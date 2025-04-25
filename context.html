@@ -461,7 +461,7 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <script>
-        const model = "gemini_2_falsh";
+        const model = "gpt4_1_mini";
         const CURRENT_MODE = "context"; // 当前模式标识符
 
         // 从localStorage获取模式信息
@@ -478,16 +478,24 @@
             // 初始化模式列表（如果尚未初始化）
             if (!localStorage.getItem('supportedModes')) {
                 const defaultModes = [
-                    { id: 'context', name: '上下文猜词', active: true }
+                    { id: 'context', name: '上下文猜词', active: true },
+                    { id: 'blank', name: '填空练习', active: true }
                 ];
                 localStorage.setItem('supportedModes', JSON.stringify(defaultModes));
+            } else {
+                // 检查并添加blank模式（如果尚未存在）
+                const modes = JSON.parse(localStorage.getItem('supportedModes'));
+                if (!modes.some(mode => mode.id === 'blank')) {
+                    modes.push({ id: 'blank', name: '填空练习', active: true });
+                    localStorage.setItem('supportedModes', JSON.stringify(modes));
+                }
             }
 
             if (!localStorage.getItem('wordBank')) {
                 const defaultWords = [
-                    { word: 'vivid', translations: ['生动的'], modes: { context: { errors: 0, practiceCount: 0 } } },
-                    { word: 'ambiguous', translations: ['模糊的'], modes: { context: { errors: 0, practiceCount: 0 } } },
-                    { word: 'profound', translations: ['深刻的'], modes: { context: { errors: 0, practiceCount: 0 } } }
+                    { word: 'vivid', translations: ['生动的'], modes: { context: { errors: 0, practiceCount: 0 }, blank: { errors: 0, practiceCount: 0 } } },
+                    { word: 'ambiguous', translations: ['模糊的'], modes: { context: { errors: 0, practiceCount: 0 }, blank: { errors: 0, practiceCount: 0 } } },
+                    { word: 'profound', translations: ['深刻的'], modes: { context: { errors: 0, practiceCount: 0 }, blank: { errors: 0, practiceCount: 0 } } }
                 ];
                 localStorage.setItem('wordBank', JSON.stringify(defaultWords));
             } else {
@@ -504,24 +512,27 @@
         const migrateWordData = () => {
             try {
                 const wordBank = JSON.parse(localStorage.getItem('wordBank') || '[]');
-                const needsMigration = wordBank.length > 0 && !wordBank[0].modes;
+                const needsMigration = wordBank.some(word => !word.modes || !word.modes.blank);
 
                 if (needsMigration) {
                     const migratedWordBank = wordBank.map(word => {
-                        return {
-                            word: word.word,
-                            translations: word.translations,
-                            modes: {
-                                context: {
-                                    errors: word.errors || 0,
-                                    practiceCount: word.practiceCount || 0
-                                }
-                            }
-                        };
+                        // 确保modes对象存在
+                        if (!word.modes) {
+                            word.modes = {
+                                context: { errors: word.errors || 0, practiceCount: word.practiceCount || 0 }
+                            };
+                        }
+
+                        // 添加blank模式数据
+                        if (!word.modes.blank) {
+                            word.modes.blank = { errors: 0, practiceCount: 0 };
+                        }
+
+                        return word;
                     });
 
                     localStorage.setItem('wordBank', JSON.stringify(migratedWordBank));
-                    console.log('单词数据已迁移到新格式');
+                    console.log('单词数据已迁移到新格式，添加blank模式');
                 }
             } catch (error) {
                 console.error('迁移数据时出错:', error);

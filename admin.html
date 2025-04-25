@@ -1128,9 +1128,17 @@ ambiguous    模糊的    0    0</pre>
         const initializeSupportedModes = () => {
             if (!localStorage.getItem('supportedModes')) {
                 const defaultModes = [
-                    { id: 'context', name: '上下文猜词', active: true }
+                    { id: 'context', name: '上下文猜词', active: true },
+                    { id: 'blank', name: '填空练习', active: true }
                 ];
                 localStorage.setItem('supportedModes', JSON.stringify(defaultModes));
+            } else {
+                // 检查并添加blank模式（如果尚未存在）
+                const modes = JSON.parse(localStorage.getItem('supportedModes'));
+                if (!modes.some(mode => mode.id === 'blank')) {
+                    modes.push({ id: 'blank', name: '填空练习', active: true });
+                    localStorage.setItem('supportedModes', JSON.stringify(modes));
+                }
             }
         }
 
