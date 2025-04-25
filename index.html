@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI English Learning Assistant</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #6366f1;
+            --background: #f8fafc;
+            --text-primary: #1e293b;
+            --border-radius: 0.75rem;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(90deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
+            min-height: 100vh;
+            padding: 2rem;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .header h1 {
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+
+        .mode-selection {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin: 3rem 0;
+            justify-content: center;
+        }
+
+        .mode-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            width: 300px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+        }
+
+        .mode-card h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .mode-card p {
+            color: #4b5563;
+            margin-bottom: 1.5rem;
+        }
+
+        .mode-card .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+
+        .admin-link {
+            display: block;
+            text-align: center;
+            margin-top: 2rem;
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .admin-link:hover {
+            color: var(--primary);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4b5563;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 640px) {
+            body {
+                padding: 1rem;
+            }
+
+            .container {
+                padding: 1.5rem;
+            }
+
+            .mode-selection {
+                flex-direction: column;
+                align-items: center;
+                gap: 1.5rem;
+            }
+
+            .mode-card {
+                width: 100%;
+                max-width: 320px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI English Learning Assistant</h1>
+            <p>选择学习模式开始练习</p>
+        </div>
+
+        <div class="mode-selection">
+            <div class="mode-card" onclick="location.href='context.html'">
+                <div class="icon">📚</div>
+                <h3>上下文猜词</h3>
+                <p>根据英语上下文猜测单词的中文含义，提高词汇理解能力</p>
+                <a href="context.html" class="btn">开始练习</a>
+            </div>
+
+            <div class="mode-card" onclick="location.href='blank.html'">
+                <div class="icon">🔍</div>
+                <h3>填空练习</h3>
+                <p>根据句子上下文填入正确的单词，巩固单词拼写和使用</p>
+                <a href="blank.html" class="btn">开始练习</a>
+            </div>
+        </div>
+
+        <a href="admin.html" class="admin-link">词库与数据管理</a>
+    </div>
+
+    <script>
+        // 从localStorage获取模式信息并确保初始化
+        const initializeStorage = () => {
+            // 初始化模式列表（如果尚未初始化）
+            if (!localStorage.getItem('supportedModes')) {
+                const defaultModes = [
+                    { id: 'context', name: '上下文猜词', active: true },
+                    { id: 'blank', name: '填空练习', active: true }
+                ];
+                localStorage.setItem('supportedModes', JSON.stringify(defaultModes));
+            } else {
+                // 检查并添加blank模式（如果尚未存在）
+                const modes = JSON.parse(localStorage.getItem('supportedModes'));
+                if (!modes.some(mode => mode.id === 'blank')) {
+                    modes.push({ id: 'blank', name: '填空练习', active: true });
+                    localStorage.setItem('supportedModes', JSON.stringify(modes));
+                }
+            }
+
+            // 初始化单词库
+            if (!localStorage.getItem('wordBank')) {
+                const defaultWords = [
+                    { word: 'vivid', translations: ['生动的'], modes: { context: { errors: 0, practiceCount: 0 }, blank: { errors: 0, practiceCount: 0 } } },
+                    { word: 'ambiguous', translations: ['模糊的'], modes: { context: { errors: 0, practiceCount: 0 }, blank: { errors: 0, practiceCount: 0 } } },
+                    { word: 'profound', translations: ['深刻的'], modes: { context: { errors: 0, practiceCount: 0 }, blank: { errors: 0, practiceCount: 0 } } }
+                ];
+                localStorage.setItem('wordBank', JSON.stringify(defaultWords));
+            }
+
+            if (!localStorage.getItem('practiceRecords')) {
+                localStorage.setItem('practiceRecords', JSON.stringify([]));
+            }
+        }
+
+        // 初始化存储
+        initializeStorage();
+    </script>
+</body>
+
+</html>
