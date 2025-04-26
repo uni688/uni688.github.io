@@ -154,28 +154,6 @@
             }
         }
 
-        .input-group {
-            display: flex;
-            gap: 1rem;
-            margin: 2rem 0;
-        }
-
-        input {
-            flex: 1;
-            padding: 0.85rem 1.25rem;
-            border: 2px solid #e2e8f0;
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            transition: all 0.2s;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--secondary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-
         button {
             padding: 0.85rem 1.5rem;
             border: none;
@@ -208,11 +186,17 @@
             background: var(--primary);
         }
 
-        button:nth-child(3) {
+        .btn-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        button:nth-child(2) {
             background: #7c3aed;
         }
 
-        button:nth-child(4) {
+        button:nth-child(3) {
             background: #0ea5e9;
         }
 
@@ -261,10 +245,6 @@
 
             .container {
                 padding: 1.5rem;
-            }
-
-            .input-group {
-                flex-direction: column;
             }
 
             .stats {
@@ -325,6 +305,7 @@
             transition: all 0.3s ease;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             border: 1px solid rgba(226, 232, 240, 0.8);
+            display: none;
         }
 
         .answer-card {
@@ -432,7 +413,7 @@
             }
         }
 
-        /* 填空题专用样式 */
+        /* 可点击填空样式 */
         .blank-sentence {
             font-size: 1.2rem;
             margin: 1.5rem 0;
@@ -440,14 +421,25 @@
         }
 
         .blank-input {
-            border-bottom: 2px dashed var(--primary);
-            padding: 0.25rem 0.5rem;
-            width: 160px;
-            text-align: center;
-            background-color: rgba(79, 70, 229, 0.05);
-            border-radius: 4px;
             display: inline-block;
+            min-width: 160px;
+            text-align: center;
+            border: none;
+            border-bottom: 2px dashed var(--primary);
+            background-color: rgba(79, 70, 229, 0.05);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
             margin: 0 0.25rem;
+            font-family: inherit;
+            font-size: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .blank-input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            background-color: rgba(79, 70, 229, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
     </style>
 </head>
@@ -456,22 +448,16 @@
     <div class="container">
         <div class="header">
             <h1>AI English Learning Assistant</h1>
-            <p>Fill in the correct word</p>
+            <p>blank</p>
         </div>
 
         <div class="context-box" id="contextBox"></div>
         <div id="answerBox" class="answer-box"></div>
 
-        <div class="input-group">
-            <input type="text" id="blankInput" placeholder="输入缺失的单词...">
-            <button id="submitBtn" onclick="checkAnswer()">Submit</button>
-            <button onclick="getHint()">Hint</button>
-            <button onclick="showAnswer()" id="answerBtn">Show Answer</button>
-        </div>
-
-        <div class="stats">
-            <div>Practice: <span id="practiceCount">0</span></div>
-            <div>Accuracy: <span id="accuracy">100%</span></div>
+        <div class="btn-container">
+            <button id="submitBtn" onclick="checkAnswer()">submit</button>
+            <button onclick="getHint()">hint</button>
+            <button onclick="showAnswer()" id="answerBtn">answer</button>
         </div>
     </div>
 
@@ -648,7 +634,7 @@
                     body: JSON.stringify({
                         message: [{
                             role: "user",
-                            content: `Generate 1-2 English sentences (30-50 words total) containing the word "${word.word}". The sentences should clearly demonstrate the meaning of the word. Do NOT include any explanation.`
+                            content: `Generate 1 English sentence (30-50 words) containing the word "${word.word}". The sentence should clearly demonstrate the meaning of the word. Make sure there is ONLY ONE sentence. Do NOT include any explanation.`
                         }],
                         mode: model,
                         prompt_id: "",
@@ -681,7 +667,7 @@
         // 创建填空题
         const createBlankSentence = (sentence, word) => {
             const regex = new RegExp(`\\b${word}\\b`, 'gi');
-            return sentence.replace(regex, '________');
+            return sentence.replace(regex, '<input type="text" class="blank-input" id="blankInput" placeholder="click to fill" autocomplete="off">');
         }
 
         // 验证填空答案
@@ -709,21 +695,21 @@
             const modeRecords = records.filter(record => record.mode === CURRENT_MODE);
             const total = modeRecords.length;
             const correct = modeRecords.filter(r => r.correct).length;
-
-            document.getElementById('practiceCount').textContent = total;
-            document.getElementById('accuracy').textContent =
-                total ? `${Math.round((correct / total) * 100)}%` : '100%';
         }
 
         // 自动聚焦到输入框
         const focusInput = () => {
-            document.getElementById('blankInput').focus();
+            const blankInput = document.getElementById('blankInput');
+            if (blankInput) {
+                blankInput.focus();
+            }
         }
 
         // 主流程控制
         let currentWord = null;
         let sentenceText = '';
         let hasErrorInCurrentWord = false; // 跟踪当前单词是否已经有错误
+        let answerShown = false; // 跟踪是否已显示答案
 
         // 显示骨架屏
         const showSkeleton = (container) => {
@@ -740,6 +726,21 @@
         const startNewSession = async () => {
             const contextBox = document.getElementById('contextBox');
             try {
+                // 重置答案显示状态
+                answerShown = false;
+
+                // 更新提交按钮状态
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.textContent = 'submit';
+
+                // 恢复答案按钮状态
+                const answerBtn = document.getElementById('answerBtn');
+                answerBtn.disabled = false;
+
+                // 隐藏答案框
+                const answerBox = document.getElementById('answerBox');
+                answerBox.style.display = 'none';
+
                 // 显示骨架屏而不是简单的loading文本
                 showSkeleton(contextBox);
 
@@ -749,7 +750,7 @@
 
                 // 先显示标题
                 contextBox.innerHTML = `
-                    <h3>Fill in the Blank</h3>
+                    <h3>fill in the blank</h3>
                     <div class="skeleton-fade-in">
                         <div class="skeleton skeleton-line full"></div>
                         <div class="skeleton skeleton-line full"></div>
@@ -762,12 +763,8 @@
                 contextBox.style.transition = 'opacity 0.3s ease';
                 setTimeout(() => contextBox.style.opacity = '1', 50);
 
-                // 清空答案框和输入框
+                // 清空答案框
                 document.getElementById('answerBox').innerHTML = '';
-                document.getElementById('blankInput').value = '';
-
-                // 聚焦到输入框
-                focusInput();
 
                 // 生成句子
                 sentenceText = await generateBlankSentence(currentWord);
@@ -778,8 +775,21 @@
                 if (sentenceArea) {
                     sentenceArea.outerHTML = `
                         <p class="blank-sentence">${blankSentence}</p>
-                        <p><em>请填入缺失的单词</em></p>
                     `;
+                }
+
+                // 聚焦到新创建的输入框
+                setTimeout(focusInput, 100);
+
+                // 为新创建的输入框绑定Enter键事件
+                const blankInput = document.getElementById('blankInput');
+                if (blankInput) {
+                    blankInput.addEventListener('keypress', function (event) {
+                        if (event.key === 'Enter') {
+                            event.preventDefault();
+                            checkAnswer();
+                        }
+                    });
                 }
 
             } catch (error) {
@@ -824,11 +834,19 @@
         // 检查用户答案
         const checkAnswer = async () => {
             const submitBtn = document.getElementById('submitBtn');
+
+            // 如果已显示答案，则进入下一题
+            if (answerShown) {
+                await startNewSession();
+                return;
+            }
+
             try {
                 submitBtn.disabled = true;
                 submitBtn.textContent = '验证中...';
 
-                const userInput = document.getElementById('blankInput').value.trim();
+                const blankInput = document.getElementById('blankInput');
+                const userInput = blankInput.value.trim();
                 if (!userInput) return;
 
                 const isCorrect = validateAnswer(userInput, currentWord.word);
@@ -867,26 +885,17 @@
                 } else {
                     showToast('回答错误，请再试一次', 'error');
                     updateRecords(false);
-                    document.getElementById('blankInput').value = ''; // 清空输入框以便重试
-                    focusInput();
+                    blankInput.value = ''; // 清空输入框以便重试
+                    blankInput.focus();
                 }
             } catch (error) {
                 console.error('验证出错:', error);
                 showToast('验证过程中发生错误', 'error');
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Submit';
+                submitBtn.textContent = 'submit';
             }
         }
-
-        // 监听键盘事件，按Enter键时提交
-        document.getElementById('blankInput').addEventListener('keypress', function (event) {
-            // 当按下回车键(keyCode 13)时触发提交
-            if (event.key === 'Enter') {
-                event.preventDefault(); // 阻止默认行为
-                checkAnswer();
-            }
-        });
 
         // 提示功能
         const getHint = async () => {
@@ -916,7 +925,7 @@
                 try {
                     const data = JSON.parse(rawData);
                     if (data.message?.[0]?.content) {
-                        showToast(data.message[0].content, 'info', 5000);
+                        showToast(data.message[0].content, 'info', 10000);
                         return;
                     }
                 } catch {
@@ -928,7 +937,7 @@
                 showToast('获取提示失败，请检查网络连接', 'error');
             } finally {
                 hintButton.disabled = false;
-                hintButton.textContent = 'Hint';
+                hintButton.textContent = 'hint';
             }
         }
 
@@ -936,12 +945,13 @@
         const showAnswer = () => {
             const answerBox = document.getElementById('answerBox');
             answerBox.style.opacity = '0';
+            answerBox.style.display = 'block';
 
             answerBox.innerHTML = `
                 <div class="answer-card">
-                    <h4>正确答案</h4>
-                    <p>答案：<strong>${currentWord.word}</strong></p>
-                    <p>中文翻译：<span style="color: #10b981; font-weight: 600;">${currentWord.translations.join(' / ')}</span></p>
+                    <h4>answer</h4>
+                    <p>answer：<strong>${currentWord.word}</strong></p>
+                    <p>chinese translation：<span style="color: #10b981; font-weight: 600;">${currentWord.translations.join(' / ')}</span></p>
                 </div>
             `;
 
@@ -955,14 +965,15 @@
             const answerBtn = document.getElementById('answerBtn');
             answerBtn.disabled = true;
 
-            // 显示提示消息
-            showToast('已显示答案，即将进入下一题', 'info');
+            // 更改提交按钮文本为"next"
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.textContent = 'next';
 
-            // 3秒后进入下一题
-            setTimeout(() => {
-                startNewSession();
-                answerBtn.disabled = false;
-            }, 3000);
+            // 设置答案显示状态
+            answerShown = true;
+
+            // 显示提示消息
+            showToast('已显示答案，点击 next 进入下一题', 'info');
         }
 
         // 初始化
