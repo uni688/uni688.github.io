@@ -1,0 +1,76 @@
+/* Index Page Specific Styles */
+
+/* Mode Selection */
+.mode-selection {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin: 3rem 0;
+    justify-content: center;
+}
+
+.mode-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 2rem;
+    width: 300px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.mode-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary);
+}
+
+.mode-card h3 {
+    color: var(--primary);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.mode-card p {
+    color: #4b5563;
+    margin-bottom: 1.5rem;
+}
+
+.mode-card .icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--secondary);
+}
+
+/* Admin Link */
+.admin-link {
+    display: block;
+    text-align: center;
+    margin-top: 2rem;
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.admin-link:hover {
+    color: var(--primary);
+}
+
+/* Mobile Responsive for Index */
+@media (max-width: 640px) {
+    .mode-selection {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .mode-card {
+        width: 100%;
+        max-width: 320px;
+    }
+}
