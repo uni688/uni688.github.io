@@ -5,840 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>数据管理后台</title>
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --secondary: #6366f1;
-            --background: #f8fafc;
-            --text-primary: #1e293b;
-            --border-radius: 0.75rem;
-            --border-radius-sm: 0.5rem;
-            --success: #10b981;
-            --error: #ef4444;
-            --info: #3b82f6;
-            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-            font-size: 110%;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(90deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-            background-size: 400% 400%;
-            animation: gradientBG 20s ease infinite;
-            min-height: 100vh;
-            padding: 2rem;
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-
-        @keyframes gradientBG {
-            0% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-
-            100% {
-                background-position: 0% 50%;
-            }
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.92);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-lg);
-            padding: 2.5rem;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        }
-
-        .page-header {
-            text-align: center;
-            margin-bottom: 2rem;
-            position: relative;
-        }
-
-        .page-header h1 {
-            margin-bottom: 0.5rem;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 700;
-            font-size: 2.2rem;
-        }
-
-        .nav-tabs {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .tab-btn {
-            padding: 0.85rem 1.75rem;
-            border: none;
-            border-radius: var(--border-radius);
-            background: var(--secondary);
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            box-shadow: var(--shadow-sm);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .tab-btn:before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 100%);
-            transform: translateY(-100%);
-            transition: transform 0.3s;
-        }
-
-        .tab-btn:hover:before {
-            transform: translateY(0);
-        }
-
-        .tab-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow);
-        }
-
-        .tab-btn.active {
-            background: var(--primary);
-            transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.25);
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            color: var(--primary);
-            font-weight: 600;
-        }
-
-        .action-bar {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
-
-        .data-table-container {
-            overflow-x: auto;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            margin-bottom: 2rem;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            background: white;
-            overflow: hidden;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 1.2rem 1rem;
-            text-align: left;
-            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-        }
-
-        .data-table th {
-            background: #f1f5f9;
-            font-weight: 600;
-            color: #475569;
-            position: sticky;
-            top: 0;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .data-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .data-table tr:hover td {
-            background-color: #f8fafc;
-        }
-
-        .data-table td.word-cell {
-            font-weight: 600;
-            color: var(--primary);
-        }
-
-        .action-btns {
-            display: flex;
-            flex-direction: row;
-            gap: 0.3rem;
-            flex-wrap: nowrap;
-            justify-content: flex-start;
-            white-space: nowrap;
-        }
-
-        .btn {
-            padding: 0.75rem 1.25rem;
-            border: none;
-            border-radius: var(--border-radius-sm);
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-sm);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            white-space: nowrap;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow);
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-info {
-            background: var(--info);
-            color: white;
-        }
-
-        .btn-edit {
-            background: var(--info);
-            color: white;
-            padding: 0.4rem 0.7rem;
-            font-size: 0.85rem;
-            min-width: auto;
-        }
-
-        .btn-delete {
-            background: var(--error);
-            color: white;
-            padding: 0.4rem 0.7rem;
-            font-size: 0.85rem;
-            min-width: auto;
-        }
-
-        .btn-delete-large {
-            background: var(--error);
-            color: white;
-            padding: 0.75rem 1.25rem;
-            font-weight: 600;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .btn-delete-large:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow);
-        }
-
-        .btn-favorite {
-            background: #fbbf24;
-            color: white;
-            padding: 0.4rem 0.7rem;
-            font-size: 0.85rem;
-            min-width: auto;
-        }
-
-        .btn-favorite.active {
-            background: #f59e0b;
-            color: white;
-        }
-
-        .btn-favorite.active i {
-            color: white;
-        }
-
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: flex-start;
-            z-index: 1000;
-            backdrop-filter: blur(3px);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            overflow-y: auto;
-            padding: 2rem 0;
-        }
-
-        .modal.visible {
-            opacity: 1;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 2.5rem;
-            border-radius: var(--border-radius);
-            min-width: 450px;
-            max-width: 90%;
-            box-shadow: var(--shadow-lg);
-            transform: translateY(20px);
-            transition: transform 0.3s ease;
-            opacity: 0;
-            margin: auto;
-            position: relative;
-        }
-
-        .modal.visible .modal-content {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .modal-header {
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-title {
-            font-size: 1.5rem;
-            color: var(--primary);
-            font-weight: 600;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #94a3b8;
-            transition: color 0.2s;
-        }
-
-        .modal-close:hover {
-            color: var(--error);
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #475569;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 0.85rem 1rem;
-            border: 2px solid #e2e8f0;
-            border-radius: var(--border-radius-sm);
-            font-size: 1rem;
-            transition: all 0.3s;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--secondary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .file-input-container {
-            margin: 2rem 0;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            background: #f8fafc;
-            padding: 2rem;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-sm);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-        }
-
-        .file-input-header {
-            font-size: 1.2rem;
-            color: var(--primary);
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .file-input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .custom-file-input {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .file-name {
-            padding: 0.5rem 1rem;
-            background: white;
-            border-radius: var(--border-radius-sm);
-            border: 1px solid #e2e8f0;
-            flex: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .file-label {
-            padding: 0.75rem 1.25rem;
-            background: var(--info);
-            color: white;
-            border-radius: var(--border-radius-sm);
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            box-shadow: var(--shadow-sm);
-            text-align: center;
-        }
-
-        .file-label:hover {
-            background: #2563eb;
-            transform: translateY(-2px);
-            box-shadow: var(--shadow);
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 0.35rem 0.75rem;
-            border-radius: 2rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .badge-success {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .badge-error {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .card {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .weight-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .weight-item:last-child {
-            border-bottom: none;
-        }
-
-        .weight-label {
-            font-weight: 500;
-            color: #475569;
-        }
-
-        .weight-value {
-            font-weight: 600;
-            color: var(--primary);
-        }
-
-        /* Toast通知样式 */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            max-width: 350px;
-            z-index: 9999;
-        }
-
-        .toast {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            padding: 1rem 1.25rem;
-            margin-bottom: 1rem;
-            animation: toastIn 0.3s ease forwards;
-            display: flex;
-            align-items: center;
-            border-left: 4px solid;
-            pointer-events: all;
-        }
-
-        .toast-success {
-            border-left-color: var(--success);
-        }
-
-        .toast-error {
-            border-left-color: var(--error);
-        }
-
-        .toast-info {
-            border-left-color: var(--info);
-        }
-
-        .toast-icon {
-            margin-right: 0.75rem;
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-
-        .toast-success .toast-icon {
-            color: var(--success);
-        }
-
-        .toast-error .toast-icon {
-            color: var(--error);
-        }
-
-        .toast-info .toast-icon {
-            color: var(--info);
-        }
-
-        .toast-message {
-            flex: 1;
-            font-size: 0.95rem;
-        }
-
-        @keyframes toastIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        @keyframes toastOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-        }
-
-        /* 响应式设计优化 */
-        @media (max-width: 768px) {
-            body {
-                padding: 1rem;
-            }
-
-            .container {
-                padding: 1.5rem;
-            }
-
-            .modal-content {
-                padding: 1.5rem;
-                min-width: unset;
-                width: 95%;
-            }
-
-            .data-table th,
-            .data-table td {
-                padding: 0.75rem;
-            }
-
-            .section-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .action-bar {
-                width: 100%;
-                justify-content: space-between;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .tab-btn {
-                width: 100%;
-            }
-
-            .form-actions {
-                flex-direction: column;
-            }
-
-            .form-actions .btn {
-                width: 100%;
-            }
-        }
-
-        /* 批量导入相关样式 */
-        .form-control {
-            width: 100%;
-            padding: 0.85rem 1rem;
-            border: 2px solid #e2e8f0;
-            border-radius: var(--border-radius-sm);
-            font-size: 1rem;
-            transition: all 0.3s;
-            box-shadow: var(--shadow-sm);
-            background: white;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--secondary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-
-        textarea.form-control {
-            min-height: 120px;
-            resize: vertical;
-            font-family: monospace;
-        }
-
-        .format-help {
-            margin: 1rem 0;
-            padding: 1rem;
-            background: #f8fafc;
-            border-radius: var(--border-radius-sm);
-            border: 1px solid #e2e8f0;
-        }
-
-        .format-help pre {
-            background: white;
-            padding: 0.75rem;
-            border-radius: var(--border-radius-sm);
-            border: 1px solid #e2e8f0;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            font-size: 0.9rem;
-        }
-
-        .format-help p {
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #475569;
-        }
-
-        .batch-checkbox {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        .mode-selector {
-            margin-right: 1rem;
-        }
-
-        .mode-selector select {
-            padding: 0.75rem 1.25rem;
-            border-radius: var(--border-radius-sm);
-            border: 2px solid #e2e8f0;
-            background-color: white;
-            font-size: 1rem;
-            font-weight: 500;
-            color: var(--text-primary);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .mode-selector select:focus {
-            outline: none;
-            border-color: var(--secondary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-
-        .text-warning {
-            color: #e11d48;
-            font-weight: 500;
-            margin-top: 0.5rem;
-        }
-
-        .btn-secondary {
-            background-color: #94a3b8;
-        }
-
-        /* 删除确认提示框样式 */
-        .confirm-tip {
-            position: absolute;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
-            width: 220px;
-            text-align: center;
-            transform: translateX(-50%);
-            margin-top: -60px;
-            animation: tipFadeIn 0.2s ease-in-out;
-        }
-
-        .confirm-tip:before {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-top: 8px solid #ddd;
-        }
-
-        .confirm-tip:after {
-            content: '';
-            position: absolute;
-            bottom: -7px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 7px solid transparent;
-            border-right: 7px solid transparent;
-            border-top: 7px solid #fff;
-        }
-
-        .confirm-tip p {
-            margin: 0 0 8px 0;
-            font-size: 14px;
-        }
-
-        .confirm-tip-buttons {
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .confirm-tip-buttons button {
-            padding: 3px 8px;
-            border-radius: 3px;
-            border: none;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .confirm-tip-cancel {
-            background-color: #f0f0f0;
-            color: #333;
-        }
-
-        .confirm-tip-confirm {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        /* 确认提示额外样式 */
-        .confirm-message {
-            margin: 0 0 8px 0;
-            font-size: 14px;
-        }
-
-        .confirm-actions {
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .confirm-btn {
-            padding: 3px 8px;
-            border-radius: 3px;
-            border: none;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .confirm-cancel {
-            background-color: #f0f0f0;
-            color: #333;
-        }
-
-        .confirm-yes {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        @keyframes tipFadeIn {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
-        }
-
-        .data-table td:last-child {
-            min-width: 160px;
-            width: 160px;
-            white-space: nowrap;
-            padding-right: 1.5rem;
-        }
-
-        .favorite-row {
-            background-color: rgba(251, 191, 36, 0.08) !important;
-        }
-
-        .favorite-row:hover td {
-            background-color: rgba(251, 191, 36, 0.15) !important;
-        }
-    </style>
+    <link rel="stylesheet" href="assets/css/common.css">
+    <link rel="stylesheet" href="assets/css/admin.css">
 </head>
 
 <body>
@@ -855,28 +23,21 @@
 
         <!-- 单词管理 -->
         <div id="wordsTab" class="tab-content">
-            <div class="action-bar">
-                <button class="btn btn-primary" onclick="showEditModal(null)">
-                    <span>添加新单词</span>
-                </button>
-                <button class="btn btn-info" onclick="showBatchAddModal()">
-                    <span>批量添加</span>
-                </button>
-                <div style="flex: 1;"></div>
-                <div class="mode-selector">
-                    <select id="wordModeSelector" class="form-control" onchange="refreshWords()">
-                        <option value="all">所有模式</option>
-                        <option value="context" selected>上下文猜词</option>
-                    </select>
+            <div class="section-header">
+                <h2 class="section-title">单词管理</h2>
+                <div class="action-bar">
+                    <button class="btn btn-primary" onclick="showEditModal(null)">
+                        <span>添加新单词</span>
+                    </button>
+                    <button class="btn btn-info" onclick="showBatchAddModal()">
+                        <span>批量添加</span>
+                    </button>
+                    <div style="flex: 1;"></div>
+                    <button class="btn btn-secondary" onclick="toggleBatchMode()">
+                        <span id="batchModeText">批量管理</span>
+                    </button>
                 </div>
-                <div class="batch-actions" style="display: none;">
-                    <button id="batchDeleteBtn" class="btn btn-delete-large" onclick="batchDelete(event)">批量删除</button>
-                </div>
-                <button class="btn btn-success" onclick="toggleBatchMode()">
-                    <span id="batchModeText">批量管理</span>
-                </button>
             </div>
-
             <div class="data-table-container">
                 <table class="data-table">
                     <thead>
@@ -886,33 +47,25 @@
                             </th>
                             <th>单词</th>
                             <th>翻译</th>
-                            <th>上下文猜词(错误次数)</th>
-                            <th>上下文猜词(练习次数)</th>
-                            <th>权重</th>
+                            <th>练习次数</th>
+                            <th>错误次数</th>
                             <th>操作</th>
                         </tr>
                     </thead>
                     <tbody id="wordsTable"></tbody>
                 </table>
             </div>
+            <div class="batch-actions" style="display: none;">
+                <button class="btn btn-delete-large" onclick="batchDeleteWords()">批量删除选中项</button>
+            </div>
         </div>
 
         <!-- 练习记录 -->
         <div id="recordsTab" class="tab-content" style="display:none">
             <div class="section-header">
-                <h2 class="section-title">练习历史记录</h2>
+                <h2 class="section-title">练习记录</h2>
                 <div class="action-bar">
-                    <div class="mode-selector">
-                        <select id="recordModeSelector" class="form-control" onchange="refreshRecords()">
-                            <option value="all">所有模式</option>
-                            <option value="context" selected>上下文猜词</option>
-                        </select>
-                    </div>
-                    <div class="batch-actions-records" style="display: none;">
-                        <button id="batchDeleteRecordsBtn" class="btn btn-delete-large"
-                            onclick="batchDeleteRecords(event)">批量删除</button>
-                    </div>
-                    <button class="btn btn-success" onclick="toggleBatchModeRecords()">
+                    <button class="btn btn-secondary" onclick="toggleBatchModeRecords()">
                         <span id="batchModeRecordsText">批量管理</span>
                     </button>
                 </div>
@@ -945,175 +98,78 @@
             <div class="file-input-container">
                 <div>
                     <h3 class="file-input-header">导出数据</h3>
-                    <p>将所有单词和记录导出到JSON文件中，以便备份或迁移。</p>
-                    <button class="btn btn-primary" onclick="exportData()" style="margin-top: 1rem;">
-                        <span>导出数据</span>
-                    </button>
+                    <div class="file-input-group">
+                        <button class="btn btn-success" onclick="exportData()">导出所有数据</button>
+                        <p class="file-info">导出包含单词库和练习记录的 JSON 文件</p>
+                    </div>
                 </div>
 
-                <div class="file-input-group">
+                <div>
                     <h3 class="file-input-header">导入数据</h3>
-                    <p>从之前导出的JSON文件导入数据，将覆盖当前数据。</p>
-
-                    <div class="custom-file-input">
-                        <div class="file-name" id="fileName">未选择文件</div>
-                        <label for="importFile" class="file-label">选择文件</label>
-                        <input type="file" id="importFile" accept=".json" onchange="updateFileName()">
+                    <div class="file-input-group">
+                        <label class="custom-file-input">
+                            <input type="file" id="fileInput" accept=".json" onchange="handleFileSelect(event)">
+                            <div>点击选择文件或拖拽文件至此</div>
+                            <p class="file-info">支持 JSON 格式文件</p>
+                        </label>
                     </div>
-
-                    <button class="btn btn-primary" onclick="importData()">
-                        <span>导入数据</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 编辑单词模态框 -->
-        <div id="editModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title" id="modalTitle">编辑单词</h3>
-                    <button class="modal-close" onclick="closeModal()">&times;</button>
                 </div>
 
-                <div class="form-group">
-                    <label for="editWord">单词</label>
-                    <input type="text" id="editWord" placeholder="输入英文单词">
-                </div>
-                <div class="form-group">
-                    <label for="editTranslations">翻译（用逗号分隔多个翻译）</label>
-                    <input type="text" id="editTranslations" placeholder="如：生动的,鲜明的">
-                </div>
-                <div class="form-group">
-                    <label for="editErrors">上下文猜词(错误次数)</label>
-                    <input type="number" id="editErrors" min="0">
-                </div>
-                <div class="form-group">
-                    <label for="editPracticeCount">上下文猜词(练习次数)</label>
-                    <input type="number" id="editPracticeCount" min="0">
-                </div>
-
-                <div class="form-actions">
-                    <button class="btn btn-delete-large" onclick="closeModal()">取消</button>
-                    <button class="btn btn-primary" onclick="saveWord()">保存</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 编辑练习记录模态框 -->
-        <div id="editRecordModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title" id="recordModalTitle">编辑练习记录</h3>
-                    <button class="modal-close" onclick="closeRecordModal()">&times;</button>
-                </div>
-                <form id="recordEditForm" onsubmit="saveRecordEdit(event)">
-                    <div class="form-group">
-                        <label for="editRecordWord">单词:</label>
-                        <input type="text" id="editRecordWord" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editRecordMode">模式:</label>
-                        <select id="editRecordMode" class="form-control" required></select>
-                    </div>
-                    <div class="form-group">
-                        <label for="editRecordDate">练习日期:</label>
-                        <input type="datetime-local" id="editRecordDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editRecordResult">结果:</label>
-                        <select id="editRecordResult" class="form-control" required>
-                            <option value="true">正确</option>
-                            <option value="false">错误</option>
-                        </select>
-                    </div>
-                    <div class="button-group">
-                        <button type="submit" class="btn btn-primary">保存</button>
-                        <button type="button" class="btn btn-delete-large" onclick="closeRecordModal()">取消</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- 导入确认模态框 -->
-        <div id="importConfirmModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">确认导入</h3>
-                    <button class="modal-close" onclick="closeImportConfirmModal()">&times;</button>
-                </div>
-                <div style="padding: 20px;">
-                    <p>导入将覆盖当前所有数据，确定要继续吗？</p>
-                    <div id="importDataSummary" style="margin: 15px 0;"></div>
-                    <div class="button-group">
-                        <button type="button" class="btn btn-primary" onclick="confirmImport()">确认导入</button>
-                        <button type="button" class="btn btn-delete-large"
-                            onclick="closeImportConfirmModal()">取消</button>
+                <div>
+                    <h3 class="file-input-header">清空数据</h3>
+                    <div class="file-input-group">
+                        <button class="btn btn-delete-large" onclick="clearAllData()">清空所有数据</button>
+                        <p class="file-info" style="color: var(--error);">此操作不可撤销，请谨慎操作</p>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- 批量添加单词模态框 -->
-        <div id="batchAddModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">批量添加单词</h3>
-                    <button class="modal-close" onclick="closeBatchAddModal()">&times;</button>
-                </div>
+    <!-- 编辑单词模态框 -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">添加新单词</h3>
+                <span class="close" onclick="closeEditModal()">&times;</span>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label for="wordInput" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">单词:</label>
+                <input type="text" id="wordInput" class="form-control" placeholder="输入英文单词">
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label for="translationsInput" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">翻译:</label>
+                <input type="text" id="translationsInput" class="form-control" placeholder="输入中文翻译，多个翻译用逗号分隔">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveWord()">保存</button>
+            </div>
+        </div>
+    </div>
 
-                <div class="form-group">
-                    <label for="batchFormat">选择导入格式</label>
-                    <select id="batchFormat" class="form-control" onchange="showFormatHelp()">
-                        <option value="json">JSON格式</option>
-                        <option value="csv">CSV格式</option>
-                        <option value="excel">Excel复制数据</option>
-                    </select>
-                </div>
+    <!-- 批量添加模态框 -->
+    <div id="batchAddModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">批量添加单词</h3>
+                <span class="close" onclick="closeBatchAddModal()">&times;</span>
+            </div>
+            <div class="format-help">
+                <p>数据格式说明：</p>
+                <pre>单词1,翻译1,翻译2
+单词2,翻译1
+单词3,翻译1,翻译2,翻译3</pre>
+                <p style="margin-top: 0.5rem; color: #64748b;">每行一个单词，用逗号分隔单词和翻译，多个翻译之间也用逗号分隔</p>
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label for="batchData" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">批量数据:</label>
+                <textarea id="batchData" class="form-control" rows="8" placeholder="粘贴数据..."></textarea>
+            </div>
 
-                <div class="form-group">
-                    <label for="batchAddModeSelector">选择添加模式</label>
-                    <select id="batchAddModeSelector" class="form-control" onchange="updateBatchFormatHelp()">
-                        <option value="all">全部模式</option>
-                        <!-- 其他选项将由JavaScript动态填充 -->
-                    </select>
-                    <small class="form-text text-muted">
-                        选择"全部模式"将把单词添加到所有激活的模式中，或选择特定模式只更新该模式的数据
-                    </small>
-                </div>
-
-                <div class="format-help" id="jsonHelp">
-                    <p>JSON格式示例:</p>
-                    <pre id="jsonHelpExample">[
-  {"word": "vivid", "translations": ["生动的"]},
-  {"word": "ambiguous", "translations": ["模糊的"]}
-]</pre>
-                    <p id="jsonHelpText">选择全部模式时，只需提供单词和翻译；选择特定模式时，可额外提供errors和practiceCount数据。</p>
-                </div>
-
-                <div class="format-help" id="csvHelp" style="display: none;">
-                    <p>CSV格式示例:</p>
-                    <pre id="csvHelpExample">vivid,生动的,0,0
-ambiguous,模糊的,0,0</pre>
-                    <p id="csvHelpText">选择全部模式时，只需提供单词和翻译（前两列）；选择特定模式时，可额外提供错误次数和练习次数（后两列）。</p>
-                </div>
-
-                <div class="format-help" id="excelHelp" style="display: none;">
-                    <p>Excel复制数据示例:</p>
-                    <pre id="excelHelpExample">vivid    生动的    0    0
-ambiguous    模糊的    0    0</pre>
-                    <p id="excelHelpText">选择全部模式时，只需提供单词和翻译（前两列）；选择特定模式时，可额外提供错误次数和练习次数（后两列）。</p>
-                </div>
-
-                <div class="form-group">
-                    <label for="batchData">粘贴数据</label>
-                    <textarea id="batchData" class="form-control" rows="8" placeholder="粘贴数据..."></textarea>
-                </div>
-
-                <div class="form-actions">
-                    <button class="btn btn-delete-large" onclick="closeBatchAddModal()">取消</button>
-                    <button class="btn btn-primary" onclick="processBatchAdd()">导入</button>
-                </div>
+            <div class="form-actions">
+                <button class="btn btn-delete-large" onclick="closeBatchAddModal()">取消</button>
+                <button class="btn btn-primary" onclick="processBatchAdd()">导入</button>
             </div>
         </div>
     </div>
@@ -1121,1251 +177,153 @@ ambiguous    模糊的    0    0</pre>
     <!-- Toast通知容器 -->
     <div id="toastContainer" class="toast-container"></div>
 
+    <script src="assets/js/common.js"></script>
     <script>
         let currentEditIndex = -1;
 
-        // 模式管理
-        const initializeSupportedModes = () => {
-            if (!localStorage.getItem('supportedModes')) {
-                const defaultModes = [
-                    { id: 'context', name: '上下文猜词', active: true },
-                    { id: 'blank', name: '填空练习', active: true }
-                ];
-                localStorage.setItem('supportedModes', JSON.stringify(defaultModes));
-            } else {
-                // 检查并添加blank模式（如果尚未存在）
-                const modes = JSON.parse(localStorage.getItem('supportedModes'));
-                if (!modes.some(mode => mode.id === 'blank')) {
-                    modes.push({ id: 'blank', name: '填空练习', active: true });
-                    localStorage.setItem('supportedModes', JSON.stringify(modes));
-                }
-            }
-        }
-
-        // 获取所有支持的模式
-        const getSupportedModes = () => {
-            return JSON.parse(localStorage.getItem('supportedModes') || '[]');
-        }
-
-        // 获取所有激活的模式
-        const getActiveModes = () => {
-            const modes = getSupportedModes();
-            return modes.filter(mode => mode.active);
-        }
-
-        // 根据ID获取模式信息
-        const getModeById = (modeId) => {
-            const modes = getSupportedModes();
-            return modes.find(mode => mode.id === modeId) || null;
-        }
-
-        // 模式选择器生成HTML
-        const generateModeSelectorsHTML = (elementId, includeAll = true) => {
-            const activeModes = getActiveModes();
-            const select = document.getElementById(elementId);
-
-            if (!select) return;
-
-            // 保存当前选中的值
-            const currentValue = select.value;
-
-            let options = includeAll ? `<option value="all">所有模式</option>` : '';
-            activeModes.forEach(mode => {
-                options += `<option value="${mode.id}">${mode.name}</option>`;
+        // Tab management
+        const showTab = (tabName) => {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
             });
 
-            select.innerHTML = options;
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
 
-            // 如果之前选中的值还存在，则保持选中
-            if (currentValue && (currentValue === 'all' || activeModes.some(m => m.id === currentValue))) {
-                select.value = currentValue;
-            } else if (activeModes.length > 0) {
-                // 默认选择第一个模式
-                select.value = includeAll ? 'all' : activeModes[0].id;
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').style.display = 'block';
+
+            // Add active class to clicked button
+            event.target.classList.add('active');
+
+            // Refresh data for the selected tab
+            if (tabName === 'words') {
+                refreshWords();
+            } else if (tabName === 'records') {
+                refreshRecords();
             }
-        }
-
-        // Toast通知系统
-        const showToast = (message, type = 'info', duration = 3000) => {
-            const toastContainer = document.getElementById('toastContainer');
-
-            // 创建toast元素
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-
-            // 设置图标
-            let icon = '!';
-            if (type === 'success') icon = '✓';
-            if (type === 'error') icon = '✗';
-            if (type === 'info') icon = 'i';
-
-            // 设置内容
-            toast.innerHTML = `
-                <div class="toast-icon">${icon}</div>
-                <div class="toast-message">${message}</div>
-            `;
-
-            // 添加到容器
-            toastContainer.appendChild(toast);
-
-            // 设置自动消失
-            setTimeout(() => {
-                toast.style.animation = 'toastOut 0.3s ease forwards';
-                setTimeout(() => {
-                    if (toastContainer.contains(toast)) {
-                        toastContainer.removeChild(toast);
-                    }
-                }, 300);
-            }, duration);
-
-            return toast;
         };
 
-        // 初始化数据
-        const loadData = () => {
-            return {
-                wordBank: JSON.parse(localStorage.getItem('wordBank') || '[]'),
-                practiceRecords: JSON.parse(localStorage.getItem('practiceRecords') || '[]')
-            }
-        }
-
-        // 将旧的单词数据迁移到新格式
-        const migrateWordData = () => {
-            try {
-                const wordBank = JSON.parse(localStorage.getItem('wordBank') || '[]');
-                const needsMigration = wordBank.length > 0 && !wordBank[0].modes;
-
-                if (needsMigration) {
-                    const migratedWordBank = wordBank.map(word => {
-                        return {
-                            word: word.word,
-                            translations: word.translations,
-                            modes: {
-                                context: {
-                                    errors: word.errors || 0,
-                                    practiceCount: word.practiceCount || 0,
-                                    lastPractice: null
-                                }
-                            }
-                        };
-                    });
-
-                    localStorage.setItem('wordBank', JSON.stringify(migratedWordBank));
-                    showToast('单词数据已迁移到新格式', 'info');
-                }
-            } catch (error) {
-                console.error('迁移数据时出错:', error);
-            }
-        }
-
-        // 获取单词特定模式下的数据
-        const getWordModeData = (word, mode = 'context') => {
-            if (!word || !word.modes || !word.modes[mode]) {
-                return { errors: 0, practiceCount: 0 };
-            }
-            return word.modes[mode];
-        }
-
-        // 显示对应标签页
-        const showTab = (tabId) => {
-            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-
-            document.getElementById(`${tabId}Tab`).style.display = 'block';
-
-            // 修复：直接找到对应按钮添加active类，而不是使用event.target
-            document.querySelector(`.tab-btn[onclick="showTab('${tabId}')"]`).classList.add('active');
-
-            if (tabId === 'words') {
-                refreshWords();
-            }
-            if (tabId === 'records') refreshRecords();
-        }
-
-        // 通过单词查找对应的索引
-        const findWordIndex = (wordText) => {
-            const { wordBank } = loadData();
-            return wordBank.findIndex(w => w.word === wordText);
-        }
-
-        // 通过单词查找并编辑
-        const findAndEditWord = (wordText) => {
-            const index = findWordIndex(wordText);
-            if (index !== -1) {
-                showEditModal(index);
-            } else {
-                showToast('无法找到单词', 'error');
-            }
-        }
-
-        // 通过单词查找并删除
-        const findAndDeleteWord = (wordText) => {
-            const index = findWordIndex(wordText);
-            if (index !== -1) {
-                confirmDeleteByWordName(wordText, index);
-            }
-        }
-
-        // 根据单词名称确认删除
-        const confirmDeleteByWordName = (wordText, wordIndex) => {
-            // 清除所有已存在的提示
-            clearAllConfirmTips();
-
-            // 查找与该单词相关的删除按钮
-            const deleteButtons = document.querySelectorAll('.btn-delete');
-            let targetButton = null;
-
-            for (let btn of deleteButtons) {
-                if (btn.closest('tr') && btn.closest('tr').querySelector('.word-cell') &&
-                    btn.closest('tr').querySelector('.word-cell').textContent.trim() === wordText) {
-                    targetButton = btn;
-                    break;
-                }
-            }
-
-            if (!targetButton) {
-                // 如果找不到按钮，直接删除
-                deleteWord(wordIndex);
-                return;
-            }
-
-            const rect = targetButton.getBoundingClientRect();
-
-            // 创建确认提示
-            const tip = document.createElement('div');
-            tip.className = 'confirm-tip';
-            tip.innerHTML = `
-                <p>确定删除单词 "${wordText}" 吗？</p>
-                <div class="confirm-tip-buttons">
-                    <button class="confirm-tip-cancel">取消</button>
-                    <button class="confirm-tip-confirm">确认</button>
-                </div>
-            `;
-
-            // 定位提示
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-
-            tip.style.left = (rect.left + rect.width / 2 + scrollLeft) + 'px';
-            tip.style.top = (rect.top + scrollTop - 30) + 'px'; // 在按钮正上方
-
-            document.body.appendChild(tip);
-
-            // 添加按钮事件
-            const cancelBtn = tip.querySelector('.confirm-tip-cancel');
-            const confirmBtn = tip.querySelector('.confirm-tip-confirm');
-
-            cancelBtn.addEventListener('click', () => {
-                tip.remove();
-            });
-
-            confirmBtn.addEventListener('click', () => {
-                deleteWord(wordIndex);
-                tip.remove();
-            });
-
-            // 点击其他地方关闭提示
-            setTimeout(() => {
-                document.addEventListener('click', function closeConfirm(e) {
-                    if (!tip.contains(e.target) && e.target !== targetButton) {
-                        if (document.body.contains(tip)) {
-                            document.body.removeChild(tip);
-                        }
-                        document.removeEventListener('click', closeConfirm);
-                    }
-                });
-            }, 100);
-        }
-
-        // 刷新单词表格
+        // Word management functions
         const refreshWords = () => {
-            const { wordBank } = loadData();
-            const tbody = document.getElementById('wordsTable');
-            const batchMode = document.querySelector('.batch-column').style.display !== 'none';
-            const selectedMode = document.getElementById('wordModeSelector').value;
-
-            // 显示加载骨架屏
-            tbody.innerHTML = '<tr><td colspan="' + (batchMode ? '7' : '6') + '" class="loading-state">加载中...</td></tr>';
-
-            setTimeout(() => {
-                // 计算并排序单词权重
-                const words = calculateWordWeights();
-
-                // 根据收藏状态和权重排序（收藏的在前面）
-                words.sort((a, b) => {
-                    // 首先按照收藏状态排序
-                    if (a.favorite && !b.favorite) return -1;
-                    if (!a.favorite && b.favorite) return 1;
-                    // 然后按照权重排序
-                    return b.weight - a.weight;
-                });
-
-                // 根据所选模式筛选单词
-                const filteredWords = selectedMode === 'all'
-                    ? words
-                    : words.filter(word => word.modes && word.modes[selectedMode]);
-
-                tbody.innerHTML = filteredWords.map((word, index) => {
-                    // 获取当前选择模式的数据
-                    const modeData = selectedMode === 'all'
-                        ? getWordModeData(word, 'context') // 默认显示context模式的数据
-                        : getWordModeData(word, selectedMode);
-
-                    return `
-                    <tr ${word.favorite ? 'class="favorite-row"' : ''}>
-                        ${batchMode ? `<td class="batch-column"><input type="checkbox" class="batch-checkbox word-checkbox" data-index="${index}"></td>` : ''}
-                        <td class="word-cell">${word.word}</td>
-                        <td>${word.translations.join(', ')}</td>
-                        <td>${modeData.errors || 0}</td>
-                        <td>${modeData.practiceCount || 0}</td>
-                        <td>
-                            <div class="weight-value">${word.weight.toFixed(2)}</div>
-                        </td>
-                        <td>
-                            <div class="action-btns">
-                                <button class="btn btn-edit" onclick="findAndEditWord('${word.word}')">编辑</button>
-                                <button class="btn btn-delete" onclick="findAndDeleteWord('${word.word}')">删除</button>
-                                <button class="btn btn-favorite ${word.favorite ? 'active' : ''}" onclick="toggleFavorite('${word.word}')">
-                                    ${word.favorite ? '★' : '☆'}
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `}).join('');
-
-                if (filteredWords.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="' + (batchMode ? '7' : '6') + '" style="text-align:center">暂无单词数据</td></tr>';
-                }
-            }, 300);
-        }
-
-        // 刷新练习记录
-        const refreshRecords = () => {
-            const { practiceRecords } = loadData();
-            const tbody = document.getElementById('recordsTable');
-            const batchMode = document.querySelector('.batch-column-records').style.display !== 'none';
-            const selectedMode = document.getElementById('recordModeSelector').value;
-
-            // 显示加载骨架屏
-            tbody.innerHTML = '<tr><td colspan="' + (batchMode ? '6' : '5') + '" class="loading-state">加载中...</td></tr>';
-
-            setTimeout(() => {
-                // 根据所选模式筛选记录
-                const filteredRecords = selectedMode === 'all'
-                    ? practiceRecords
-                    : practiceRecords.filter(record => !record.mode || record.mode === selectedMode);
-
-                // 逆序显示记录，最新的在前面
-                const sortedRecords = [...filteredRecords].reverse();
-
-                tbody.innerHTML = sortedRecords.map((record, index) => `
-                    <tr>
-                        ${batchMode ? `<td class="batch-column-records"><input type="checkbox" class="batch-checkbox record-checkbox" data-index="${index}"></td>` : ''}
-                        <td>${new Date(record.date).toLocaleString()}</td>
-                        <td>
-                            <span class="badge ${record.correct ? 'badge-success' : 'badge-error'}">
-                                ${record.correct ? '✓ 正确' : '✗ 错误'}
-                            </span>
-                        </td>
-                        <td class="word-cell">${record.word || 'N/A'}</td>
-                        <td>${record.mode || 'context'}</td>
-                        <td>
-                            <div class="action-btns">
-                                <button class="btn btn-edit" onclick="showEditRecordModal(${practiceRecords.indexOf(record)})">编辑</button>
-                                <button class="btn btn-delete" onclick="confirmDeleteRecord(event, ${practiceRecords.indexOf(record)})">删除</button>
-                            </div>
-                        </td>
-                    </tr>
-                `).join('');
-
-                if (sortedRecords.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="' + (batchMode ? '6' : '5') + '" style="text-align:center">暂无练习记录</td></tr>';
-                }
-            }, 300);
-        }
-
-        // 更新文件名显示
-        const updateFileName = () => {
-            const fileInput = document.getElementById('importFile');
-            const fileNameElement = document.getElementById('fileName');
-
-            if (fileInput.files.length > 0) {
-                fileNameElement.textContent = fileInput.files[0].name;
-                fileNameElement.style.color = '#1e293b';
-            } else {
-                fileNameElement.textContent = '未选择文件';
-                fileNameElement.style.color = '#94a3b8';
-            }
-        }
-
-        // 删除单词 - 显示确认提示
-        const confirmDelete = (event) => {
-            if (!event) {
-                showToast('无法处理删除请求', 'error');
-                return;
-            }
-
-            // 获取要删除的单词索引
-            const button = event.currentTarget;
-            const row = button.closest('tr');
-            if (!row) {
-                showToast('无法找到要删除的单词', 'error');
-                return;
-            }
-
-            const wordCell = row.querySelector('.word-cell');
-            if (!wordCell) {
-                showToast('无法找到要删除的单词', 'error');
-                return;
-            }
-
-            const wordText = wordCell.textContent.trim();
-            const { wordBank } = loadData();
-            const index = wordBank.findIndex(w => w.word === wordText);
-
-            if (index < 0 || index >= wordBank.length) {
-                showToast('无法找到要删除的单词', 'error');
-                return;
-            }
-
-            // 调用单词删除确认函数
-            confirmDeleteByWordName(wordText, index);
-        }
-
-        // 批量删除单词 - 显示确认提示
-        const batchDelete = (e) => {
-            const checkedBoxes = document.querySelectorAll('.word-checkbox:checked');
-
-            if (checkedBoxes.length === 0) {
-                showToast('请至少选择一个单词', 'error');
-                return;
-            }
-
-            // 获取按钮
-            const button = e.currentTarget;
-
-            // 清除所有提示
-            clearAllConfirmTips();
-
-            // 创建提示框
-            const tip = document.createElement('div');
-            tip.className = 'confirm-tip';
-            tip.innerHTML = `
-                <p>确定要删除选中的 ${checkedBoxes.length} 个单词吗？</p>
-                <div class="confirm-tip-buttons">
-                    <button class="confirm-tip-cancel">取消</button>
-                    <button class="confirm-tip-confirm">确认</button>
-                </div>
-            `;
-
-            // 添加到DOM并定位
-            document.body.appendChild(tip);
-
-            // 获取按钮位置
-            const buttonRect = button.getBoundingClientRect();
-            const tipHeight = tip.offsetHeight;
-
-            // 定位到按钮上方
-            tip.style.left = `${buttonRect.left + buttonRect.width / 2}px`;
-            tip.style.top = `${buttonRect.top - tipHeight - 10}px`;
-
-            // 添加事件监听
-            tip.querySelector('.confirm-tip-cancel').addEventListener('click', () => {
-                document.body.removeChild(tip);
-            });
-
-            tip.querySelector('.confirm-tip-confirm').addEventListener('click', () => {
-                document.body.removeChild(tip);
-                doBatchDelete();
-            });
-
-            // 点击其他地方关闭提示
-            setTimeout(() => {
-                document.addEventListener('click', function closeConfirm(e) {
-                    if (!tip.contains(e.target) && e.target !== button) {
-                        if (document.body.contains(tip)) {
-                            document.body.removeChild(tip);
-                        }
-                        document.removeEventListener('click', closeConfirm);
-                    }
-                });
-            }, 100);
-        }
-
-        // 批量删除记录 - 显示确认提示
-        const batchDeleteRecords = (e) => {
-            const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
-
-            if (checkedBoxes.length === 0) {
-                showToast('请至少选择一条记录', 'error');
-                return;
-            }
-
-            // 获取按钮
-            const button = e.currentTarget;
-
-            // 清除所有提示
-            clearAllConfirmTips();
-
-            // 创建提示框
-            const tip = document.createElement('div');
-            tip.className = 'confirm-tip';
-            tip.innerHTML = `
-                <p>确定要删除选中的 ${checkedBoxes.length} 条记录吗？</p>
-                <div class="confirm-tip-buttons">
-                    <button class="confirm-tip-cancel">取消</button>
-                    <button class="confirm-tip-confirm">确认</button>
-                </div>
-            `;
-
-            // 添加到DOM并定位
-            document.body.appendChild(tip);
-
-            // 获取按钮位置
-            const buttonRect = button.getBoundingClientRect();
-            const tipHeight = tip.offsetHeight;
-
-            // 定位到按钮上方
-            tip.style.left = `${buttonRect.left + buttonRect.width / 2}px`;
-            tip.style.top = `${buttonRect.top - tipHeight - 10}px`;
-
-            // 添加事件监听
-            tip.querySelector('.confirm-tip-cancel').addEventListener('click', () => {
-                document.body.removeChild(tip);
-            });
-
-            tip.querySelector('.confirm-tip-confirm').addEventListener('click', () => {
-                document.body.removeChild(tip);
-                doBatchDeleteRecords();
-            });
-
-            // 点击其他地方关闭提示
-            setTimeout(() => {
-                document.addEventListener('click', function closeConfirm(e) {
-                    if (!tip.contains(e.target) && e.target !== button) {
-                        if (document.body.contains(tip)) {
-                            document.body.removeChild(tip);
-                        }
-                        document.removeEventListener('click', closeConfirm);
-                    }
-                });
-            }, 100);
-        }
-
-        // 执行批量删除
-        const doBatchDelete = () => {
-            const checkedBoxes = document.querySelectorAll('.word-checkbox:checked');
-            const { wordBank } = loadData();
-
-            // 获取选中的单词和对应的索引
-            const wordsToDelete = [];
-            const wordTexts = [];
-
-            // 获取所有选中的单词的文本
-            checkedBoxes.forEach(checkbox => {
-                const index = parseInt(checkbox.dataset.index);
-                const displayedWords = calculateWordWeights();
-                displayedWords.sort((a, b) => b.weight - a.weight);
-
-                const selectedMode = document.getElementById('wordModeSelector').value;
-                const filteredWords = selectedMode === 'all'
-                    ? displayedWords
-                    : displayedWords.filter(word => word.modes && word.modes[selectedMode]);
-
-                if (index >= 0 && index < filteredWords.length) {
-                    const wordText = filteredWords[index].word;
-                    wordTexts.push(wordText);
-                }
-            });
-
-            // 找到对应的原始索引
-            wordTexts.forEach(wordText => {
-                const index = wordBank.findIndex(w => w.word === wordText);
-                if (index !== -1) {
-                    wordsToDelete.push(index);
-                }
-            });
-
-            // 从大到小排序，以便从后往前删除
-            wordsToDelete.sort((a, b) => b - a);
-
-            // 从后往前删除，以免索引变化
-            wordsToDelete.forEach(index => {
-                wordBank.splice(index, 1);
-            });
-
-            localStorage.setItem('wordBank', JSON.stringify(wordBank));
-            showToast(`已删除 ${wordsToDelete.length} 个单词`, 'info');
-            refreshWords();
-        }
-
-        // 执行批量删除记录
-        const doBatchDeleteRecords = () => {
-            const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
-            const { practiceRecords } = loadData();
-            const selectedMode = document.getElementById('recordModeSelector').value;
-
-            // 根据所选模式筛选记录
-            const filteredRecords = selectedMode === 'all'
-                ? practiceRecords
-                : practiceRecords.filter(record => !record.mode || record.mode === selectedMode);
-
-            const sortedIndices = [...filteredRecords].map((_, i) => i).reverse(); // 获取反向索引映射
-
-            const indicesToDelete = Array.from(checkedBoxes)
-                .map(checkbox => parseInt(checkbox.dataset.index))
-                .sort((a, b) => b - a); // 从大到小排序
-
-            // 找出在原数组中的索引
-            const originalIndices = [];
-            for (const displayIndex of indicesToDelete) {
-                const recordIndex = practiceRecords.indexOf(filteredRecords[sortedIndices[displayIndex]]);
-                if (recordIndex !== -1) {
-                    originalIndices.push(recordIndex);
-                }
-            }
-
-            // 从大到小排序，以便从后往前删除
-            originalIndices.sort((a, b) => b - a);
-
-            // 删除选中的记录
-            originalIndices.forEach(index => {
-                practiceRecords.splice(index, 1);
-            });
-
-            localStorage.setItem('practiceRecords', JSON.stringify(practiceRecords));
-            showToast(`已删除 ${checkedBoxes.length} 条练习记录`, 'info');
-            refreshRecords();
-        }
-
-        // 关闭批量删除模态框
-        const closeBatchDeleteModal = () => {
-            const modal = document.getElementById('batchDeleteModal');
-            modal.classList.remove('visible');
-            setTimeout(() => {
-                modal.style.display = 'none';
-            }, 300);
-        }
-
-        // 显示批量添加模态框
-        const showBatchAddModal = () => {
-            const modal = document.getElementById('batchAddModal');
-
-            // 重置表单
-            document.getElementById('batchFormat').value = 'json';
-            document.getElementById('batchData').value = '';
-
-            // 初始化模式选择器
-            generateModeSelectorsHTML('batchAddModeSelector', true);
-
-            // 更新格式帮助信息
-            showFormatHelp();
-
-            // 显示模态框并添加动画效果
-            modal.style.display = 'flex';
-
-            // 调整模态框位置到当前视图
-            const modalContent = modal.querySelector('.modal-content');
-            // 获取当前滚动位置
-            const scrollTop = window.scrollY || document.documentElement.scrollTop;
-            const windowHeight = window.innerHeight;
-
-            // 将模态内容滚动到当前视图中心
-            const modalTop = Math.max(80, scrollTop + (windowHeight * 0.2));
-            modalContent.style.marginTop = `${modalTop}px`;
-
-            setTimeout(() => {
-                modal.classList.add('visible');
-            }, 10);
-
-            // 聚焦到文本框
-            setTimeout(() => {
-                document.getElementById('batchData').focus();
-            }, 300);
-        }
-
-        // 关闭批量添加模态框
-        const closeBatchAddModal = () => {
-            const modal = document.getElementById('batchAddModal');
-            modal.classList.remove('visible');
-            setTimeout(() => {
-                modal.style.display = 'none';
-                // 重置模态内容的margin-top
-                const modalContent = modal.querySelector('.modal-content');
-                if (modalContent) {
-                    modalContent.style.marginTop = '';
-                }
-            }, 300);
-        }
-
-        // 更新批量添加帮助信息
-        const updateBatchFormatHelp = () => {
-            const mode = document.getElementById('batchAddModeSelector').value;
-            const isAllModes = mode === 'all';
-
-            // 更新JSON示例
-            const jsonExample = document.getElementById('jsonHelpExample');
-            jsonExample.textContent = isAllModes
-                ? `[
-  {"word": "vivid", "translations": ["生动的"], "favorite": false},
-  {"word": "ambiguous", "translations": ["模糊的"], "favorite": true}
-]`
-                : `[
-  {"word": "vivid", "translations": ["生动的"], "errors": 0, "practiceCount": 0, "favorite": false},
-  {"word": "ambiguous", "translations": ["模糊的"], "errors": 0, "practiceCount": 0, "favorite": true}
-]`;
-
-            // 更新CSV示例
-            const csvExample = document.getElementById('csvHelpExample');
-            csvExample.textContent = isAllModes
-                ? `vivid,生动的,,,0
-ambiguous,模糊的,,,1`
-                : `vivid,生动的,0,0,0
-ambiguous,模糊的,0,0,1`;
-
-            // 更新Excel示例
-            const excelExample = document.getElementById('excelHelpExample');
-            excelExample.textContent = isAllModes
-                ? `vivid    生动的            0
-ambiguous    模糊的            1`
-                : `vivid    生动的    0    0    0
-ambiguous    模糊的    0    0    1`;
-
-            // 更新帮助文本
-            document.getElementById('jsonHelpText').textContent = isAllModes
-                ? "全部模式：提供单词、翻译和收藏状态(favorite)，系统会自动将单词添加到所有激活的模式中。"
-                : `"${mode}"模式：可提供错误次数(errors)、练习次数(practiceCount)和收藏状态(favorite)，这些数据只会影响所选模式。`;
-
-            document.getElementById('csvHelpText').textContent = isAllModes
-                ? "全部模式：前两列为单词和翻译，第5列为收藏状态(0=不收藏,1=收藏)。系统会自动将单词添加到所有激活的模式中。"
-                : `"${mode}"模式：前两列为单词和翻译，第3、4列为错误次数和练习次数，第5列为收藏状态(0=不收藏,1=收藏)。`;
-
-            document.getElementById('excelHelpText').textContent = isAllModes
-                ? "全部模式：前两列为单词和翻译，第5列为收藏状态(0=不收藏,1=收藏)。系统会自动将单词添加到所有激活的模式中。"
-                : `"${mode}"模式：前两列为单词和翻译，第3、4列为错误次数和练习次数，第5列为收藏状态(0=不收藏,1=收藏)。`;
-        }
-
-        // 显示对应格式的帮助信息
-        const showFormatHelp = () => {
-            const format = document.getElementById('batchFormat').value;
-            document.getElementById('jsonHelp').style.display = format === 'json' ? 'block' : 'none';
-            document.getElementById('csvHelp').style.display = format === 'csv' ? 'block' : 'none';
-            document.getElementById('excelHelp').style.display = format === 'excel' ? 'block' : 'none';
-
-            // 同时更新示例内容
-            updateBatchFormatHelp();
-        }
-
-        // 处理批量添加
-        const processBatchAdd = () => {
-            const format = document.getElementById('batchFormat').value;
-            const data = document.getElementById('batchData').value.trim();
-            const selectedMode = document.getElementById('batchAddModeSelector').value;
-            const isAllModes = selectedMode === 'all';
-
-            if (!data) {
-                showToast('请输入数据', 'error');
-                return;
-            }
-
-            // 如果不是全部模式，获取所选模式的信息
-            let modeInfo = null;
-            if (!isAllModes) {
-                modeInfo = getModeById(selectedMode);
-                if (!modeInfo) {
-                    showToast('所选模式无效', 'error');
-                    return;
-                }
-            }
-
-            try {
-                let wordsToAdd = [];
-
-                // 根据不同格式处理数据
-                if (format === 'json') {
-                    const parsedData = JSON.parse(data);
-                    if (!Array.isArray(parsedData)) {
-                        throw new Error('JSON格式错误，应为数组');
-                    }
-
-                    // 转换数据到新格式
-                    wordsToAdd = parsedData.map(word => {
-                        // 准备新的单词对象
-                        const newWord = {
-                            word: word.word,
-                            translations: word.translations,
-                            modes: {},
-                            favorite: word.favorite || false
-                        };
-
-                        if (isAllModes) {
-                            // 全部模式：为所有激活的模式添加默认数据
-                            const activeModes = getActiveModes();
-                            activeModes.forEach(mode => {
-                                newWord.modes[mode.id] = {
-                                    errors: 0,
-                                    practiceCount: 0,
-                                    lastPractice: null
-                                };
-                            });
-                        } else {
-                            // 特定模式：只为指定模式添加数据
-                            newWord.modes[selectedMode] = {
-                                errors: word.errors || 0,
-                                practiceCount: word.practiceCount || 0,
-                                lastPractice: null
-                            };
-                        }
-
-                        return newWord;
-                    });
-                } else if (format === 'csv') {
-                    wordsToAdd = processCSVData(data, selectedMode, isAllModes);
-                } else if (format === 'excel') {
-                    wordsToAdd = processExcelData(data, selectedMode, isAllModes);
-                }
-
-                // 添加单词
-                const { wordBank } = loadData();
-                const existingWords = [];
-                const addedWords = [];
-                const updatedWords = [];
-
-                wordsToAdd.forEach(newWord => {
-                    // 检查单词是否已存在
-                    const existingIndex = wordBank.findIndex(w => w.word.toLowerCase() === newWord.word.toLowerCase());
-
-                    if (existingIndex !== -1) {
-                        // 单词已存在
-                        const existingWord = wordBank[existingIndex];
-
-                        // 确保modes对象存在
-                        if (!existingWord.modes) {
-                            existingWord.modes = {};
-                        }
-
-                        if (isAllModes) {
-                            // 全部模式：保留所有已有模式的数据，只添加不存在的模式
-                            const activeModes = getActiveModes();
-                            activeModes.forEach(mode => {
-                                if (!existingWord.modes[mode.id]) {
-                                    existingWord.modes[mode.id] = {
-                                        errors: 0,
-                                        practiceCount: 0,
-                                        lastPractice: null
-                                    };
-                                }
-                            });
-                            updatedWords.push(newWord.word);
-                        } else {
-                            // 特定模式：只更新特定模式的数据
-                            existingWord.modes[selectedMode] = newWord.modes[selectedMode];
-                            updatedWords.push(newWord.word);
-                        }
-
-                        // 保留收藏状态
-                        wordBank[existingIndex] = existingWord;
-                    } else {
-                        // 添加新单词
-                        wordBank.push(newWord);
-                        addedWords.push(newWord.word);
-                    }
-                });
-
-                localStorage.setItem('wordBank', JSON.stringify(wordBank));
-
-                // 显示结果
-                if (addedWords.length > 0) {
-                    showToast(`成功添加 ${addedWords.length} 个新单词`, 'success');
-                }
-
-                if (updatedWords.length > 0) {
-                    if (isAllModes) {
-                        showToast(`成功更新 ${updatedWords.length} 个已有单词，确保所有激活模式都有数据`, 'info');
-                    } else {
-                        showToast(`成功更新 ${updatedWords.length} 个已有单词的"${modeInfo.name}"模式数据`, 'info');
-                    }
-                }
-
-                closeBatchAddModal();
-                refreshWords();
-
-            } catch (error) {
-                showToast(`处理失败: ${error.message}`, 'error');
-            }
-        }
-
-        // 处理CSV格式数据
-        const processCSVData = (data, selectedMode, isAllModes) => {
-            const lines = data.split('\n').filter(line => line.trim());
-            return lines.map(line => {
-                const parts = line.split(',').map(item => item.trim());
-
-                // 确保至少有单词和翻译
-                if (parts.length < 2 || !parts[0] || !parts[1]) {
-                    throw new Error('CSV格式错误，单词和翻译不能为空');
-                }
-
-                const word = parts[0];
-                const translations = [parts[1]];
-
-                const newWord = {
-                    word,
-                    translations,
-                    modes: {},
-                    favorite: (parts.length > 4 && parts[4] === '1') // 第5列为1表示收藏
-                };
-
-                if (isAllModes) {
-                    // 全部模式：为所有激活的模式添加默认数据
-                    const activeModes = getActiveModes();
-                    activeModes.forEach(mode => {
-                        newWord.modes[mode.id] = {
-                            errors: 0,
-                            practiceCount: 0,
-                            lastPractice: null
-                        };
-                    });
-                } else {
-                    // 特定模式：只为指定模式添加数据，支持错误次数和练习次数
-                    const errors = parts.length > 2 ? parseInt(parts[2]) || 0 : 0;
-                    const practiceCount = parts.length > 3 ? parseInt(parts[3]) || 0 : 0;
-
-                    newWord.modes[selectedMode] = {
-                        errors,
-                        practiceCount,
-                        lastPractice: null
-                    };
-                }
-
-                return newWord;
-            });
-        }
-
-        // 处理Excel复制的数据
-        const processExcelData = (data, selectedMode, isAllModes) => {
-            const lines = data.split('\n').filter(line => line.trim());
-            return lines.map(line => {
-                // Excel复制的数据通常是制表符分隔的
-                const parts = line.split(/\t/).map(item => item.trim());
-
-                // 确保至少有单词和翻译
-                if (parts.length < 2 || !parts[0] || !parts[1]) {
-                    throw new Error('Excel数据格式错误，单词和翻译不能为空');
-                }
-
-                const word = parts[0];
-                const translations = [parts[1]];
-
-                const newWord = {
-                    word,
-                    translations,
-                    modes: {},
-                    favorite: (parts.length > 4 && parts[4] === '1') // 第5列为1表示收藏
-                };
-
-                if (isAllModes) {
-                    // 全部模式：为所有激活的模式添加默认数据
-                    const activeModes = getActiveModes();
-                    activeModes.forEach(mode => {
-                        newWord.modes[mode.id] = {
-                            errors: 0,
-                            practiceCount: 0,
-                            lastPractice: null
-                        };
-                    });
-                } else {
-                    // 特定模式：只为指定模式添加数据，支持错误次数和练习次数
-                    const errors = parts.length > 2 ? parseInt(parts[2]) || 0 : 0;
-                    const practiceCount = parts.length > 3 ? parseInt(parts[3]) || 0 : 0;
-
-                    newWord.modes[selectedMode] = {
-                        errors,
-                        practiceCount,
-                        lastPractice: null
-                    };
-                }
-
-                return newWord;
-            });
-        }
-
-        // 计算单词权重 (与getWeightedWord算法一致)
-        const calculateWordWeights = () => {
-            const words = JSON.parse(localStorage.getItem('wordBank') || '[]');
-            const selectedMode = document.getElementById('wordModeSelector')?.value || 'context';
-
-            if (!words || words.length === 0) return [];
-
-            // 计算最后一次练习的时间差
-            const lastPracticeTime = {};
-            const records = JSON.parse(localStorage.getItem('practiceRecords') || '[]');
-
-            // 根据所选模式筛选记录
-            const filteredRecords = selectedMode === 'all'
-                ? records
-                : records.filter(record => !record.mode || record.mode === selectedMode);
-
-            filteredRecords.forEach(record => {
-                if (record.word) {
-                    lastPracticeTime[record.word] = Math.max(
-                        new Date(record.date).getTime(),
-                        lastPracticeTime[record.word] || 0
-                    );
-                }
-            });
-
-            const currentTime = new Date().getTime();
-            const dayInMs = 24 * 60 * 60 * 1000;
-
-            // 计算综合权重
-            return words.map(word => {
-                // 使用所选模式的数据或默认为context
-                const modeToUse = (selectedMode === 'all' || !word.modes?.[selectedMode]) ? 'context' : selectedMode;
-                const modeData = getWordModeData(word, modeToUse);
-
-                // 1. 练习次数权重 - 练习次数越少权重越高
-                const practiceWeight = Math.pow(0.85, modeData.practiceCount || 0);
-
-                // 2. 错误率权重 - 错误率越高权重越高
-                const totalAttempts = (modeData.practiceCount || 0);
-                const errorRate = totalAttempts > 0 ? (modeData.errors || 0) / totalAttempts : 0;
-                const errorWeight = 1 + (errorRate * 2); // 错误率100%时权重为3
-
-                // 3. 时间间隔权重 - 距离上次练习时间越长权重越高
-                const lastPractice = lastPracticeTime[word.word] || 0;
-                const daysSinceLastPractice = lastPractice ? (currentTime - lastPractice) / dayInMs : 7; // 默认7天
-                const timeWeight = Math.min(2, 1 + (daysSinceLastPractice / 7)); // 一周未练习权重翻倍
-
-                // 4. 基础权重 - 确保每个单词都有被选中的机会
-                const baseWeight = 0.3;
-
-                // 5. 收藏权重 - 收藏的单词权重提高
-                const favoriteWeight = word.favorite ? 2 : 1;
-
-                // 计算最终权重
-                const finalWeight = (baseWeight + (practiceWeight * errorWeight * timeWeight)) * favoriteWeight;
-
-                return {
-                    ...word,
-                    weight: finalWeight,
-                    _practiceWeight: practiceWeight,
-                    _errorWeight: errorWeight,
-                    _timeWeight: timeWeight,
-                    _favoriteWeight: favoriteWeight
-                };
+            const wordBank = getWordBank();
+            const tableBody = document.getElementById('wordsTable');
+            
+            tableBody.innerHTML = '';
+
+            wordBank.forEach((word, index) => {
+                const contextStats = word.modes?.context || { errors: 0, practiceCount: 0 };
+                const blankStats = word.modes?.blank || { errors: 0, practiceCount: 0 };
+                const totalPractice = contextStats.practiceCount + blankStats.practiceCount;
+                const totalErrors = contextStats.errors + blankStats.errors;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="batch-column" style="display: none;">
+                        <input type="checkbox" class="word-checkbox batch-checkbox" data-index="${index}">
+                    </td>
+                    <td style="font-weight: 600; color: var(--primary);">${word.word}</td>
+                    <td>${word.translations.join(', ')}</td>
+                    <td>${totalPractice}</td>
+                    <td>${totalErrors}</td>
+                    <td>
+                        <button class="btn btn-small btn-info" onclick="showEditModal(${index})">编辑</button>
+                        <button class="btn btn-small btn-delete" onclick="deleteWord(${index})">删除</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
             });
         };
 
-        // 初始化
-        document.addEventListener('DOMContentLoaded', function () {
-            // 初始化支持的模式
-            initializeSupportedModes();
-
-            // 初始化各模式选择器
-            generateModeSelectorsHTML('wordModeSelector');
-            generateModeSelectorsHTML('recordModeSelector');
-
-            // 添加模式列到练习记录表格头部
-            const recordsTableHead = document.querySelector('#recordsTab .data-table thead tr');
-            const modeColumnExists = Array.from(recordsTableHead.children).some(th => th.textContent.trim() === '模式');
-
-            if (!modeColumnExists) {
-                // 找到最后一个th（单词列）
-                const lastTh = recordsTableHead.lastElementChild;
-                // 创建并插入模式列
-                const modeTh = document.createElement('th');
-                modeTh.textContent = '模式';
-                recordsTableHead.insertBefore(modeTh, null);
-            }
-
-            // 迁移旧数据到新格式
-            migrateWordData();
-
-            // 显示单词列表
-            showTab('words');
-
-            // 初始化文件名显示
-            updateFileName();
-
-            // 显示欢迎消息
-            setTimeout(() => {
-                showToast('欢迎使用单词管理系统', 'info');
-            }, 1000);
-        });
-
-        // 清除所有确认提示
-        function clearAllConfirmTips() {
-            const tips = document.querySelectorAll('.confirm-tip');
-            if (tips.length > 0) {
-                tips.forEach(tip => tip.remove());
-            }
-        }
-
-        // 显示编辑模态框
         const showEditModal = (index) => {
+            currentEditIndex = index;
             const modal = document.getElementById('editModal');
-            const { wordBank } = loadData();
+            const modalTitle = document.getElementById('modalTitle');
+            const wordInput = document.getElementById('wordInput');
+            const translationsInput = document.getElementById('translationsInput');
 
             if (index === null) {
-                // 新增
-                currentEditIndex = -1;
-                document.getElementById('editWord').value = '';
-                document.getElementById('editTranslations').value = '';
-                document.getElementById('editErrors').value = 0;
-                document.getElementById('editPracticeCount').value = 0;
-                document.getElementById('modalTitle').textContent = '添加新单词';
+                // Adding new word
+                modalTitle.textContent = '添加新单词';
+                wordInput.value = '';
+                translationsInput.value = '';
             } else {
-                // 编辑
-                currentEditIndex = index;
+                // Editing existing word
+                const wordBank = getWordBank();
                 const word = wordBank[index];
-                const modeData = getWordModeData(word, 'context');
-
-                document.getElementById('editWord').value = word.word;
-                document.getElementById('editTranslations').value = word.translations.join(', ');
-                document.getElementById('editErrors').value = modeData.errors || 0;
-                document.getElementById('editPracticeCount').value = modeData.practiceCount || 0;
-                document.getElementById('modalTitle').textContent = '编辑单词';
+                modalTitle.textContent = '编辑单词';
+                wordInput.value = word.word;
+                translationsInput.value = word.translations.join(', ');
             }
 
-            // 显示模态框并添加动画效果
-            modal.style.display = 'flex';
+            modal.style.display = 'block';
+        };
 
-            // 调整模态框位置到当前视图
-            const modalContent = modal.querySelector('.modal-content');
-            // 获取当前滚动位置
-            const scrollTop = window.scrollY || document.documentElement.scrollTop;
-            const windowHeight = window.innerHeight;
+        const closeEditModal = () => {
+            document.getElementById('editModal').style.display = 'none';
+        };
 
-            // 将模态内容滚动到当前视图中心
-            const modalTop = Math.max(80, scrollTop + (windowHeight * 0.2));
-            modalContent.style.marginTop = `${modalTop}px`;
-
-            setTimeout(() => {
-                modal.classList.add('visible');
-            }, 10);
-
-            // 聚焦到第一个输入框
-            setTimeout(() => {
-                document.getElementById('editWord').focus();
-            }, 300);
-        }
-
-        // 保存单词
         const saveWord = () => {
-            const { wordBank } = loadData();
-            const wordInput = document.getElementById('editWord').value.trim();
-            const translationsInput = document.getElementById('editTranslations').value;
-            const errorsInput = parseInt(document.getElementById('editErrors').value) || 0;
-            const practiceCountInput = parseInt(document.getElementById('editPracticeCount').value) || 0;
+            const wordInput = document.getElementById('wordInput');
+            const translationsInput = document.getElementById('translationsInput');
 
-            // 表单验证
-            if (!wordInput) {
-                showToast('请输入单词', 'error');
-                document.getElementById('editWord').focus();
+            const word = wordInput.value.trim();
+            const translations = translationsInput.value.trim().split(',').map(t => t.trim()).filter(t => t);
+
+            if (!word || translations.length === 0) {
+                showToast('请输入单词和翻译', 'error');
                 return;
             }
 
-            if (!translationsInput) {
-                showToast('请输入翻译', 'error');
-                document.getElementById('editTranslations').focus();
+            const wordBank = getWordBank();
+
+            // Check for duplicates (except when editing the same word)
+            const existingIndex = wordBank.findIndex(w => w.word.toLowerCase() === word.toLowerCase());
+            if (existingIndex !== -1 && existingIndex !== currentEditIndex) {
+                showToast('单词已存在', 'error');
                 return;
             }
 
-            const newWord = {
-                word: wordInput,
-                translations: translationsInput.split(',').map(t => t.trim()).filter(t => t),
+            const wordObj = {
+                word: word,
+                translations: translations,
                 modes: {
-                    context: {
-                        errors: errorsInput,
-                        practiceCount: practiceCountInput,
-                        lastPractice: null
-                    }
+                    context: { errors: 0, practiceCount: 0 },
+                    blank: { errors: 0, practiceCount: 0 }
                 }
             };
 
-            if (currentEditIndex === -1) {
-                // 检查单词是否已存在
-                if (wordBank.some(w => w.word.toLowerCase() === newWord.word.toLowerCase())) {
-                    showToast(`单词 "${newWord.word}" 已存在`, 'error');
-                    return;
-                }
-
-                newWord.favorite = false; // 新添加的单词默认不收藏
-                wordBank.push(newWord);
-                showToast(`已添加单词 "${newWord.word}"`, 'success');
+            if (currentEditIndex === null) {
+                // Adding new word
+                wordBank.push(wordObj);
+                showToast('单词添加成功', 'success');
             } else {
-                // 保持其他模式的数据不变以及收藏状态
-                if (wordBank[currentEditIndex].modes) {
-                    const otherModes = { ...wordBank[currentEditIndex].modes };
-                    delete otherModes.context; // 移除上下文模式，将使用新数据
-                    newWord.modes = { ...otherModes, ...newWord.modes };
-                }
-
-                // 保持收藏状态
-                newWord.favorite = wordBank[currentEditIndex].favorite || false;
-
-                wordBank[currentEditIndex] = newWord;
-                showToast(`已更新单词 "${newWord.word}"`, 'success');
+                // Editing existing word - preserve practice stats
+                const existingWord = wordBank[currentEditIndex];
+                wordObj.modes = existingWord.modes || wordObj.modes;
+                wordBank[currentEditIndex] = wordObj;
+                showToast('单词更新成功', 'success');
             }
 
-            localStorage.setItem('wordBank', JSON.stringify(wordBank));
-            closeModal();
+            saveWordBank(wordBank);
             refreshWords();
-        }
+            closeEditModal();
+        };
 
-        // 删除单词
         const deleteWord = (index) => {
-            const { wordBank } = loadData();
-            if (index < 0 || index >= wordBank.length) {
-                showToast('无法找到要删除的单词', 'error');
-                return;
-            }
+            if (!confirm('确定要删除这个单词吗？')) return;
 
-            const word = wordBank[index].word;
+            const wordBank = getWordBank();
             wordBank.splice(index, 1);
-            localStorage.setItem('wordBank', JSON.stringify(wordBank));
-
-            showToast(`已删除单词 "${word}"`, 'info');
+            saveWordBank(wordBank);
             refreshWords();
-        }
+            showToast('单词删除成功', 'success');
+        };
 
-        // 关闭模态框
-        const closeModal = () => {
-            const modal = document.getElementById('editModal');
-            modal.classList.remove('visible');
-            setTimeout(() => {
-                modal.style.display = 'none';
-                // 重置模态内容的margin-top
-                const modalContent = modal.querySelector('.modal-content');
-                if (modalContent) {
-                    modalContent.style.marginTop = '';
-                }
-            }, 300);
-        }
-
-        // ESC键关闭模态框
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape') {
-                const editModal = document.getElementById('editModal');
-                const batchAddModal = document.getElementById('batchAddModal');
-                const editRecordModal = document.getElementById('editRecordModal');
-
-                if (editModal.style.display === 'flex') {
-                    closeModal();
-                }
-
-                if (batchAddModal.style.display === 'flex') {
-                    closeBatchAddModal();
-                }
-
-                if (editRecordModal.style.display === 'flex') {
-                    closeRecordModal();
-                }
-            }
-        });
-
-        // 批量管理模式切换 - 单词管理
+        // Batch operations
         const toggleBatchMode = () => {
             const batchColumns = document.querySelectorAll('.batch-column');
             const batchActions = document.querySelector('.batch-actions');
@@ -2373,494 +331,268 @@ ambiguous    模糊的    0    0    1`;
             const isInBatchMode = batchColumns[0].style.display === 'table-cell';
 
             if (isInBatchMode) {
-                // 退出批量模式
+                // Exit batch mode
                 batchColumns.forEach(col => col.style.display = 'none');
                 batchActions.style.display = 'none';
                 batchModeText.textContent = '批量管理';
             } else {
-                // 进入批量模式
+                // Enter batch mode
                 batchColumns.forEach(col => col.style.display = 'table-cell');
                 batchActions.style.display = 'block';
                 batchModeText.textContent = '退出批量管理';
-                // 取消所有选中
+                // Uncheck all
                 document.querySelectorAll('.word-checkbox').forEach(checkbox => checkbox.checked = false);
                 document.getElementById('selectAllWords').checked = false;
             }
 
-            // 刷新表格以适应新的列宽
             refreshWords();
         };
 
-        // 批量管理模式切换 - 练习记录
+        const toggleSelectAllWords = () => {
+            const selectAll = document.getElementById('selectAllWords');
+            const checkboxes = document.querySelectorAll('.word-checkbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+        };
+
+        const batchDeleteWords = () => {
+            const checkboxes = document.querySelectorAll('.word-checkbox:checked');
+            if (checkboxes.length === 0) {
+                showToast('请选择要删除的单词', 'error');
+                return;
+            }
+
+            if (!confirm(`确定要删除选中的 ${checkboxes.length} 个单词吗？`)) return;
+
+            const wordBank = getWordBank();
+            const indicesToDelete = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index)).sort((a, b) => b - a);
+
+            indicesToDelete.forEach(index => {
+                wordBank.splice(index, 1);
+            });
+
+            saveWordBank(wordBank);
+            refreshWords();
+            showToast(`成功删除 ${indicesToDelete.length} 个单词`, 'success');
+        };
+
+        // Batch add functionality
+        const showBatchAddModal = () => {
+            document.getElementById('batchAddModal').style.display = 'block';
+        };
+
+        const closeBatchAddModal = () => {
+            document.getElementById('batchAddModal').style.display = 'none';
+            document.getElementById('batchData').value = '';
+        };
+
+        const processBatchAdd = () => {
+            const batchData = document.getElementById('batchData').value.trim();
+            if (!batchData) {
+                showToast('请输入数据', 'error');
+                return;
+            }
+
+            const lines = batchData.split('\n').filter(line => line.trim());
+            const wordBank = getWordBank();
+            let addedCount = 0;
+            let skippedCount = 0;
+
+            lines.forEach(line => {
+                const parts = line.split(',').map(part => part.trim()).filter(part => part);
+                if (parts.length < 2) return;
+
+                const word = parts[0];
+                const translations = parts.slice(1);
+
+                // Check for duplicates
+                if (wordBank.some(w => w.word.toLowerCase() === word.toLowerCase())) {
+                    skippedCount++;
+                    return;
+                }
+
+                wordBank.push({
+                    word: word,
+                    translations: translations,
+                    modes: {
+                        context: { errors: 0, practiceCount: 0 },
+                        blank: { errors: 0, practiceCount: 0 }
+                    }
+                });
+                addedCount++;
+            });
+
+            saveWordBank(wordBank);
+            refreshWords();
+            closeBatchAddModal();
+
+            let message = `成功添加 ${addedCount} 个单词`;
+            if (skippedCount > 0) {
+                message += `，跳过 ${skippedCount} 个重复单词`;
+            }
+            showToast(message, 'success');
+        };
+
+        // Records management
+        const refreshRecords = () => {
+            const records = getPracticeRecords();
+            const tableBody = document.getElementById('recordsTable');
+            
+            tableBody.innerHTML = '';
+
+            records.slice().reverse().forEach((record, index) => {
+                const row = document.createElement('tr');
+                const statusIcon = record.isCorrect ? '✓' : '✗';
+                const statusColor = record.isCorrect ? 'var(--success)' : 'var(--error)';
+
+                row.innerHTML = `
+                    <td class="batch-column-records" style="display: none;">
+                        <input type="checkbox" class="record-checkbox batch-checkbox" data-index="${records.length - 1 - index}">
+                    </td>
+                    <td>${record.date}</td>
+                    <td style="color: ${statusColor}; font-weight: 600;">${statusIcon} ${record.isCorrect ? '正确' : '错误'}</td>
+                    <td style="font-weight: 600;">${record.word}</td>
+                    <td>${record.mode}</td>
+                    <td>
+                        <button class="btn btn-small btn-delete" onclick="deleteRecord(${records.length - 1 - index})">删除</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        };
+
+        const deleteRecord = (index) => {
+            if (!confirm('确定要删除这条记录吗？')) return;
+
+            const records = getPracticeRecords();
+            records.splice(index, 1);
+            localStorage.setItem('practiceRecords', JSON.stringify(records));
+            refreshRecords();
+            showToast('记录删除成功', 'success');
+        };
+
         const toggleBatchModeRecords = () => {
             const batchColumns = document.querySelectorAll('.batch-column-records');
-            const batchActions = document.querySelector('.batch-actions-records');
             const batchModeText = document.getElementById('batchModeRecordsText');
             const isInBatchMode = batchColumns[0].style.display === 'table-cell';
 
             if (isInBatchMode) {
-                // 退出批量模式
                 batchColumns.forEach(col => col.style.display = 'none');
-                batchActions.style.display = 'none';
                 batchModeText.textContent = '批量管理';
             } else {
-                // 进入批量模式
                 batchColumns.forEach(col => col.style.display = 'table-cell');
-                batchActions.style.display = 'block';
                 batchModeText.textContent = '退出批量管理';
-                // 取消所有选中
                 document.querySelectorAll('.record-checkbox').forEach(checkbox => checkbox.checked = false);
                 document.getElementById('selectAllRecords').checked = false;
             }
 
-            // 刷新表格以适应新的列宽
             refreshRecords();
         };
 
-        // 全选/取消全选 - 单词管理
-        const toggleSelectAllWords = () => {
-            const selectAll = document.getElementById('selectAllWords');
-            const checkboxes = document.querySelectorAll('.word-checkbox');
-
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = selectAll.checked;
-            });
-        };
-
-        // 全选/取消全选 - 练习记录
         const toggleSelectAllRecords = () => {
             const selectAll = document.getElementById('selectAllRecords');
             const checkboxes = document.querySelectorAll('.record-checkbox');
-
+            
             checkboxes.forEach(checkbox => {
                 checkbox.checked = selectAll.checked;
             });
         };
 
-        // 显示编辑记录模态框
-        const showEditRecordModal = (index) => {
-            const modal = document.getElementById('editRecordModal');
-            const { practiceRecords } = loadData();
-            currentEditIndex = index;
-
-            if (index >= 0 && index < practiceRecords.length) {
-                const record = practiceRecords[index];
-
-                // 设置日期格式为YYYY-MM-DDThh:mm
-                const recordDate = new Date(record.date);
-                const dateStr = recordDate.toISOString().slice(0, 16);
-
-                // 初始化模式选择器
-                const modeSelector = document.getElementById('editRecordMode');
-                const activeModes = getActiveModes();
-                modeSelector.innerHTML = '';
-                activeModes.forEach(mode => {
-                    const option = document.createElement('option');
-                    option.value = mode.id;
-                    option.textContent = mode.name;
-                    modeSelector.appendChild(option);
-                });
-
-                document.getElementById('editRecordWord').value = record.word || '';
-                document.getElementById('editRecordMode').value = record.mode || 'context';
-                document.getElementById('editRecordDate').value = dateStr;
-                document.getElementById('editRecordResult').value = record.correct ? 'true' : 'false';
-                document.getElementById('recordModalTitle').textContent = '编辑练习记录';
-            } else {
-                showToast('无法找到记录', 'error');
-                return;
-            }
-
-            // 显示模态框并添加动画效果
-            modal.style.display = 'flex';
-
-            // 调整模态框位置到当前视图
-            const modalContent = modal.querySelector('.modal-content');
-            // 获取当前滚动位置
-            const scrollTop = window.scrollY || document.documentElement.scrollTop;
-            const windowHeight = window.innerHeight;
-
-            // 将模态内容滚动到当前视图中心
-            const modalTop = Math.max(80, scrollTop + (windowHeight * 0.2));
-            modalContent.style.marginTop = `${modalTop}px`;
-
-            setTimeout(() => {
-                modal.classList.add('visible');
-            }, 10);
-
-            // 聚焦到第一个输入框
-            setTimeout(() => {
-                document.getElementById('editRecordWord').focus();
-            }, 300);
-        }
-
-        // 保存练习记录
-        const saveRecord = () => {
-            const { practiceRecords } = loadData();
-
-            if (currentEditIndex < 0 || currentEditIndex >= practiceRecords.length) {
-                showToast('无法找到记录', 'error');
-                return;
-            }
-
-            const wordInput = document.getElementById('editRecordWord').value.trim();
-            const modeInput = document.getElementById('editRecordMode').value;
-            const dateInput = document.getElementById('editRecordDate').value;
-            const statusInput = document.getElementById('editRecordResult').value === 'true';
-
-            // 表单验证
-            if (!wordInput) {
-                showToast('请输入单词', 'error');
-                document.getElementById('editRecordWord').focus();
-                return;
-            }
-
-            if (!dateInput) {
-                showToast('请选择日期时间', 'error');
-                document.getElementById('editRecordDate').focus();
-                return;
-            }
-
-            // 更新记录
-            practiceRecords[currentEditIndex] = {
-                word: wordInput,
-                mode: modeInput,
-                date: new Date(dateInput).toISOString(),
-                correct: statusInput
+        // Data management
+        const exportData = () => {
+            const data = {
+                wordBank: getWordBank(),
+                practiceRecords: getPracticeRecords(),
+                supportedModes: JSON.parse(localStorage.getItem('supportedModes') || '[]'),
+                exportDate: new Date().toISOString()
             };
 
-            // 保存到localStorage
-            localStorage.setItem('practiceRecords', JSON.stringify(practiceRecords));
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `english-learning-data-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
 
-            showToast('记录已更新', 'success');
-            closeRecordModal();
-            refreshRecords();
-        }
+            showToast('数据导出成功', 'success');
+        };
 
-        // 关闭记录编辑模态框
-        const closeRecordModal = () => {
-            const modal = document.getElementById('editRecordModal');
-            modal.classList.remove('visible');
-            setTimeout(() => {
-                modal.style.display = 'none';
-                // 重置模态内容的margin-top
-                const modalContent = modal.querySelector('.modal-content');
-                if (modalContent) {
-                    modalContent.style.marginTop = '';
-                }
-            }, 300);
-        }
-
-        // 确认删除记录
-        const confirmDeleteRecord = (event, index) => {
-            if (!event) {
-                showToast('无法处理删除请求', 'error');
-                return;
-            }
-
-            const { practiceRecords } = loadData();
-            if (index < 0 || index >= practiceRecords.length) {
-                showToast('无法找到要删除的记录', 'error');
-                return;
-            }
-
-            // 获取按钮
-            const button = event.currentTarget;
-
-            // 清除所有提示
-            clearAllConfirmTips();
-
-            // 获取记录信息
-            const record = practiceRecords[index];
-            const recordWord = record.word || 'N/A';
-            const recordDate = new Date(record.date).toLocaleString();
-
-            // 创建提示框
-            const tip = document.createElement('div');
-            tip.className = 'confirm-tip';
-            tip.innerHTML = `
-                <p>确定删除"${recordWord}"的练习记录？</p>
-                <p style="font-size:12px;color:#666;margin-top:4px">${recordDate}</p>
-                <div class="confirm-tip-buttons">
-                    <button class="confirm-tip-cancel">取消</button>
-                    <button class="confirm-tip-confirm">确认</button>
-                </div>
-            `;
-
-            // 添加到DOM并定位
-            document.body.appendChild(tip);
-
-            // 获取按钮位置
-            const buttonRect = button.getBoundingClientRect();
-            const tipHeight = tip.offsetHeight;
-
-            // 定位到按钮上方
-            tip.style.left = `${buttonRect.left + buttonRect.width / 2}px`;
-            tip.style.top = `${buttonRect.top - tipHeight - 10}px`;
-
-            // 添加事件监听
-            tip.querySelector('.confirm-tip-cancel').addEventListener('click', () => {
-                document.body.removeChild(tip);
-            });
-
-            tip.querySelector('.confirm-tip-confirm').addEventListener('click', () => {
-                deleteRecord(index);
-                document.body.removeChild(tip);
-            });
-
-            // 点击其他地方关闭提示
-            setTimeout(() => {
-                document.addEventListener('click', function closeConfirm(e) {
-                    if (!tip.contains(e.target) && e.target !== button) {
-                        if (document.body.contains(tip)) {
-                            document.body.removeChild(tip);
-                        }
-                        document.removeEventListener('click', closeConfirm);
-                    }
-                });
-            }, 100);
-        }
-
-        // 删除记录
-        const deleteRecord = (index) => {
-            const { practiceRecords } = loadData();
-            if (index < 0 || index >= practiceRecords.length) {
-                showToast('无法找到要删除的记录', 'error');
-                return;
-            }
-
-            practiceRecords.splice(index, 1);
-            localStorage.setItem('practiceRecords', JSON.stringify(practiceRecords));
-
-            showToast('已删除练习记录', 'info');
-            refreshRecords();
-        }
-
-        // 切换单词收藏状态
-        const toggleFavorite = (wordText) => {
-            const { wordBank } = loadData();
-            const index = wordBank.findIndex(w => w.word === wordText);
-
-            if (index !== -1) {
-                const word = wordBank[index];
-                word.favorite = !word.favorite;
-
-                localStorage.setItem('wordBank', JSON.stringify(wordBank));
-
-                showToast(`${word.favorite ? '已收藏' : '已取消收藏'}单词 "${wordText}"`, 'success');
-                refreshWords();
-            } else {
-                showToast('无法找到单词', 'error');
-            }
-        }
-
-        // 导出数据为JSON文件
-        const exportData = () => {
-            try {
-                const { wordBank, practiceRecords } = loadData();
-                const exportData = {
-                    wordBank,
-                    practiceRecords,
-                    exportDate: new Date().toISOString(),
-                    appVersion: '1.0'
-                };
-
-                // 将数据转换为JSON字符串
-                const jsonData = JSON.stringify(exportData, null, 2);
-
-                // 创建Blob对象
-                const blob = new Blob([jsonData], { type: 'application/json' });
-
-                // 创建临时下载链接
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `单词数据_${new Date().toISOString().split('T')[0]}.json`;
-
-                // 触发下载
-                document.body.appendChild(a);
-                a.click();
-
-                // 清理
-                setTimeout(() => {
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                }, 100);
-
-                showToast('数据导出成功！', 'success');
-            } catch (error) {
-                console.error('导出数据时出错:', error);
-                showToast(`导出失败: ${error.message}`, 'error');
-            }
-        }
-
-        // 导入数据
-        const importData = () => {
-            const fileInput = document.getElementById('importFile');
-
-            if (fileInput.files.length === 0) {
-                showToast('请先选择要导入的文件', 'error');
-                return;
-            }
-
-            const file = fileInput.files[0];
-
-            // 确认是否为JSON文件
-            if (!file.name.endsWith('.json')) {
-                showToast('请选择JSON格式的文件', 'error');
-                return;
-            }
+        const handleFileSelect = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
 
             const reader = new FileReader();
-
-            reader.onload = (event) => {
+            reader.onload = (e) => {
                 try {
-                    // 解析JSON数据
-                    const data = JSON.parse(event.target.result);
-
-                    // 验证数据结构
-                    if (!data.wordBank || !Array.isArray(data.wordBank) ||
-                        !data.practiceRecords || !Array.isArray(data.practiceRecords)) {
-                        throw new Error('文件格式不正确，缺少必要的数据结构');
-                    }
-
-                    // 显示导入确认模态窗口
-                    showImportConfirmModal(data);
+                    const data = JSON.parse(e.target.result);
+                    importData(data);
                 } catch (error) {
-                    console.error('导入数据时出错:', error);
-                    showToast(`导入失败: ${error.message}`, 'error');
+                    showToast('文件格式错误', 'error');
                 }
             };
-
-            reader.onerror = () => {
-                showToast('读取文件时出错', 'error');
-            };
-
-            // 开始读取文件
             reader.readAsText(file);
-        }
+        };
 
-        // 显示导入确认模态窗口
-        const showImportConfirmModal = (data) => {
-            const modal = document.getElementById('importConfirmModal');
-            const summaryElement = document.getElementById('importDataSummary');
-
-            // 生成导入数据的摘要信息
-            summaryElement.innerHTML = `
-                <p>文件包含以下数据：</p>
-                <ul>
-                    <li>${data.wordBank.length} 个单词</li>
-                    <li>${data.practiceRecords.length} 条练习记录</li>
-                    ${data.exportDate ? `<li>导出日期：${new Date(data.exportDate).toLocaleString()}</li>` : ''}
-                    ${data.appVersion ? `<li>应用版本：${data.appVersion}</li>` : ''}
-                </ul>
-            `;
-
-            // 将导入数据保存到模态窗口中，以便确认时使用
-            modal.dataset.importData = JSON.stringify(data);
-
-            // 显示模态窗口并添加动画效果
-            modal.style.display = 'flex';
-
-            // 调整模态框位置到当前视图
-            const modalContent = modal.querySelector('.modal-content');
-            // 获取当前滚动位置
-            const scrollTop = window.scrollY || document.documentElement.scrollTop;
-            const windowHeight = window.innerHeight;
-
-            // 将模态内容滚动到当前视图中心
-            const modalTop = Math.max(80, scrollTop + (windowHeight * 0.2));
-            modalContent.style.marginTop = `${modalTop}px`;
-
-            setTimeout(() => {
-                modal.classList.add('visible');
-            }, 10);
-        }
-
-        // 关闭导入确认模态窗口
-        const closeImportConfirmModal = () => {
-            const modal = document.getElementById('importConfirmModal');
-            modal.classList.remove('visible');
-
-            setTimeout(() => {
-                modal.style.display = 'none';
-                // 清除数据
-                modal.dataset.importData = '';
-
-                const modalContent = modal.querySelector('.modal-content');
-                if (modalContent) {
-                    modalContent.style.marginTop = '';
-                }
-            }, 300);
-        }
-
-        // 确认导入数据
-        const confirmImport = () => {
-            const modal = document.getElementById('importConfirmModal');
-            const dataString = modal.dataset.importData;
-
-            if (!dataString) {
-                showToast('导入数据丢失，请重试', 'error');
-                closeImportConfirmModal();
-                return;
-            }
+        const importData = (data) => {
+            if (!confirm('导入数据将覆盖当前所有数据，确定要继续吗？')) return;
 
             try {
-                const data = JSON.parse(dataString);
+                if (data.wordBank) {
+                    localStorage.setItem('wordBank', JSON.stringify(data.wordBank));
+                }
+                if (data.practiceRecords) {
+                    localStorage.setItem('practiceRecords', JSON.stringify(data.practiceRecords));
+                }
+                if (data.supportedModes) {
+                    localStorage.setItem('supportedModes', JSON.stringify(data.supportedModes));
+                }
 
-                // 保存数据到localStorage
-                localStorage.setItem('wordBank', JSON.stringify(data.wordBank));
-                localStorage.setItem('practiceRecords', JSON.stringify(data.practiceRecords));
-
-                // 重置文件输入
-                const fileInput = document.getElementById('importFile');
-                fileInput.value = '';
-                updateFileName();
-
-                // 刷新展示
                 refreshWords();
                 refreshRecords();
-
-                showToast(`数据导入成功！共导入${data.wordBank.length}个单词和${data.practiceRecords.length}条记录`, 'success');
-                closeImportConfirmModal();
+                showToast('数据导入成功', 'success');
             } catch (error) {
-                console.error('确认导入时出错:', error);
-                showToast(`导入失败: ${error.message}`, 'error');
-                closeImportConfirmModal();
+                showToast('数据导入失败', 'error');
             }
-        }
+        };
 
-        // 处理记录编辑表单提交
-        const saveRecordEdit = (event) => {
-            event.preventDefault();
+        const clearAllData = () => {
+            if (!confirm('确定要清空所有数据吗？此操作不可撤销！')) return;
+            if (!confirm('再次确认：真的要删除所有单词和记录吗？')) return;
 
-            const { practiceRecords } = loadData();
+            localStorage.removeItem('wordBank');
+            localStorage.removeItem('practiceRecords');
+            localStorage.removeItem('supportedModes');
 
-            if (currentEditIndex < 0 || currentEditIndex >= practiceRecords.length) {
-                showToast('无法找到记录', 'error');
-                return;
-            }
+            // Reinitialize with defaults
+            initializeApp();
 
-            const wordInput = document.getElementById('editRecordWord').value.trim();
-            const modeInput = document.getElementById('editRecordMode').value;
-            const dateInput = document.getElementById('editRecordDate').value;
-            const statusInput = document.getElementById('editRecordResult').value === 'true';
-
-            // 更新记录
-            practiceRecords[currentEditIndex] = {
-                word: wordInput,
-                mode: modeInput,
-                date: new Date(dateInput).toISOString(),
-                correct: statusInput
-            };
-
-            // 保存到localStorage
-            localStorage.setItem('practiceRecords', JSON.stringify(practiceRecords));
-
-            showToast('记录已更新', 'success');
-            closeRecordModal();
+            refreshWords();
             refreshRecords();
-        }
+            showToast('所有数据已清空', 'success');
+        };
+
+        // Modal handling
+        window.onclick = (event) => {
+            const editModal = document.getElementById('editModal');
+            const batchModal = document.getElementById('batchAddModal');
+            if (event.target === editModal) {
+                closeEditModal();
+            }
+            if (event.target === batchModal) {
+                closeBatchAddModal();
+            }
+        };
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeApp();
+            refreshWords();
+        });
     </script>
 </body>
 
