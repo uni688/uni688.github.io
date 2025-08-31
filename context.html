@@ -5,235 +5,166 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI English Learning Assistant</title>
-    <link rel="stylesheet" href="assets/css/common.css">
-    <link rel="stylesheet" href="assets/css/practice.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .container {
+            max-width: 800px;
+        }
+
+        .context-box {
+            background: #f8fafc;
+            padding: 1.8rem;
+            border-radius: var(--border-radius);
+            margin: 1.5rem 0;
+            min-height: 180px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        .context-box h3 {
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .context-box p {
+            line-height: 1.7;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        input {
+            flex: 1;
+            padding: 0.85rem 1.25rem;
+            border: 2px solid #e2e8f0;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        #submitBtn {
+            background: var(--primary);
+        }
+
+        /* Explicit button styles to avoid nth-child brittleness */
+        #hintBtn {
+            background: #0ea5e9;
+        }
+
+        #answerBtn {
+            background: #7c3aed;
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #e2e8f0;
+            font-size: 1.05rem;
+        }
+
+        .stats div {
+            background: #f8fafc;
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(226, 232, 240, 0.6);
+        }
+
+        .stats span {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        @media (max-width: 640px) {
+            .input-group {
+                flex-direction: column;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        .answer-box {
+            margin: 1.5rem 0;
+            background: #eef2ff;
+            border-radius: var(--border-radius);
+            padding: 1.25rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .answer-card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .answer-card h4 {
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+            font-size: 1.2rem;
+        }
+
+        .answer-card p {
+            margin: 0.75rem 0;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        strong {
+            color: var(--primary);
+            font-weight: 700;
+        }
+    </style>
 </head>
 
 <body>
     <div class="container">
         <div class="header">
             <h1>AI English Learning Assistant</h1>
-            <p>Based on context to infer word meaning</p>
+            <p>Context Mode</p>
         </div>
 
-        <div class="context-box" id="contextBox"></div>
-        <div id="answerBox" class="answer-box"></div>
+        <div class="context-box" id="contextBox">
+            <!-- Context will be loaded here -->
+        </div>
 
         <div class="input-group">
-            <input type="text" id="translationInput" placeholder="Enter your translation...">
+            <input type="text" id="translationInput" placeholder="Based on the context, translate this word in Chinese">
+        </div>
+
+        <div class="btn-container">
             <button id="submitBtn" onclick="checkTranslation()">Submit</button>
-            <button onclick="getHint()">Hint</button>
-            <button onclick="showAnswer()" id="answerBtn">Show Answer</button>
+            <button id="hintBtn" onclick="getHint()">Hint</button>
+            <button id="answerBtn" onclick="showAnswer()">Answer</button>
+        </div>
+
+        <div id="answerBox" class="answer-box" style="display: none;">
+            <!-- Answer will be shown here -->
         </div>
 
         <div class="stats">
-            <div>Practice: <span id="practiceCount">0</span></div>
+            <div>Practice Count: <span id="practiceCount">0</span></div>
             <div>Accuracy: <span id="accuracy">100%</span></div>
         </div>
     </div>
 
-    <!-- Toast通知容器 -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <script src="assets/js/common.js"></script>
-    <script>
-        const model = "claude-sonnet-4";
-        const CURRENT_MODE = "context"; // 当前模式标识符
-
-        // 从localStorage获取模式信息
-        const currentModeInfo = getModeInfo(CURRENT_MODE);
-
-        let currentWord = null;
-        let currentContext = null;
-        let answerShown = false;
-        let practiceRecords = [];
-
-        // Toast通知系统
-        let toastQueue = [];
-        let isToastShowing = false;
-
-        // 显示骨架屏
-        const showContextSkeleton = (container) => {
-            showSkeleton(container);
-        }
-
-        const startNewSession = async () => {
-            const contextBox = document.getElementById('contextBox');
-            try {
-                // 重置答案显示状态
-                answerShown = false;
-
-                // 更新提交按钮状态
-                const submitBtn = document.getElementById('submitBtn');
-                submitBtn.textContent = 'Submit';
-
-                // 恢复答案按钮状态
-                const answerBtn = document.getElementById('answerBtn');
-                answerBtn.disabled = false;
-
-                // 隐藏答案框
-                const answerBox = document.getElementById('answerBox');
-                answerBox.style.display = 'none';
-
-                // 清空翻译输入框
-                const translationInput = document.getElementById('translationInput');
-                translationInput.value = '';
-
-                // 显示骨架屏
-                showContextSkeleton(contextBox);
-
-                // 从词库中随机选择一个单词
-                const wordBank = getWordBank();
-                
-                if (wordBank.length === 0) {
-                    contextBox.innerHTML = '<p class="error">No words available in word bank. Please add some words first.</p>';
-                    return;
-                }
-
-                currentWord = wordBank[Math.floor(Math.random() * wordBank.length)];
-
-                // 使用简单的上下文生成（模拟AI响应）
-                await generateContext();
-
-            } catch (error) {
-                console.error('Error starting new session:', error);
-                contextBox.innerHTML = '<p class="error">Failed to start new session. Please try again.</p>';
-            }
-        };
-
-        const generateContext = async () => {
-            const contextBox = document.getElementById('contextBox');
-            
-            // 模拟AI生成上下文（实际项目中这里会调用真实的AI API）
-            const contexts = [
-                `The painting was so ${currentWord.word} that it seemed to come alive before our eyes.`,
-                `Her description of the sunset was incredibly ${currentWord.word}, making us feel as if we were there.`,
-                `The author's ${currentWord.word} storytelling transported readers to another world.`,
-                `The documentary presented a ${currentWord.word} portrayal of life in the 1960s.`,
-                `His ${currentWord.word} memory allowed him to recall every detail of that important day.`
-            ];
-
-            currentContext = contexts[Math.floor(Math.random() * contexts.length)];
-
-            setTimeout(() => {
-                contextBox.innerHTML = `
-                    <h3>Context</h3>
-                    <p>${currentContext}</p>
-                    <p style="margin-top: 1rem; color: var(--primary); font-weight: 600;">
-                        What does "${currentWord.word}" mean in Chinese?
-                    </p>
-                `;
-            }, 800);
-        };
-
-        const checkTranslation = () => {
-            const translationInput = document.getElementById('translationInput');
-            const userTranslation = translationInput.value.trim().toLowerCase();
-            
-            if (!userTranslation) {
-                showToast('Please enter a translation', 'error');
-                return;
-            }
-
-            const isCorrect = currentWord.translations.some(translation => 
-                translation.toLowerCase().includes(userTranslation) || 
-                userTranslation.includes(translation.toLowerCase())
-            );
-
-            // Update word statistics
-            const wordBank = getWordBank();
-            const wordIndex = wordBank.findIndex(w => w.word === currentWord.word);
-            if (wordIndex !== -1) {
-                if (!wordBank[wordIndex].modes) {
-                    wordBank[wordIndex].modes = {};
-                }
-                if (!wordBank[wordIndex].modes[CURRENT_MODE]) {
-                    wordBank[wordIndex].modes[CURRENT_MODE] = { errors: 0, practiceCount: 0 };
-                }
-                
-                wordBank[wordIndex].modes[CURRENT_MODE].practiceCount++;
-                if (!isCorrect) {
-                    wordBank[wordIndex].modes[CURRENT_MODE].errors++;
-                }
-                saveWordBank(wordBank);
-            }
-
-            // Record practice result
-            savePracticeRecord({
-                word: currentWord.word,
-                mode: CURRENT_MODE,
-                isCorrect: isCorrect,
-                userAnswer: userTranslation,
-                correctAnswer: currentWord.translations.join(', ')
-            });
-
-            if (isCorrect) {
-                showToast('Correct! Well done!', 'success');
-                document.getElementById('submitBtn').textContent = 'Next Word';
-                document.getElementById('submitBtn').onclick = startNewSession;
-            } else {
-                showToast('Incorrect. Try again or show answer.', 'error');
-            }
-
-            // Update statistics display
-            updateStats();
-        };
-
-        const getHint = () => {
-            if (!currentWord) return;
-            
-            const hint = `This word starts with "${currentWord.word.charAt(0).toUpperCase()}" and has ${currentWord.word.length} letters.`;
-            showToast(hint, 'info', 5000);
-        };
-
-        const showAnswer = () => {
-            if (!currentWord) return;
-            
-            const answerBox = document.getElementById('answerBox');
-            answerBox.innerHTML = `
-                <h4>Answer</h4>
-                <p><strong>Word:</strong> ${currentWord.word}</p>
-                <p><strong>Translation:</strong> ${currentWord.translations.join(', ')}</p>
-                <p><strong>Context:</strong> ${currentContext}</p>
-            `;
-            answerBox.style.display = 'block';
-            
-            answerShown = true;
-            document.getElementById('answerBtn').disabled = true;
-            document.getElementById('submitBtn').textContent = 'Next Word';
-            document.getElementById('submitBtn').onclick = startNewSession;
-        };
-
-        const updateStats = () => {
-            const records = getPracticeRecords();
-            const contextRecords = records.filter(r => r.mode === CURRENT_MODE);
-            
-            const practiceCount = contextRecords.length;
-            const correctCount = contextRecords.filter(r => r.isCorrect).length;
-            const accuracy = practiceCount > 0 ? Math.round((correctCount / practiceCount) * 100) : 100;
-
-            document.getElementById('practiceCount').textContent = practiceCount;
-            document.getElementById('accuracy').textContent = accuracy + '%';
-        };
-
-        // Handle Enter key in translation input
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeApp();
-            
-            const translationInput = document.getElementById('translationInput');
-            if (translationInput) {
-                translationInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        checkTranslation();
-                    }
-                });
-            }
-
-            // Start first session
-            startNewSession();
-            updateStats();
-        });
-    </script>
+    <script src="js/common.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/context.js"></script>
 </body>
 
 </html>

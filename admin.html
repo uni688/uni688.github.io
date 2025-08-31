@@ -5,8 +5,713 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>数据管理后台</title>
-    <link rel="stylesheet" href="assets/css/common.css">
-    <link rel="stylesheet" href="assets/css/admin.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .container {
+            max-width: 1200px;
+        }
+
+        .page-header h1 {
+            font-size: 2.2rem;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            padding: 0.85rem 1.75rem;
+            border: none;
+            border-radius: var(--border-radius);
+            background: var(--secondary);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab-btn:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 100%);
+            transform: translateY(-100%);
+            transition: transform 0.3s;
+        }
+
+        .tab-btn:hover:before {
+            transform: translateY(0);
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.25);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .data-table-container {
+            overflow-x: auto;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+            overflow: hidden;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1.2rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .data-table th {
+            background: #f1f5f9;
+            font-weight: 600;
+            color: #475569;
+            position: sticky;
+            top: 0;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        .data-table td.word-cell {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .action-btns {
+            display: flex;
+            flex-direction: row;
+            gap: 0.3rem;
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+            white-space: nowrap;
+        }
+
+        .btn-edit {
+            background: var(--info);
+            color: white;
+            padding: 0.4rem 0.7rem;
+            font-size: 0.85rem;
+            min-width: auto;
+        }
+
+        .btn-delete {
+            background: var(--error);
+            color: white;
+            padding: 0.4rem 0.7rem;
+            font-size: 0.85rem;
+            min-width: auto;
+        }
+
+        .btn-favorite {
+            background: #fbbf24;
+            color: white;
+            padding: 0.4rem 0.7rem;
+            font-size: 0.85rem;
+            min-width: auto;
+        }
+
+        .btn-favorite.active {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-favorite.active i {
+            color: white;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: flex-start;
+            z-index: 1000;
+            backdrop-filter: blur(3px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            overflow-y: auto;
+            padding: 2rem 1rem;
+        }
+
+        .modal.visible {
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 1.25rem;
+            border-radius: var(--border-radius);
+            min-width: 420px;
+            max-width: 90%;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(20px);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            margin: 0 auto;
+            position: relative;
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+        }
+
+        .modal.visible .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .modal-header {
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #94a3b8;
+            transition: color 0.15s ease;
+            width: 2.25rem;
+            height: 2.25rem;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+        }
+
+        .modal-close:hover {
+            color: var(--error);
+        }
+
+        /* removed :active animation to keep plain style */
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .file-input-container {
+            margin: 2rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            background: #f8fafc;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .file-input-header {
+            font-size: 1.2rem;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .file-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .custom-file-input {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .file-name {
+            padding: 0.5rem 1rem;
+            background: white;
+            border-radius: var(--border-radius-sm);
+            border: 1px solid #e2e8f0;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            padding: 0.75rem 1.25rem;
+            background: var(--info);
+            color: white;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+
+        .file-label:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .weight-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .weight-item:last-child {
+            border-bottom: none;
+        }
+
+        .weight-label {
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .weight-value {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* 响应式设计优化 */
+        @media (max-width: 768px) {
+            .modal-content {
+                padding: 1rem;
+                min-width: unset;
+                width: 95%;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 0.75rem;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .action-bar {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        /* Compact spacing specifically inside modals */
+        .modal .form-group {
+            margin-bottom: 0.9rem;
+        }
+
+        .modal .form-group label {
+            margin-bottom: 0.4rem;
+        }
+
+        .modal input,
+        .modal .form-control {
+            padding: 0.6rem 0.9rem;
+        }
+
+        @media (max-width: 480px) {
+            .tab-btn {
+                width: 100%;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .form-actions .btn {
+                width: 100%;
+            }
+        }
+
+        /* 批量导入相关样式 */
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+            font-family: monospace;
+        }
+
+        .format-help {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: var(--border-radius-sm);
+            border: 1px solid #e2e8f0;
+        }
+
+        .format-help pre {
+            background: white;
+            padding: 0.75rem;
+            border-radius: var(--border-radius-sm);
+            border: 1px solid #e2e8f0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+        }
+
+        .format-help p {
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .batch-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .mode-selector {
+            margin-right: 1rem;
+        }
+
+        .mode-selector select {
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--border-radius-sm);
+            border: 2px solid #e2e8f0;
+            background-color: white;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-selector select:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .text-warning {
+            color: #e11d48;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        /* 删除确认提示框样式 */
+        .confirm-tip {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            width: 220px;
+            text-align: center;
+            transform: translateX(-50%);
+            margin-top: -60px;
+            animation: tipFadeIn 0.2s ease-in-out;
+        }
+
+        .confirm-tip:before {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid #ddd;
+        }
+
+        .confirm-tip:after {
+            content: '';
+            position: absolute;
+            bottom: -7px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            border-top: 7px solid #fff;
+        }
+
+        .confirm-tip p {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+        }
+
+        .confirm-tip-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .confirm-tip-buttons button {
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .confirm-tip-cancel {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .confirm-tip-confirm {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        /* 确认提示额外样式 */
+        .confirm-message {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+        }
+
+        .confirm-actions {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .confirm-btn {
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .confirm-cancel {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .confirm-yes {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        @keyframes tipFadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .data-table td:last-child {
+            min-width: 160px;
+            width: 160px;
+            white-space: nowrap;
+            padding-right: 1.5rem;
+        }
+
+        .favorite-row {
+            background-color: rgba(251, 191, 36, 0.08) !important;
+        }
+
+        .favorite-row:hover td {
+            background-color: rgba(251, 191, 36, 0.15) !important;
+        }
+
+        /* 阻止表格行文本选择 */
+        .data-table tbody tr {
+            user-select: none;
+            /* 标准语法 */
+            -webkit-user-select: none;
+            /* Safari */
+            -moz-user-select: none;
+            /* Firefox */
+            -ms-user-select: none;
+            /* IE/Edge */
+        }
+
+        /* Segmented tabs */
+        .segmented-tabs {
+            position: relative;
+            display: inline-flex;
+            gap: 0.5rem;
+            background: rgba(99, 102, 241, 0.08);
+            border-radius: 999px;
+            padding: 0.5rem;
+            margin: 0 auto 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .segmented-tabs input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .segmented-tabs label {
+            position: relative;
+            z-index: 1;
+            padding: 0.6rem 1.1rem;
+            border-radius: 999px;
+            cursor: pointer;
+            color: #475569;
+            font-weight: 600;
+            transition: color .25s ease;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            user-select: none;
+        }
+
+        .segmented-tabs .chip {
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--primary);
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            padding: 0.05rem 0.5rem;
+            border-radius: 999px;
+            font-size: .8rem;
+            line-height: 1.2;
+        }
+
+        .segmented-tabs .seg-indicator {
+            position: absolute;
+            top: 4px;
+            bottom: 4px;
+            left: 4px;
+            width: 0;
+            background: #fff;
+            border-radius: 999px;
+            box-shadow: var(--shadow);
+            transition: transform .35s cubic-bezier(.2, .8, .2, 1), width .35s ease;
+            will-change: transform, width;
+        }
+
+        /* Tabs viewport & panels */
+        .tabs-viewport {
+            overflow: hidden;
+            position: relative;
+        }
+
+        .tab-panels {
+            display: flex;
+            width: 100%;
+            transform: translateX(0%);
+            transition: transform .45s cubic-bezier(.2, .8, .2, 1);
+            will-change: transform;
+        }
+
+        .tab-panel {
+            width: 100%;
+            flex: 0 0 100%;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            color: #64748b;
+            padding: 2.5rem 1rem;
+        }
+
+        .empty-state strong {
+            color: var(--primary);
+        }
+    </style>
 </head>
 
 <body>
@@ -15,161 +720,293 @@
             <h1>数据管理后台</h1>
         </div>
 
-        <div class="nav-tabs">
-            <button class="tab-btn active" onclick="showTab('words')">单词管理</button>
-            <button class="tab-btn" onclick="showTab('records')">练习记录</button>
-            <button class="tab-btn" onclick="showTab('backup')">数据备份</button>
+        <!-- Segmented Tabs -->
+        <div class="segmented-tabs" role="tablist" aria-label="管理导航">
+            <input type="radio" id="tab-words" name="admin-tabs" value="words" checked>
+            <label for="tab-words" data-tab="words" role="tab" aria-controls="wordsTab" aria-selected="true">
+                单词管理 <span class="chip" id="count-words">0</span>
+            </label>
+            <input type="radio" id="tab-records" name="admin-tabs" value="records">
+            <label for="tab-records" data-tab="records" role="tab" aria-controls="recordsTab" aria-selected="false">
+                练习记录 <span class="chip" id="count-records">0</span>
+            </label>
+            <input type="radio" id="tab-backup" name="admin-tabs" value="backup">
+            <label for="tab-backup" data-tab="backup" role="tab" aria-controls="backupTab" aria-selected="false">
+                数据备份
+            </label>
+            <span class="seg-indicator" aria-hidden="true"></span>
         </div>
 
-        <!-- 单词管理 -->
-        <div id="wordsTab" class="tab-content">
-            <div class="section-header">
-                <h2 class="section-title">单词管理</h2>
-                <div class="action-bar">
-                    <button class="btn btn-primary" onclick="showEditModal(null)">
-                        <span>添加新单词</span>
-                    </button>
-                    <button class="btn btn-info" onclick="showBatchAddModal()">
-                        <span>批量添加</span>
-                    </button>
-                    <div style="flex: 1;"></div>
-                    <button class="btn btn-secondary" onclick="toggleBatchMode()">
-                        <span id="batchModeText">批量管理</span>
-                    </button>
-                </div>
-            </div>
-            <div class="data-table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th class="batch-column" style="display: none; width: 40px;">
-                                <input type="checkbox" id="selectAllWords" onchange="toggleSelectAllWords()">
-                            </th>
-                            <th>单词</th>
-                            <th>翻译</th>
-                            <th>练习次数</th>
-                            <th>错误次数</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="wordsTable"></tbody>
-                </table>
-            </div>
-            <div class="batch-actions" style="display: none;">
-                <button class="btn btn-delete-large" onclick="batchDeleteWords()">批量删除选中项</button>
-            </div>
-        </div>
+        <!-- Panels viewport -->
+        <div class="tabs-viewport">
+            <div class="tab-panels" id="tabPanels">
 
-        <!-- 练习记录 -->
-        <div id="recordsTab" class="tab-content" style="display:none">
-            <div class="section-header">
-                <h2 class="section-title">练习记录</h2>
-                <div class="action-bar">
-                    <button class="btn btn-secondary" onclick="toggleBatchModeRecords()">
-                        <span id="batchModeRecordsText">批量管理</span>
-                    </button>
-                </div>
-            </div>
-            <div class="data-table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th class="batch-column-records" style="display: none; width: 40px;">
-                                <input type="checkbox" id="selectAllRecords" onchange="toggleSelectAllRecords()">
-                            </th>
-                            <th>日期</th>
-                            <th>状态</th>
-                            <th>单词</th>
-                            <th>模式</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recordsTable"></tbody>
-                </table>
-            </div>
-        </div>
+                <!-- 单词管理 -->
+                <div id="wordsTab" class="tab-content tab-panel" data-tab="words">
+                    <div class="action-bar">
+                        <button class="btn btn-primary" onclick="showEditModal(null)">
+                            <span>添加新单词</span>
+                        </button>
+                        <button class="btn btn-info" onclick="showBatchAddModal()">
+                            <span>批量添加</span>
+                        </button>
+                        <div style="flex: 1;"></div>
+                        <div class="mode-selector">
+                            <select id="wordModeSelector" class="form-control" onchange="refreshWords()">
+                                <option value="all">所有模式</option>
+                                <option value="context" selected>上下文猜词</option>
+                            </select>
+                        </div>
+                        <div class="batch-actions" style="display: none;">
+                            <button id="batchDeleteBtn" class="btn btn-delete-large"
+                                onclick="batchDelete(event)">批量删除</button>
+                        </div>
+                        <button class="btn btn-success" onclick="toggleBatchMode()">
+                            <span id="batchModeText">批量管理</span>
+                        </button>
+                    </div>
 
-        <!-- 数据备份 -->
-        <div id="backupTab" class="tab-content" style="display:none">
-            <div class="section-header">
-                <h2 class="section-title">数据管理</h2>
-            </div>
-
-            <div class="file-input-container">
-                <div>
-                    <h3 class="file-input-header">导出数据</h3>
-                    <div class="file-input-group">
-                        <button class="btn btn-success" onclick="exportData()">导出所有数据</button>
-                        <p class="file-info">导出包含单词库和练习记录的 JSON 文件</p>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th class="batch-column" style="display: none; width: 40px;">
+                                        <input type="checkbox" id="selectAllWords" onchange="toggleSelectAllWords()">
+                                    </th>
+                                    <th>单词</th>
+                                    <th>翻译</th>
+                                    <th>上下文猜词(错误次数)</th>
+                                    <th>上下文猜词(练习次数)</th>
+                                    <th>权重</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="wordsTable"></tbody>
+                        </table>
                     </div>
                 </div>
 
-                <div>
-                    <h3 class="file-input-header">导入数据</h3>
-                    <div class="file-input-group">
-                        <label class="custom-file-input">
-                            <input type="file" id="fileInput" accept=".json" onchange="handleFileSelect(event)">
-                            <div>点击选择文件或拖拽文件至此</div>
-                            <p class="file-info">支持 JSON 格式文件</p>
-                        </label>
+                <!-- 练习记录 -->
+                <div id="recordsTab" class="tab-content tab-panel" data-tab="records">
+                    <div class="section-header">
+                        <h2 class="section-title">练习历史记录</h2>
+                        <div class="action-bar">
+                            <div class="mode-selector">
+                                <select id="recordModeSelector" class="form-control" onchange="refreshRecords()">
+                                    <option value="all">所有模式</option>
+                                    <option value="context" selected>上下文猜词</option>
+                                </select>
+                            </div>
+                            <div class="batch-actions-records" style="display: none;">
+                                <button id="batchDeleteRecordsBtn" class="btn btn-delete-large"
+                                    onclick="batchDeleteRecords(event)">批量删除</button>
+                            </div>
+                            <button class="btn btn-success" onclick="toggleBatchModeRecords()">
+                                <span id="batchModeRecordsText">批量管理</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th class="batch-column-records" style="display: none; width: 40px;">
+                                        <input type="checkbox" id="selectAllRecords"
+                                            onchange="toggleSelectAllRecords()">
+                                    </th>
+                                    <th>日期</th>
+                                    <th>状态</th>
+                                    <th>单词</th>
+                                    <th>模式</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recordsTable"></tbody>
+                        </table>
                     </div>
                 </div>
 
-                <div>
-                    <h3 class="file-input-header">清空数据</h3>
-                    <div class="file-input-group">
-                        <button class="btn btn-delete-large" onclick="clearAllData()">清空所有数据</button>
-                        <p class="file-info" style="color: var(--error);">此操作不可撤销，请谨慎操作</p>
+                <!-- 数据备份 -->
+                <div id="backupTab" class="tab-content tab-panel" data-tab="backup">
+                    <div class="section-header">
+                        <h2 class="section-title">数据管理</h2>
+                    </div>
+
+                    <div class="file-input-container">
+                        <div>
+                            <h3 class="file-input-header">导出数据</h3>
+                            <p>将所有单词和记录导出到JSON文件中，以便备份或迁移。</p>
+                            <button class="btn btn-primary" onclick="exportData()" style="margin-top: 1rem;">
+                                <span>导出数据</span>
+                            </button>
+                        </div>
+
+                        <div class="file-input-group">
+                            <h3 class="file-input-header">导入数据</h3>
+                            <p>从之前导出的JSON文件导入数据，将覆盖当前数据。</p>
+
+                            <div class="custom-file-input">
+                                <div class="file-name" id="fileName">未选择文件</div>
+                                <label for="importFile" class="file-label">选择文件</label>
+                                <input type="file" id="importFile" accept=".json" onchange="updateFileName()">
+                            </div>
+
+                            <button class="btn btn-primary" onclick="importData()">
+                                <span>导入数据</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 编辑单词模态框 -->
+        <div id="editModal" class="modal" aria-hidden="true">
+            <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="modalTitle">编辑单词</h3>
+                    <button class="modal-close" aria-label="关闭" title="按 Esc 也可关闭"
+                        onclick="closeModal()">&times;</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="editWord">单词</label>
+                    <input type="text" id="editWord" placeholder="输入英文单词">
+                </div>
+                <div class="form-group">
+                    <label for="editTranslations">翻译（用逗号分隔多个翻译）</label>
+                    <input type="text" id="editTranslations" placeholder="如：生动的,鲜明的">
+                </div>
+                <div id="wordStatsContainer">
+                    <!-- Dynamic word stats will be injected here -->
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-delete-large" onclick="closeModal()">取消</button>
+                    <button class="btn btn-primary" onclick="saveWord()">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 编辑练习记录模态框 -->
+        <div id="editRecordModal" class="modal" aria-hidden="true">
+            <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="recordModalTitle" tabindex="-1">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="recordModalTitle">编辑练习记录</h3>
+                    <button class="modal-close" aria-label="关闭" title="按 Esc 也可关闭"
+                        onclick="closeRecordModal()">&times;</button>
+                </div>
+                <form id="recordEditForm" onsubmit="saveRecordEdit(event)">
+                    <div class="form-group">
+                        <label for="editRecordWord">单词:</label>
+                        <input type="text" id="editRecordWord" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editRecordMode">模式:</label>
+                        <select id="editRecordMode" class="form-control" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editRecordDate">练习日期:</label>
+                        <input type="datetime-local" id="editRecordDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editRecordResult">结果:</label>
+                        <select id="editRecordResult" class="form-control" required>
+                            <option value="true">正确</option>
+                            <option value="false">错误</option>
+                        </select>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">保存</button>
+                        <button type="button" class="btn btn-delete-large" onclick="closeRecordModal()">取消</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 导入确认模态框 -->
+        <div id="importConfirmModal" class="modal" aria-hidden="true">
+            <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="importConfirmTitle"
+                tabindex="-1">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="importConfirmTitle">确认导入</h3>
+                    <button class="modal-close" aria-label="关闭" title="按 Esc 也可关闭"
+                        onclick="closeImportConfirmModal()">&times;</button>
+                </div>
+                <div style="padding: 20px;">
+                    <p>导入将覆盖当前所有数据，确定要继续吗？</p>
+                    <div id="importDataSummary" style="margin: 15px 0;"></div>
+                    <div class="button-group">
+                        <button type="button" class="btn btn-primary" onclick="confirmImport()">确认导入</button>
+                        <button type="button" class="btn btn-delete-large"
+                            onclick="closeImportConfirmModal()">取消</button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- 编辑单词模态框 -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title" id="modalTitle">添加新单词</h3>
-                <span class="close" onclick="closeEditModal()">&times;</span>
-            </div>
-            <div style="margin-bottom: 1rem;">
-                <label for="wordInput" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">单词:</label>
-                <input type="text" id="wordInput" class="form-control" placeholder="输入英文单词">
-            </div>
-            <div style="margin-bottom: 1.5rem;">
-                <label for="translationsInput" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">翻译:</label>
-                <input type="text" id="translationsInput" class="form-control" placeholder="输入中文翻译，多个翻译用逗号分隔">
-            </div>
-            <div class="form-actions">
-                <button class="btn btn-secondary" onclick="closeEditModal()">取消</button>
-                <button class="btn btn-primary" onclick="saveWord()">保存</button>
-            </div>
-        </div>
-    </div>
+        <!-- 批量添加单词模态框 -->
+        <div id="batchAddModal" class="modal" aria-hidden="true">
+            <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="batchAddTitle" tabindex="-1">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="batchAddTitle">批量添加单词</h3>
+                    <button class="modal-close" aria-label="关闭" title="按 Esc 也可关闭"
+                        onclick="closeBatchAddModal()">&times;</button>
+                </div>
 
-    <!-- 批量添加模态框 -->
-    <div id="batchAddModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">批量添加单词</h3>
-                <span class="close" onclick="closeBatchAddModal()">&times;</span>
-            </div>
-            <div class="format-help">
-                <p>数据格式说明：</p>
-                <pre>单词1,翻译1,翻译2
-单词2,翻译1
-单词3,翻译1,翻译2,翻译3</pre>
-                <p style="margin-top: 0.5rem; color: #64748b;">每行一个单词，用逗号分隔单词和翻译，多个翻译之间也用逗号分隔</p>
-            </div>
-            <div style="margin-bottom: 1.5rem;">
-                <label for="batchData" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">批量数据:</label>
-                <textarea id="batchData" class="form-control" rows="8" placeholder="粘贴数据..."></textarea>
-            </div>
+                <div class="form-group">
+                    <label for="batchFormat">选择导入格式</label>
+                    <select id="batchFormat" class="form-control" onchange="showFormatHelp()">
+                        <option value="json">JSON格式</option>
+                        <option value="csv">CSV格式</option>
+                        <option value="excel">Excel复制数据</option>
+                    </select>
+                </div>
 
-            <div class="form-actions">
-                <button class="btn btn-delete-large" onclick="closeBatchAddModal()">取消</button>
-                <button class="btn btn-primary" onclick="processBatchAdd()">导入</button>
+                <div class="form-group">
+                    <label for="batchAddModeSelector">选择添加模式</label>
+                    <select id="batchAddModeSelector" class="form-control" onchange="updateBatchFormatHelp()">
+                        <option value="all">全部模式</option>
+                        <!-- 其他选项将由JavaScript动态填充 -->
+                    </select>
+                    <small class="form-text text-muted">
+                        选择"全部模式"将把单词添加到所有激活的模式中，或选择特定模式只更新该模式的数据
+                    </small>
+                </div>
+
+                <div class="format-help" id="jsonHelp">
+                    <p>JSON格式示例:</p>
+                    <pre id="jsonHelpExample">[
+  {"word": "vivid", "translations": ["生动的"]},
+  {"word": "ambiguous", "translations": ["模糊的"]}
+]</pre>
+                    <p id="jsonHelpText">选择全部模式时，只需提供单词和翻译；选择特定模式时，可额外提供errors和practiceCount数据。</p>
+                </div>
+
+                <div class="format-help" id="csvHelp" style="display: none;">
+                    <p>CSV格式示例:</p>
+                    <pre id="csvHelpExample">vivid,生动的,0,0
+ambiguous,模糊的,0,0</pre>
+                    <p id="csvHelpText">选择全部模式时，只需提供单词和翻译（前两列）；选择特定模式时，可额外提供错误次数和练习次数（后两列）。</p>
+                </div>
+
+                <div class="format-help" id="excelHelp" style="display: none;">
+                    <p>Excel复制数据示例:</p>
+                    <pre id="excelHelpExample">vivid    生动的    0    0
+ambiguous    模糊的    0    0</pre>
+                    <p id="excelHelpText">选择全部模式时，只需提供单词和翻译（前两列）；选择特定模式时，可额外提供错误次数和练习次数（后两列）。</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="batchData">粘贴数据</label>
+                    <textarea id="batchData" class="form-control" rows="8" placeholder="粘贴数据..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-delete-large" onclick="closeBatchAddModal()">取消</button>
+                    <button class="btn btn-primary" onclick="processBatchAdd()">导入</button>
+                </div>
             </div>
         </div>
     </div>
@@ -177,423 +1014,8 @@
     <!-- Toast通知容器 -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <script src="assets/js/common.js"></script>
-    <script>
-        let currentEditIndex = -1;
-
-        // Tab management
-        const showTab = (tabName) => {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.style.display = 'none';
-            });
-
-            // Remove active class from all buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            // Show selected tab
-            document.getElementById(tabName + 'Tab').style.display = 'block';
-
-            // Add active class to clicked button
-            event.target.classList.add('active');
-
-            // Refresh data for the selected tab
-            if (tabName === 'words') {
-                refreshWords();
-            } else if (tabName === 'records') {
-                refreshRecords();
-            }
-        };
-
-        // Word management functions
-        const refreshWords = () => {
-            const wordBank = getWordBank();
-            const tableBody = document.getElementById('wordsTable');
-            
-            tableBody.innerHTML = '';
-
-            wordBank.forEach((word, index) => {
-                const contextStats = word.modes?.context || { errors: 0, practiceCount: 0 };
-                const blankStats = word.modes?.blank || { errors: 0, practiceCount: 0 };
-                const totalPractice = contextStats.practiceCount + blankStats.practiceCount;
-                const totalErrors = contextStats.errors + blankStats.errors;
-
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="batch-column" style="display: none;">
-                        <input type="checkbox" class="word-checkbox batch-checkbox" data-index="${index}">
-                    </td>
-                    <td style="font-weight: 600; color: var(--primary);">${word.word}</td>
-                    <td>${word.translations.join(', ')}</td>
-                    <td>${totalPractice}</td>
-                    <td>${totalErrors}</td>
-                    <td>
-                        <button class="btn btn-small btn-info" onclick="showEditModal(${index})">编辑</button>
-                        <button class="btn btn-small btn-delete" onclick="deleteWord(${index})">删除</button>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
-        };
-
-        const showEditModal = (index) => {
-            currentEditIndex = index;
-            const modal = document.getElementById('editModal');
-            const modalTitle = document.getElementById('modalTitle');
-            const wordInput = document.getElementById('wordInput');
-            const translationsInput = document.getElementById('translationsInput');
-
-            if (index === null) {
-                // Adding new word
-                modalTitle.textContent = '添加新单词';
-                wordInput.value = '';
-                translationsInput.value = '';
-            } else {
-                // Editing existing word
-                const wordBank = getWordBank();
-                const word = wordBank[index];
-                modalTitle.textContent = '编辑单词';
-                wordInput.value = word.word;
-                translationsInput.value = word.translations.join(', ');
-            }
-
-            modal.style.display = 'block';
-        };
-
-        const closeEditModal = () => {
-            document.getElementById('editModal').style.display = 'none';
-        };
-
-        const saveWord = () => {
-            const wordInput = document.getElementById('wordInput');
-            const translationsInput = document.getElementById('translationsInput');
-
-            const word = wordInput.value.trim();
-            const translations = translationsInput.value.trim().split(',').map(t => t.trim()).filter(t => t);
-
-            if (!word || translations.length === 0) {
-                showToast('请输入单词和翻译', 'error');
-                return;
-            }
-
-            const wordBank = getWordBank();
-
-            // Check for duplicates (except when editing the same word)
-            const existingIndex = wordBank.findIndex(w => w.word.toLowerCase() === word.toLowerCase());
-            if (existingIndex !== -1 && existingIndex !== currentEditIndex) {
-                showToast('单词已存在', 'error');
-                return;
-            }
-
-            const wordObj = {
-                word: word,
-                translations: translations,
-                modes: {
-                    context: { errors: 0, practiceCount: 0 },
-                    blank: { errors: 0, practiceCount: 0 }
-                }
-            };
-
-            if (currentEditIndex === null) {
-                // Adding new word
-                wordBank.push(wordObj);
-                showToast('单词添加成功', 'success');
-            } else {
-                // Editing existing word - preserve practice stats
-                const existingWord = wordBank[currentEditIndex];
-                wordObj.modes = existingWord.modes || wordObj.modes;
-                wordBank[currentEditIndex] = wordObj;
-                showToast('单词更新成功', 'success');
-            }
-
-            saveWordBank(wordBank);
-            refreshWords();
-            closeEditModal();
-        };
-
-        const deleteWord = (index) => {
-            if (!confirm('确定要删除这个单词吗？')) return;
-
-            const wordBank = getWordBank();
-            wordBank.splice(index, 1);
-            saveWordBank(wordBank);
-            refreshWords();
-            showToast('单词删除成功', 'success');
-        };
-
-        // Batch operations
-        const toggleBatchMode = () => {
-            const batchColumns = document.querySelectorAll('.batch-column');
-            const batchActions = document.querySelector('.batch-actions');
-            const batchModeText = document.getElementById('batchModeText');
-            const isInBatchMode = batchColumns[0].style.display === 'table-cell';
-
-            if (isInBatchMode) {
-                // Exit batch mode
-                batchColumns.forEach(col => col.style.display = 'none');
-                batchActions.style.display = 'none';
-                batchModeText.textContent = '批量管理';
-            } else {
-                // Enter batch mode
-                batchColumns.forEach(col => col.style.display = 'table-cell');
-                batchActions.style.display = 'block';
-                batchModeText.textContent = '退出批量管理';
-                // Uncheck all
-                document.querySelectorAll('.word-checkbox').forEach(checkbox => checkbox.checked = false);
-                document.getElementById('selectAllWords').checked = false;
-            }
-
-            refreshWords();
-        };
-
-        const toggleSelectAllWords = () => {
-            const selectAll = document.getElementById('selectAllWords');
-            const checkboxes = document.querySelectorAll('.word-checkbox');
-            
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = selectAll.checked;
-            });
-        };
-
-        const batchDeleteWords = () => {
-            const checkboxes = document.querySelectorAll('.word-checkbox:checked');
-            if (checkboxes.length === 0) {
-                showToast('请选择要删除的单词', 'error');
-                return;
-            }
-
-            if (!confirm(`确定要删除选中的 ${checkboxes.length} 个单词吗？`)) return;
-
-            const wordBank = getWordBank();
-            const indicesToDelete = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index)).sort((a, b) => b - a);
-
-            indicesToDelete.forEach(index => {
-                wordBank.splice(index, 1);
-            });
-
-            saveWordBank(wordBank);
-            refreshWords();
-            showToast(`成功删除 ${indicesToDelete.length} 个单词`, 'success');
-        };
-
-        // Batch add functionality
-        const showBatchAddModal = () => {
-            document.getElementById('batchAddModal').style.display = 'block';
-        };
-
-        const closeBatchAddModal = () => {
-            document.getElementById('batchAddModal').style.display = 'none';
-            document.getElementById('batchData').value = '';
-        };
-
-        const processBatchAdd = () => {
-            const batchData = document.getElementById('batchData').value.trim();
-            if (!batchData) {
-                showToast('请输入数据', 'error');
-                return;
-            }
-
-            const lines = batchData.split('\n').filter(line => line.trim());
-            const wordBank = getWordBank();
-            let addedCount = 0;
-            let skippedCount = 0;
-
-            lines.forEach(line => {
-                const parts = line.split(',').map(part => part.trim()).filter(part => part);
-                if (parts.length < 2) return;
-
-                const word = parts[0];
-                const translations = parts.slice(1);
-
-                // Check for duplicates
-                if (wordBank.some(w => w.word.toLowerCase() === word.toLowerCase())) {
-                    skippedCount++;
-                    return;
-                }
-
-                wordBank.push({
-                    word: word,
-                    translations: translations,
-                    modes: {
-                        context: { errors: 0, practiceCount: 0 },
-                        blank: { errors: 0, practiceCount: 0 }
-                    }
-                });
-                addedCount++;
-            });
-
-            saveWordBank(wordBank);
-            refreshWords();
-            closeBatchAddModal();
-
-            let message = `成功添加 ${addedCount} 个单词`;
-            if (skippedCount > 0) {
-                message += `，跳过 ${skippedCount} 个重复单词`;
-            }
-            showToast(message, 'success');
-        };
-
-        // Records management
-        const refreshRecords = () => {
-            const records = getPracticeRecords();
-            const tableBody = document.getElementById('recordsTable');
-            
-            tableBody.innerHTML = '';
-
-            records.slice().reverse().forEach((record, index) => {
-                const row = document.createElement('tr');
-                const statusIcon = record.isCorrect ? '✓' : '✗';
-                const statusColor = record.isCorrect ? 'var(--success)' : 'var(--error)';
-
-                row.innerHTML = `
-                    <td class="batch-column-records" style="display: none;">
-                        <input type="checkbox" class="record-checkbox batch-checkbox" data-index="${records.length - 1 - index}">
-                    </td>
-                    <td>${record.date}</td>
-                    <td style="color: ${statusColor}; font-weight: 600;">${statusIcon} ${record.isCorrect ? '正确' : '错误'}</td>
-                    <td style="font-weight: 600;">${record.word}</td>
-                    <td>${record.mode}</td>
-                    <td>
-                        <button class="btn btn-small btn-delete" onclick="deleteRecord(${records.length - 1 - index})">删除</button>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
-        };
-
-        const deleteRecord = (index) => {
-            if (!confirm('确定要删除这条记录吗？')) return;
-
-            const records = getPracticeRecords();
-            records.splice(index, 1);
-            localStorage.setItem('practiceRecords', JSON.stringify(records));
-            refreshRecords();
-            showToast('记录删除成功', 'success');
-        };
-
-        const toggleBatchModeRecords = () => {
-            const batchColumns = document.querySelectorAll('.batch-column-records');
-            const batchModeText = document.getElementById('batchModeRecordsText');
-            const isInBatchMode = batchColumns[0].style.display === 'table-cell';
-
-            if (isInBatchMode) {
-                batchColumns.forEach(col => col.style.display = 'none');
-                batchModeText.textContent = '批量管理';
-            } else {
-                batchColumns.forEach(col => col.style.display = 'table-cell');
-                batchModeText.textContent = '退出批量管理';
-                document.querySelectorAll('.record-checkbox').forEach(checkbox => checkbox.checked = false);
-                document.getElementById('selectAllRecords').checked = false;
-            }
-
-            refreshRecords();
-        };
-
-        const toggleSelectAllRecords = () => {
-            const selectAll = document.getElementById('selectAllRecords');
-            const checkboxes = document.querySelectorAll('.record-checkbox');
-            
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = selectAll.checked;
-            });
-        };
-
-        // Data management
-        const exportData = () => {
-            const data = {
-                wordBank: getWordBank(),
-                practiceRecords: getPracticeRecords(),
-                supportedModes: JSON.parse(localStorage.getItem('supportedModes') || '[]'),
-                exportDate: new Date().toISOString()
-            };
-
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `english-learning-data-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            showToast('数据导出成功', 'success');
-        };
-
-        const handleFileSelect = (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    importData(data);
-                } catch (error) {
-                    showToast('文件格式错误', 'error');
-                }
-            };
-            reader.readAsText(file);
-        };
-
-        const importData = (data) => {
-            if (!confirm('导入数据将覆盖当前所有数据，确定要继续吗？')) return;
-
-            try {
-                if (data.wordBank) {
-                    localStorage.setItem('wordBank', JSON.stringify(data.wordBank));
-                }
-                if (data.practiceRecords) {
-                    localStorage.setItem('practiceRecords', JSON.stringify(data.practiceRecords));
-                }
-                if (data.supportedModes) {
-                    localStorage.setItem('supportedModes', JSON.stringify(data.supportedModes));
-                }
-
-                refreshWords();
-                refreshRecords();
-                showToast('数据导入成功', 'success');
-            } catch (error) {
-                showToast('数据导入失败', 'error');
-            }
-        };
-
-        const clearAllData = () => {
-            if (!confirm('确定要清空所有数据吗？此操作不可撤销！')) return;
-            if (!confirm('再次确认：真的要删除所有单词和记录吗？')) return;
-
-            localStorage.removeItem('wordBank');
-            localStorage.removeItem('practiceRecords');
-            localStorage.removeItem('supportedModes');
-
-            // Reinitialize with defaults
-            initializeApp();
-
-            refreshWords();
-            refreshRecords();
-            showToast('所有数据已清空', 'success');
-        };
-
-        // Modal handling
-        window.onclick = (event) => {
-            const editModal = document.getElementById('editModal');
-            const batchModal = document.getElementById('batchAddModal');
-            if (event.target === editModal) {
-                closeEditModal();
-            }
-            if (event.target === batchModal) {
-                closeBatchAddModal();
-            }
-        };
-
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeApp();
-            refreshWords();
-        });
-    </script>
+    <script src="js/common.js"></script>
+    <script src="js/admin.js"></script>
 </body>
 
 </html>

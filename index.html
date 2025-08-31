@@ -5,8 +5,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI English Learning Assistant</title>
-    <link rel="stylesheet" href="assets/css/common.css">
-    <link rel="stylesheet" href="assets/css/index.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .container {
+            max-width: 800px;
+        }
+
+        .mode-selection {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin: 3rem 0;
+            justify-content: center;
+        }
+
+        .mode-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            width: 300px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 280px;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+        }
+
+        .mode-card h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .mode-card p {
+            color: #4b5563;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .mode-card .btn {
+            margin-top: auto;
+        }
+
+        .mode-card .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+
+        .mode-card-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .admin-link {
+            display: block;
+            text-align: center;
+            margin-top: 2rem;
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .admin-link:hover {
+            color: var(--primary);
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 640px) {
+            .mode-selection {
+                flex-direction: column;
+                align-items: center;
+                gap: 1.5rem;
+            }
+
+            .mode-card {
+                width: 100%;
+                max-width: 320px;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -18,27 +110,31 @@
 
         <div class="mode-selection">
             <div class="mode-card" onclick="location.href='context.html'">
-                <div class="icon">📚</div>
-                <h3>上下文猜词</h3>
-                <p>根据英语上下文猜测单词的中文含义，提高词汇理解能力</p>
-                <a href="context.html" class="btn">开始练习</a>
+                <div class="mode-card-content">
+                    <div class="icon">📚</div>
+                    <h3>上下文猜词</h3>
+                    <p>根据英语上下文猜测单词的中文含义，提高词汇理解能力</p>
+                    <a href="context.html" class="btn">开始练习</a>
+                </div>
             </div>
 
             <div class="mode-card" onclick="location.href='blank.html'">
-                <div class="icon">🔍</div>
-                <h3>填空练习</h3>
-                <p>根据句子上下文填入正确的单词，巩固单词拼写和使用</p>
-                <a href="blank.html" class="btn">开始练习</a>
+                <div class="mode-card-content">
+                    <div class="icon">🔍</div>
+                    <h3>填空练习</h3>
+                    <p>根据句子上下文填入正确的单词，巩固单词拼写和使用</p>
+                    <a href="blank.html" class="btn">开始练习</a>
+                </div>
             </div>
         </div>
 
         <a href="admin.html" class="admin-link">词库与数据管理</a>
     </div>
 
-    <script src="assets/js/common.js"></script>
+    <script src="js/common.js"></script>
     <script>
-        // Initialize the application
-        initializeApp();
+        // Initialize storage on the main page to ensure data is ready for other pages.
+        initializeStorage();
     </script>
 </body>
 

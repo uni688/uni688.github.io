@@ -5,15 +5,150 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI English Learning Assistant</title>
-    <link rel="stylesheet" href="assets/css/common.css">
-    <link rel="stylesheet" href="assets/css/practice.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .container {
+            max-width: 800px;
+        }
+
+        .context-box {
+            background: #f8fafc;
+            padding: 1.8rem;
+            border-radius: var(--border-radius);
+            margin: 1.5rem 0;
+            min-height: 180px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        .context-box h3 {
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .context-box p {
+            line-height: 1.7;
+        }
+
+        #submitBtn {
+            background: var(--primary);
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        button:nth-child(2) {
+            background: #7c3aed;
+        }
+
+        button:nth-child(3) {
+            background: #0ea5e9;
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #e2e8f0;
+            font-size: 1.05rem;
+        }
+
+        .stats div {
+            background: #f8fafc;
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(226, 232, 240, 0.6);
+        }
+
+        .stats span {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        @media (max-width: 640px) {
+            .stats {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        .answer-box {
+            margin: 1.5rem 0;
+            background: #eef2ff;
+            border-radius: var(--border-radius);
+            padding: 1.25rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            display: none;
+        }
+
+        .answer-card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .answer-card h4 {
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+            font-size: 1.2rem;
+        }
+
+        .answer-card p {
+            margin: 0.75rem 0;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        strong {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        /* 可点击填空样式 */
+        .blank-sentence {
+            font-size: 1.2rem;
+            margin: 1.5rem 0;
+            line-height: 1.8;
+        }
+
+        .blank-input {
+            display: inline-block;
+            min-width: 160px;
+            text-align: center;
+            border: none;
+            border-bottom: 2px dashed var(--primary);
+            background-color: rgba(79, 70, 229, 0.05);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            margin: 0 0.25rem;
+            font-family: inherit;
+            font-size: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .blank-input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            background-color: rgba(79, 70, 229, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+    </style>
 </head>
 
 <body>
     <div class="container">
         <div class="header">
             <h1>AI English Learning Assistant</h1>
-            <p>Fill in the blank</p>
+            <p>blank</p>
         </div>
 
         <div class="context-box" id="contextBox"></div>
@@ -29,201 +164,9 @@
     <!-- Toast通知容器 -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <script src="assets/js/common.js"></script>
-    <script>
-        const model = "claude-sonnet-4";
-        const CURRENT_MODE = "blank"; // 当前模式标识符
-
-        // 从localStorage获取模式信息
-        const currentModeInfo = getModeInfo(CURRENT_MODE);
-
-        let currentWord = null;
-        let currentSentence = null;
-        let answerShown = false;
-        let practiceRecords = [];
-
-        // 显示骨架屏
-        const showBlankSkeleton = (container) => {
-            showSkeleton(container);
-        }
-
-        const startNewSession = async () => {
-            const contextBox = document.getElementById('contextBox');
-            try {
-                // 重置答案显示状态
-                answerShown = false;
-
-                // 更新提交按钮状态
-                const submitBtn = document.getElementById('submitBtn');
-                submitBtn.textContent = 'submit';
-
-                // 恢复答案按钮状态
-                const answerBtn = document.getElementById('answerBtn');
-                answerBtn.disabled = false;
-
-                // 隐藏答案框
-                const answerBox = document.getElementById('answerBox');
-                answerBox.style.display = 'none';
-
-                // 显示骨架屏
-                showBlankSkeleton(contextBox);
-
-                // 从词库中随机选择一个单词
-                const wordBank = getWordBank();
-                
-                if (wordBank.length === 0) {
-                    contextBox.innerHTML = '<p class="error">No words available in word bank. Please add some words first.</p>';
-                    return;
-                }
-
-                currentWord = wordBank[Math.floor(Math.random() * wordBank.length)];
-
-                // 生成填空句子
-                await generateBlankSentence();
-
-            } catch (error) {
-                console.error('Error starting new session:', error);
-                contextBox.innerHTML = '<p class="error">Failed to start new session. Please try again.</p>';
-            }
-        };
-
-        const generateBlankSentence = async () => {
-            const contextBox = document.getElementById('contextBox');
-            
-            // 模拟AI生成填空句子
-            const sentences = [
-                `The painting was so _______ that it seemed to come alive before our eyes.`,
-                `Her description of the sunset was incredibly _______, making us feel as if we were there.`,
-                `The author's _______ storytelling transported readers to another world.`,
-                `The documentary presented a _______ portrayal of life in the 1960s.`,
-                `His _______ memory allowed him to recall every detail of that important day.`
-            ];
-
-            const randomSentence = sentences[Math.floor(Math.random() * sentences.length)];
-            currentSentence = randomSentence.replace('_______', currentWord.word);
-
-            setTimeout(() => {
-                contextBox.innerHTML = `
-                    <h3>Fill in the blank</h3>
-                    <div class="blank-sentence">
-                        ${randomSentence.replace('_______', '<input type="text" class="blank-input" id="blankInput" placeholder="?">')}
-                    </div>
-                    <p style="margin-top: 1rem; color: #64748b;">
-                        <strong>Hint:</strong> ${currentWord.translations.join(', ')}
-                    </p>
-                `;
-
-                // Add event listener to the input
-                const blankInput = document.getElementById('blankInput');
-                if (blankInput) {
-                    blankInput.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') {
-                            checkAnswer();
-                        }
-                    });
-                    blankInput.focus();
-                }
-            }, 800);
-        };
-
-        const checkAnswer = () => {
-            const blankInput = document.getElementById('blankInput');
-            if (!blankInput) return;
-            
-            const userAnswer = blankInput.value.trim().toLowerCase();
-            
-            if (!userAnswer) {
-                showToast('Please enter an answer', 'error');
-                return;
-            }
-
-            const isCorrect = userAnswer === currentWord.word.toLowerCase();
-
-            // Update word statistics
-            const wordBank = getWordBank();
-            const wordIndex = wordBank.findIndex(w => w.word === currentWord.word);
-            if (wordIndex !== -1) {
-                if (!wordBank[wordIndex].modes) {
-                    wordBank[wordIndex].modes = {};
-                }
-                if (!wordBank[wordIndex].modes[CURRENT_MODE]) {
-                    wordBank[wordIndex].modes[CURRENT_MODE] = { errors: 0, practiceCount: 0 };
-                }
-                
-                wordBank[wordIndex].modes[CURRENT_MODE].practiceCount++;
-                if (!isCorrect) {
-                    wordBank[wordIndex].modes[CURRENT_MODE].errors++;
-                }
-                saveWordBank(wordBank);
-            }
-
-            // Record practice result
-            savePracticeRecord({
-                word: currentWord.word,
-                mode: CURRENT_MODE,
-                isCorrect: isCorrect,
-                userAnswer: userAnswer,
-                correctAnswer: currentWord.word
-            });
-
-            if (isCorrect) {
-                showToast('Correct! Well done!', 'success');
-                blankInput.value = currentWord.word;
-                blankInput.style.backgroundColor = '#10b981';
-                blankInput.style.color = 'white';
-                document.getElementById('submitBtn').textContent = 'Next Word';
-                document.getElementById('submitBtn').onclick = startNewSession;
-            } else {
-                showToast('Incorrect. Try again or show answer.', 'error');
-                blankInput.style.backgroundColor = '#ef4444';
-                blankInput.style.color = 'white';
-                setTimeout(() => {
-                    blankInput.style.backgroundColor = '';
-                    blankInput.style.color = '';
-                }, 1000);
-            }
-        };
-
-        const getHint = () => {
-            if (!currentWord) return;
-            
-            const hint = `This word starts with "${currentWord.word.charAt(0).toUpperCase()}" and has ${currentWord.word.length} letters.`;
-            showToast(hint, 'info', 5000);
-        };
-
-        const showAnswer = () => {
-            if (!currentWord) return;
-            
-            const blankInput = document.getElementById('blankInput');
-            if (blankInput) {
-                blankInput.value = currentWord.word;
-                blankInput.style.backgroundColor = 'var(--primary)';
-                blankInput.style.color = 'white';
-            }
-            
-            const answerBox = document.getElementById('answerBox');
-            answerBox.innerHTML = `
-                <h4>Answer</h4>
-                <p><strong>Word:</strong> ${currentWord.word}</p>
-                <p><strong>Translation:</strong> ${currentWord.translations.join(', ')}</p>
-                <p><strong>Complete sentence:</strong> ${currentSentence}</p>
-            `;
-            answerBox.style.display = 'block';
-            
-            answerShown = true;
-            document.getElementById('answerBtn').disabled = true;
-            document.getElementById('submitBtn').textContent = 'Next Word';
-            document.getElementById('submitBtn').onclick = startNewSession;
-        };
-
-        // Handle page initialization
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeApp();
-            
-            // Start first session
-            startNewSession();
-        });
-    </script>
+    <script src="js/common.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/blank.js"></script>
 </body>
 
 </html>
