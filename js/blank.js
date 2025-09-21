@@ -149,17 +149,33 @@ async function getHint() {
 }
 
 /**
+ * HTML-escapes a string for safe insertion into the DOM.
+ */
+function escapeHTML(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/\//g, '&#x2F;');
+}
+
+/**
  * Displays the correct answer.
  */
 function showAnswer() {
     answerShown = true;
     answerBox.style.display = 'block';
     answerBox.style.opacity = '0';
+    // Escape word and translations before HTML-insertion.
+    const safeWord = escapeHTML(currentWord.word);
+    const safeTranslations = currentWord.translations.map(escapeHTML).join(' / ');
     answerBox.innerHTML = `
         <div class="answer-card">
             <h4>answer</h4>
-            <p>answer：<strong>${currentWord.word}</strong></p>
-            <p>chinese translation：<span style="color: #10b981; font-weight: 600;">${currentWord.translations.join(' / ')}</span></p>
+            <p>answer：<strong>${safeWord}</strong></p>
+            <p>chinese translation：<span style="color: #10b981; font-weight: 600;">${safeTranslations}</span></p>
         </div>
     `;
     setTimeout(() => answerBox.style.opacity = '1', 50);
