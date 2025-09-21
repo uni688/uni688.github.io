@@ -1,6 +1,6 @@
 const CURRENT_MODE = "context";
 
-// Page-specific elements
+// 页面特定元素
 const contextBox = document.getElementById('contextBox');
 const answerBox = document.getElementById('answerBox');
 const translationInput = document.getElementById('translationInput');
@@ -10,7 +10,7 @@ const answerBtn = document.getElementById('answerBtn');
 const practiceCountEl = document.getElementById('practiceCount');
 const accuracyEl = document.getElementById('accuracy');
 
-// Page state
+// 页面状态
 let currentWord = null;
 let contextText = '';
 let hasErrorInCurrentWord = false;
@@ -25,7 +25,7 @@ function updateStats() {
     const total = modeRecords.length;
     const correct = modeRecords.filter(r => r.correct).length;
 
-    // These elements might not exist if the user hasn't added them to the HTML
+    // 这些元素可能不存在，如果用户没有添加到HTML中
     if (practiceCountEl) {
         practiceCountEl.textContent = total;
     }
@@ -74,7 +74,7 @@ async function startNewSession() {
         contextText = await generateContext(currentWord);
         const contextPara = contextBox.querySelector('div.skeleton-fade-in');
         if (contextPara) {
-            // Highlight target word occurrences in the displayed paragraph (case-insensitive)
+            // 高亮显示段落中目标单词的出现位置（不区分大小写）
             const re = new RegExp(`\\b${currentWord.word}\\b`, 'gi');
             const highlighted = contextText.replace(re, match => `<mark class="highlight">${match}</mark>`);
             contextPara.outerHTML = `<p>${highlighted}</p>`;
@@ -90,7 +90,7 @@ async function startNewSession() {
  * Checks the user's submitted translation.
  */
 async function checkTranslation() {
-    // If answer was shown, clicking submit goes to next question
+    // 如果答案已显示，点击提交按钮进入下一题
     if (answerShown) {
         await startNewSession();
         return;
@@ -103,15 +103,15 @@ async function checkTranslation() {
     submitBtn.textContent = '验证中...';
 
     try {
-        // First, check against the stored correct translations
+        // 首先，检查存储的正确翻译
         let isCorrect = currentWord.translations.some(t => userInput.includes(t));
 
-        // If not found, use the API for a more lenient check
+        // 如果没找到，使用API进行更宽松的检查
         if (!isCorrect) {
             isCorrect = await validateTranslation(currentWord, userInput, contextText);
         }
 
-        // Update word stats in localStorage
+        // 更新本地存储中的单词统计数据
         const wordBank = JSON.parse(localStorage.getItem('wordBank'));
         const wordIndex = wordBank.findIndex(w => w.word === currentWord.word);
         if (wordIndex !== -1) {
@@ -119,14 +119,14 @@ async function checkTranslation() {
             modeData.practiceCount++;
             if (!isCorrect && !hasErrorInCurrentWord) {
                 modeData.errors++;
-                hasErrorInCurrentWord = true; // Mark that an error has occurred for this word
+                hasErrorInCurrentWord = true; // 标记该单词发生了错误
             }
             wordBank[wordIndex].modes[CURRENT_MODE] = modeData;
             localStorage.setItem('wordBank', JSON.stringify(wordBank));
         }
 
         updateRecords(currentWord.word, isCorrect, CURRENT_MODE);
-        updateStats(); // Update stats display
+        updateStats(); // 更新统计显示
 
         if (isCorrect) {
             showToast('回答正确！', 'success');
@@ -139,7 +139,7 @@ async function checkTranslation() {
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit';
-        // Do not clear input on wrong answer to allow for correction
+        // 答错时不清空输入框，允许用户修正
         if (isCorrect) {
             translationInput.value = '';
         }
@@ -170,7 +170,7 @@ async function getHint() {
 function showAnswer() {
     answerShown = true;
 
-    // Record this as an error since the user gave up
+    // 记录为错误，因为用户放弃了
     const wordBank = JSON.parse(localStorage.getItem('wordBank'));
     const wordIndex = wordBank.findIndex(w => w.word === currentWord.word);
     if (wordIndex !== -1) {
@@ -184,7 +184,7 @@ function showAnswer() {
         localStorage.setItem('wordBank', JSON.stringify(wordBank));
     }
 
-    // Record as incorrect in practice records
+    // 在练习记录中记录为错误
     updateRecords(currentWord.word, false, CURRENT_MODE);
     updateStats();
 
@@ -204,7 +204,7 @@ function showAnswer() {
     showToast('已显示答案，点击 Next 进入下一题', 'info');
 }
 
-// Event Listeners
+// 事件监听器
 translationInput.addEventListener('keypress', (event) => {
     if (event.key === 'Enter') {
         event.preventDefault();

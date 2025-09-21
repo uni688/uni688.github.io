@@ -1,5 +1,5 @@
 // =================================================================
-// API an d Model Configuration
+// API 和模型配置
 // =================================================================
 
 const API_BASE_URL = "https://aliyun.zaiwen.top/admin/chatbot";
@@ -7,12 +7,12 @@ const API_KEY = "test";
 const MODEL_NAME = "claude-sonnet-4";
 
 // =================================================================
-// Generic API Fetch Function
+// 通用 API 获取函数
 // =================================================================
 
 /**
- * A generic function to make API calls to the chatbot.
- * @param {Array<Object>} messages - The array of message objects to send.
+ * 向聊天机器人发起API调用的通用函数。
+ * @param {Array<Object>} messages - 要发送的消息对象数组。
  * @returns {Promise<string>} - The content of the response message.
  * @throws {Error} - Throws an error if the API call fails or returns an invalid format.
  */
@@ -53,18 +53,18 @@ async function fetchChatbotResponse(messages) {
         throw new Error('Invalid response format from API');
     } catch (error) {
         console.error('API call failed:', error);
-        throw error; // Re-throw the error to be handled by the caller
+        throw error; // 重新抛出错误让调用者处理
     }
 }
 
 // =================================================================
-// Specific API Functions
+// 具体的 API 函数
 // =================================================================
 
 /**
- * Generates a sentence for the blank-filling exercise.
- * @param {Object} word - The word object.
- * @returns {Promise<string>} - The generated sentence.
+ * 为填空练习生成句子。
+ * @param {Object} word - 单词对象。
+ * @returns {Promise<string>} - 生成的句子。
  */
 async function generateBlankSentence(word) {
     const messages = [{
