@@ -7,10 +7,6 @@
     <title>数据管理后台</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
-        .container {
-            max-width: 1200px;
-        }
-
         .page-header h1 {
             font-size: 2.2rem;
         }
@@ -85,6 +81,10 @@
             margin-bottom: 1.5rem;
             margin-top: 1.5rem;
             flex-wrap: wrap;
+            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                margin 0.3s ease,
+                opacity 0.3s ease;
+            will-change: height, margin, opacity;
         }
 
         .data-table-container {
@@ -92,14 +92,21 @@
             border-radius: var(--border-radius);
             box-shadow: var(--shadow);
             margin-bottom: 2rem;
+            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease;
+            will-change: height, max-height, opacity;
         }
 
         .data-table {
             width: 100%;
-            border-collapse: separate;
+            border-collapse: collapse;
+            /* 修复行背景不连续 */
             border-spacing: 0;
             background: white;
             overflow: hidden;
+            table-layout: fixed;
+            /* 统一列宽，减少错位 */
         }
 
         .data-table th,
@@ -107,6 +114,8 @@
             padding: 1.2rem 1rem;
             text-align: left;
             border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            vertical-align: middle;
+            /* 按钮与文本垂直居中，避免错位 */
         }
 
         .data-table th {
@@ -131,47 +140,7 @@
             color: var(--primary);
         }
 
-        .action-btns {
-            display: flex;
-            flex-direction: row;
-            gap: 0.3rem;
-            flex-wrap: nowrap;
-            justify-content: flex-start;
-            white-space: nowrap;
-        }
-
-        .btn-edit {
-            background: var(--info);
-            color: white;
-            padding: 0.4rem 0.7rem;
-            font-size: 0.85rem;
-            min-width: auto;
-        }
-
-        .btn-delete {
-            background: var(--error);
-            color: white;
-            padding: 0.4rem 0.7rem;
-            font-size: 0.85rem;
-            min-width: auto;
-        }
-
-        .btn-favorite {
-            background: #fbbf24;
-            color: white;
-            padding: 0.4rem 0.7rem;
-            font-size: 0.85rem;
-            min-width: auto;
-        }
-
-        .btn-favorite.active {
-            background: #f59e0b;
-            color: white;
-        }
-
-        .btn-favorite.active i {
-            color: white;
-        }
+        /* 按钮样式统一已移至 css/style.css */
 
         .modal {
             position: fixed;
@@ -179,15 +148,17 @@
             left: 0;
             right: 0;
             bottom: 0;
+            width: 100vw;
+            height: 100vh;
             background: rgba(0, 0, 0, 0.5);
             display: none;
             justify-content: center;
-            align-items: flex-start;
-            z-index: 1000;
+            align-items: center;
+            z-index: 9999;
             backdrop-filter: blur(3px);
             opacity: 0;
             transition: opacity 0.3s ease;
-            overflow-y: auto;
+            overflow: hidden;
             padding: 2rem 1rem;
         }
 
@@ -197,7 +168,6 @@
 
         .modal-content {
             background: white;
-            padding: 1.25rem;
             border-radius: var(--border-radius);
             min-width: 420px;
             max-width: 90%;
@@ -208,7 +178,26 @@
             margin: 0 auto;
             position: relative;
             max-height: calc(100vh - 4rem);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-body {
+            padding: 1.25rem;
             overflow-y: auto;
+            overflow-x: hidden;
+            flex: 1;
+        }
+
+        .modal-content .modal-header {
+            padding: 1.25rem 1.25rem 0.75rem 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .modal-content .form-actions {
+            padding: 0.75rem 1.25rem 1.25rem 1.25rem;
+            flex-shrink: 0;
         }
 
         .modal.visible .modal-content {
@@ -243,13 +232,16 @@
             border-radius: 999px;
             display: grid;
             place-items: center;
+            transform: none !important;
+            box-shadow: none !important;
+            transition: color 0.3s ease;
         }
 
         .modal-close:hover {
             color: var(--error);
         }
 
-        /* removed :active animation to keep plain style */
+        /* 移除了:active动画以保持纯净样式 */
 
         .form-actions {
             display: flex;
@@ -394,7 +386,7 @@
             }
         }
 
-        /* Compact spacing specifically inside modals */
+        /* 专门为模态框内部设置紧凑间距 */
         .modal .form-group {
             margin-bottom: 0.9rem;
         }
@@ -419,6 +411,23 @@
 
             .form-actions .btn {
                 width: 100%;
+            }
+
+            /* 移动端按钮优化 */
+            .action-btns {
+                gap: 0.25rem;
+            }
+
+            .action-btns .btn {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.8rem;
+                min-width: 50px;
+                height: 28px;
+            }
+
+            .data-table td:last-child {
+                min-width: 180px;
+                width: 180px;
             }
         }
 
@@ -498,9 +507,9 @@
             z-index: 1000;
             width: 220px;
             text-align: center;
-            transform: translateX(-50%);
+            transform: translateX(-50%) translateY(0);
             margin-top: -60px;
-            animation: tipFadeIn 0.2s ease-in-out;
+            animation: tipFadeIn 0.2s ease-in-out forwards;
         }
 
         .confirm-tip:before {
@@ -599,10 +608,16 @@
         }
 
         .data-table td:last-child {
-            min-width: 160px;
-            width: 160px;
+            min-width: 200px;
+            width: 200px;
             white-space: nowrap;
             padding-right: 1.5rem;
+        }
+
+        /* 词库批量列（默认隐藏，通过JS切换显示） */
+        .batch-column-vocab {
+            display: none;
+            width: 40px;
         }
 
         .favorite-row {
@@ -618,14 +633,14 @@
             user-select: none;
             /* 标准语法 */
             -webkit-user-select: none;
-            /* Safari */
+            /* Safari浏览器 */
             -moz-user-select: none;
-            /* Firefox */
+            /* Firefox浏览器 */
             -ms-user-select: none;
-            /* IE/Edge */
+            /* IE/Edge浏览器 */
         }
 
-        /* Segmented tabs */
+        /* 分段式标签页 */
         .segmented-tabs {
             position: relative;
             display: inline-flex;
@@ -682,10 +697,11 @@
             will-change: transform, width;
         }
 
-        /* Tabs viewport & panels */
+        /* 标签页视口和面板 */
         .tabs-viewport {
             overflow: hidden;
             position: relative;
+            width: 100%;
         }
 
         .tab-panels {
@@ -699,9 +715,12 @@
         .tab-panel {
             width: 100%;
             flex: 0 0 100%;
+            transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease;
+            will-change: height, opacity;
         }
 
-        /* Empty state */
+        /* 空状态样式 */
         .empty-state {
             text-align: center;
             color: #64748b;
@@ -710,6 +729,44 @@
 
         .empty-state strong {
             color: var(--primary);
+        }
+
+        /* 批量操作过渡动画 */
+        .batch-actions,
+        .batch-actions-vocab,
+        .batch-actions-records {
+            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease,
+                margin 0.3s ease,
+                transform 0.3s ease;
+            will-change: height, opacity, margin, transform;
+            overflow: hidden;
+        }
+
+        .batch-actions.hiding,
+        .batch-actions-vocab.hiding,
+        .batch-actions-records.hiding {
+            opacity: 0;
+            transform: translateY(-10px);
+            height: 0;
+            margin: 0;
+        }
+
+        .batch-actions.showing,
+        .batch-actions-vocab.showing,
+        .batch-actions-records.showing {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 批量列过渡动画 */
+        .batch-column,
+        .batch-column-vocab,
+        .batch-column-records {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease,
+                padding 0.3s ease;
+            will-change: width, opacity, padding;
         }
     </style>
 </head>
@@ -720,7 +777,7 @@
             <h1>数据管理后台</h1>
         </div>
 
-        <!-- Segmented Tabs -->
+        <!-- 分段式标签页 -->
         <div class="segmented-tabs" role="tablist" aria-label="管理导航">
             <input type="radio" id="tab-words" name="admin-tabs" value="words" checked>
             <label for="tab-words" data-tab="words" role="tab" aria-controls="wordsTab" aria-selected="true">
@@ -737,52 +794,105 @@
             <span class="seg-indicator" aria-hidden="true"></span>
         </div>
 
-        <!-- Panels viewport -->
+        <!-- 面板视口 -->
         <div class="tabs-viewport">
             <div class="tab-panels" id="tabPanels">
 
                 <!-- 单词管理 -->
                 <div id="wordsTab" class="tab-content tab-panel" data-tab="words">
-                    <div class="action-bar">
-                        <button class="btn btn-primary" onclick="showEditModal(null)">
-                            <span>添加新单词</span>
-                        </button>
-                        <button class="btn btn-info" onclick="showBatchAddModal()">
-                            <span>批量添加</span>
-                        </button>
-                        <div style="flex: 1;"></div>
-                        <div class="mode-selector">
-                            <select id="wordModeSelector" class="form-control" onchange="refreshWords()">
-                                <option value="all">所有模式</option>
-                                <option value="context" selected>上下文猜词</option>
-                            </select>
-                        </div>
-                        <div class="batch-actions" style="display: none;">
-                            <button id="batchDeleteBtn" class="btn btn-delete-large"
-                                onclick="batchDelete(event)">批量删除</button>
-                        </div>
-                        <button class="btn btn-success" onclick="toggleBatchMode()">
-                            <span id="batchModeText">批量管理</span>
+                    <!-- 面包屑导航 -->
+                    <div class="breadcrumb-nav"
+                        style="margin-bottom: 1.5rem; padding: 0.75rem 1rem; background: #f8fafc; border-radius: var(--border-radius-sm); border: 1px solid #e2e8f0;">
+                        <span id="breadcrumbText" style="color: #475569; font-weight: 500;">词库管理</span>
+                        <button id="backToVocabularies" class="btn btn-secondary"
+                            style="display: none; margin-left: 1rem; padding: 0.5rem 1rem; font-size: 0.9rem;"
+                            onclick="showVocabularyView()">
+                            ← 返回词库列表
                         </button>
                     </div>
 
-                    <div class="data-table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th class="batch-column" style="display: none; width: 40px;">
-                                        <input type="checkbox" id="selectAllWords" onchange="toggleSelectAllWords()">
-                                    </th>
-                                    <th>单词</th>
-                                    <th>翻译</th>
-                                    <th>上下文猜词(错误次数)</th>
-                                    <th>上下文猜词(练习次数)</th>
-                                    <th>权重</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="wordsTable"></tbody>
-                        </table>
+                    <!-- 词库管理视图 -->
+                    <div id="vocabularyManagementView">
+                        <div class="action-bar">
+                            <button class="btn btn-primary" onclick="showVocabularyModal(null)">
+                                <span>新建词库</span>
+                            </button>
+                            <div class="batch-actions-vocab" style="display: none;">
+                                <button id="batchMergeVocabBtn" class="btn btn-merge"
+                                    onclick="openBatchMergeVocab()">批量合并</button>
+                                <button id="batchDeleteVocabBtn" class="btn btn-delete-large"
+                                    onclick="batchDeleteVocab(event)">批量删除</button>
+                            </div>
+                            <button class="btn btn-success" onclick="toggleBatchModeVocab()">
+                                <span id="batchModeVocabText">批量管理</span>
+                            </button>
+                            <div style="flex: 1;"></div>
+                        </div>
+
+                        <div class="data-table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th class="batch-column-vocab" style="display: none;">
+                                            <input type="checkbox" id="selectAllVocab"
+                                                onchange="toggleSelectAllVocab()">
+                                        </th>
+                                        <th>词库名称</th>
+                                        <th>描述</th>
+                                        <th>单词数量</th>
+                                        <th>创建时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vocabulariesTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 单词管理视图 -->
+                    <div id="wordManagementView" style="display: none;">
+                        <div class="action-bar">
+                            <button class="btn btn-primary" onclick="showEditModal(null)">
+                                <span>添加新单词</span>
+                            </button>
+                            <button class="btn btn-info" onclick="showBatchAddModal()">
+                                <span>批量添加</span>
+                            </button>
+                            <div style="flex: 1;"></div>
+                            <div class="mode-selector">
+                                <select id="wordModeSelector" class="form-control" onchange="refreshWords()">
+                                    <option value="all">所有模式</option>
+                                    <option value="context" selected>上下文猜词</option>
+                                </select>
+                            </div>
+                            <div class="batch-actions" style="display: none;">
+                                <button id="batchDeleteBtn" class="btn btn-delete-large"
+                                    onclick="batchDelete(event)">批量删除</button>
+                            </div>
+                            <button class="btn btn-success" onclick="toggleBatchMode()">
+                                <span id="batchModeText">批量管理</span>
+                            </button>
+                        </div>
+
+                        <div class="data-table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th class="batch-column" style="display: none; width: 40px;">
+                                            <input type="checkbox" id="selectAllWords"
+                                                onchange="toggleSelectAllWords()">
+                                        </th>
+                                        <th>单词</th>
+                                        <th>翻译</th>
+                                        <th>上下文猜词(错误次数)</th>
+                                        <th>上下文猜词(练习次数)</th>
+                                        <th>权重</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="wordsTable"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -860,16 +970,73 @@
 
             </div>
         </div>
+    </div>
 
-        <!-- 编辑单词模态框 -->
-        <div id="editModal" class="modal" aria-hidden="true">
-            <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
-                <div class="modal-header">
-                    <h3 class="modal-title" id="modalTitle">编辑单词</h3>
-                    <button class="modal-close" aria-label="关闭" title="按 Esc 也可关闭"
-                        onclick="closeModal()">&times;</button>
+    <!-- 词库编辑模态框 -->
+    <div id="vocabularyModal" class="modal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="vocabularyModalTitle" tabindex="-1">
+            <div class="modal-header">
+                <h3 class="modal-title" id="vocabularyModalTitle">新建词库</h3>
+                <button class="modal-close" aria-label="关闭" title="按 Esc 也可关闭"
+                    onclick="closeVocabularyModal()">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="vocabularyName">词库名称</label>
+                    <input type="text" id="vocabularyName" placeholder="输入词库名称" required>
                 </div>
+                <div class="form-group">
+                    <label for="vocabularyDescription">词库描述（可选）</label>
+                    <textarea id="vocabularyDescription" class="form-control" rows="3" placeholder="输入词库描述"></textarea>
+                </div>
+            </div>
 
+            <div class="form-actions">
+                <button class="btn btn-delete-large" onclick="closeVocabularyModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveVocabulary()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 词库合并确认模态框 -->
+    <div id="mergeVocabularyModal" class="modal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="mergeVocabularyTitle" tabindex="-1">
+            <div class="modal-header">
+                <h3 class="modal-title" id="mergeVocabularyTitle">合并词库</h3>
+                <button class="modal-close" aria-label="关闭" title="按 Esc 也可关闭"
+                    onclick="closeMergeVocabularyModal()">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <p>选择要合并到的目标词库：</p>
+                <div class="form-group">
+                    <label for="targetVocabularySelect">目标词库</label>
+                    <select id="targetVocabularySelect" class="form-control" required></select>
+                </div>
+                <div id="mergeInfo"
+                    style="margin: 15px 0; padding: 10px; background: #f8fafc; border-radius: 4px; border: 1px solid #e2e8f0;">
+                    <p style="margin: 0; color: #dc2626; font-weight: 500;">⚠️ 注意：合并操作不可撤销</p>
+                    <p style="margin: 5px 0 0 0; color: #475569; font-size: 0.9rem;">源词库的所有单词将移动到目标词库，然后源词库将被删除。</p>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-delete-large" onclick="closeMergeVocabularyModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmMergeVocabulary()">确认合并</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑单词模态框 -->
+    <div id="editModal" class="modal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">编辑单词</h3>
+                <button class="modal-close" aria-label="关闭" title="按 Esc 也可关闭" onclick="closeModal()">&times;</button>
+            </div>
+
+            <div class="modal-body">
                 <div class="form-group">
                     <label for="editWord">单词</label>
                     <input type="text" id="editWord" placeholder="输入英文单词">
@@ -879,24 +1046,26 @@
                     <input type="text" id="editTranslations" placeholder="如：生动的,鲜明的">
                 </div>
                 <div id="wordStatsContainer">
-                    <!-- Dynamic word stats will be injected here -->
-                </div>
-
-                <div class="form-actions">
-                    <button class="btn btn-delete-large" onclick="closeModal()">取消</button>
-                    <button class="btn btn-primary" onclick="saveWord()">保存</button>
+                    <!-- 动态单词统计信息将在此处注入 -->
                 </div>
             </div>
-        </div>
 
-        <!-- 编辑练习记录模态框 -->
-        <div id="editRecordModal" class="modal" aria-hidden="true">
-            <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="recordModalTitle" tabindex="-1">
-                <div class="modal-header">
-                    <h3 class="modal-title" id="recordModalTitle">编辑练习记录</h3>
-                    <button class="modal-close" aria-label="关闭" title="按 Esc 也可关闭"
-                        onclick="closeRecordModal()">&times;</button>
-                </div>
+            <div class="form-actions">
+                <button class="btn btn-delete-large" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveWord()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑练习记录模态框 -->
+    <div id="editRecordModal" class="modal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="recordModalTitle" tabindex="-1">
+            <div class="modal-header">
+                <h3 class="modal-title" id="recordModalTitle">编辑练习记录</h3>
+                <button class="modal-close" aria-label="关闭" title="按 Esc 也可关闭"
+                    onclick="closeRecordModal()">&times;</button>
+            </div>
+            <div class="modal-body">
                 <form id="recordEditForm" onsubmit="saveRecordEdit(event)">
                     <div class="form-group">
                         <label for="editRecordWord">单词:</label>
@@ -924,37 +1093,37 @@
                 </form>
             </div>
         </div>
+    </div>
 
-        <!-- 导入确认模态框 -->
-        <div id="importConfirmModal" class="modal" aria-hidden="true">
-            <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="importConfirmTitle"
-                tabindex="-1">
-                <div class="modal-header">
-                    <h3 class="modal-title" id="importConfirmTitle">确认导入</h3>
-                    <button class="modal-close" aria-label="关闭" title="按 Esc 也可关闭"
-                        onclick="closeImportConfirmModal()">&times;</button>
-                </div>
-                <div style="padding: 20px;">
-                    <p>导入将覆盖当前所有数据，确定要继续吗？</p>
-                    <div id="importDataSummary" style="margin: 15px 0;"></div>
-                    <div class="button-group">
-                        <button type="button" class="btn btn-primary" onclick="confirmImport()">确认导入</button>
-                        <button type="button" class="btn btn-delete-large"
-                            onclick="closeImportConfirmModal()">取消</button>
-                    </div>
-                </div>
+    <!-- 导入确认模态框 -->
+    <div id="importConfirmModal" class="modal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="importConfirmTitle" tabindex="-1">
+            <div class="modal-header">
+                <h3 class="modal-title" id="importConfirmTitle">确认导入</h3>
+                <button class="modal-close" aria-label="关闭" title="按 Esc 也可关闭"
+                    onclick="closeImportConfirmModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>导入将覆盖当前所有数据，确定要继续吗？</p>
+                <div id="importDataSummary" style="margin: 15px 0;"></div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-primary" onclick="confirmImport()">确认导入</button>
+                <button type="button" class="btn btn-delete-large" onclick="closeImportConfirmModal()">取消</button>
             </div>
         </div>
+    </div>
 
-        <!-- 批量添加单词模态框 -->
-        <div id="batchAddModal" class="modal" aria-hidden="true">
-            <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="batchAddTitle" tabindex="-1">
-                <div class="modal-header">
-                    <h3 class="modal-title" id="batchAddTitle">批量添加单词</h3>
-                    <button class="modal-close" aria-label="关闭" title="按 Esc 也可关闭"
-                        onclick="closeBatchAddModal()">&times;</button>
-                </div>
+    <!-- 批量添加单词模态框 -->
+    <div id="batchAddModal" class="modal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="batchAddTitle" tabindex="-1">
+            <div class="modal-header">
+                <h3 class="modal-title" id="batchAddTitle">批量添加单词</h3>
+                <button class="modal-close" aria-label="关闭" title="按 Esc 也可关闭"
+                    onclick="closeBatchAddModal()">&times;</button>
+            </div>
 
+            <div class="modal-body">
                 <div class="form-group">
                     <label for="batchFormat">选择导入格式</label>
                     <select id="batchFormat" class="form-control" onchange="showFormatHelp()">
@@ -1002,11 +1171,11 @@ ambiguous    模糊的    0    0</pre>
                     <label for="batchData">粘贴数据</label>
                     <textarea id="batchData" class="form-control" rows="8" placeholder="粘贴数据..."></textarea>
                 </div>
+            </div>
 
-                <div class="form-actions">
-                    <button class="btn btn-delete-large" onclick="closeBatchAddModal()">取消</button>
-                    <button class="btn btn-primary" onclick="processBatchAdd()">导入</button>
-                </div>
+            <div class="form-actions">
+                <button class="btn btn-delete-large" onclick="closeBatchAddModal()">取消</button>
+                <button class="btn btn-primary" onclick="processBatchAdd()">导入</button>
             </div>
         </div>
     </div>

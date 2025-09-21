@@ -1,13 +1,13 @@
 // =================================================================
-// Local Storage Management
+// 本地存储管理
 // =================================================================
 
 /**
- * Initializes localStorage with default values if they don't exist.
- * This includes supported modes, word bank, and practice records.
+ * 如果不存在则初始化localStorage的默认值。
+ * 包括支持的模式、单词库和练习记录。
  */
 function initializeStorage() {
-    // Initialize the list of supported modes if it doesn't exist.
+    // 如果不存在，则初始化支持的模式列表。
     if (!localStorage.getItem('supportedModes')) {
         const defaultModes = [
             { id: 'context', name: '上下文猜词', active: true },
@@ -15,7 +15,7 @@ function initializeStorage() {
         ];
         localStorage.setItem('supportedModes', JSON.stringify(defaultModes));
     } else {
-        // Ensure 'blank' mode exists for backward compatibility.
+        // 确保存在'blank'模式以保持向后兼容性。
         const modes = JSON.parse(localStorage.getItem('supportedModes'));
         if (!modes.some(mode => mode.id === 'blank')) {
             modes.push({ id: 'blank', name: '填空练习', active: true });
@@ -23,65 +23,97 @@ function initializeStorage() {
         }
     }
 
-    // Initialize the word bank with default words if it doesn't exist.
+    // 如果不存在，则初始化词库。
+    if (!localStorage.getItem('vocabularies')) {
+        const defaultVocabulary = {
+            id: 'default',
+            name: '默认词库',
+            description: '',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        localStorage.setItem('vocabularies', JSON.stringify([defaultVocabulary]));
+    }
+
+    // 如果不存在，则用默认单词初始化单词库。
     if (!localStorage.getItem('wordBank')) {
         const defaultWords = [
-            { word: 'vivid', translations: ['生动的'], modes: { context: { errors: 0, practiceCount: 0 }, blank: { errors: 0, practiceCount: 0 } } },
-            { word: 'ambiguous', translations: ['模糊的'], modes: { context: { errors: 0, practiceCount: 0 }, blank: { errors: 0, practiceCount: 0 } } },
-            { word: 'profound', translations: ['深刻的'], modes: { context: { errors: 0, practiceCount: 0 }, blank: { errors: 0, practiceCount: 0 } } }
+            { word: 'vivid', translations: ['生动的'], modes: { context: { errors: 0, practiceCount: 0 }, blank: { errors: 0, practiceCount: 0 } }, vocabularyId: 'default' },
+            { word: 'ambiguous', translations: ['模糊的'], modes: { context: { errors: 0, practiceCount: 0 }, blank: { errors: 0, practiceCount: 0 } }, vocabularyId: 'default' },
+            { word: 'profound', translations: ['深刻的'], modes: { context: { errors: 0, practiceCount: 0 }, blank: { errors: 0, practiceCount: 0 } }, vocabularyId: 'default' }
         ];
         localStorage.setItem('wordBank', JSON.stringify(defaultWords));
     } else {
-        // Migrate old data format if necessary.
+        // 如有必要，迁移旧数据格式。
         migrateWordData();
     }
 
-    // Initialize practice records if it doesn't exist.
+    // 如果不存在，则初始化练习记录。
     if (!localStorage.getItem('practiceRecords')) {
         localStorage.setItem('practiceRecords', JSON.stringify([]));
     }
 }
 
 /**
- * Migrates old word data structure to the new format which includes 'modes'.
+ * 迁移旧的单词数据结构到新格式，包括模式支持和词库归属。
  */
 function migrateWordData() {
     try {
         const wordBank = JSON.parse(localStorage.getItem('wordBank') || '[]');
-        const needsMigration = wordBank.some(word => !word.modes);
+        let needsMigration = wordBank.some(word => !word.modes);
+        let needsVocabularyMigration = wordBank.some(word => !word.vocabularyId);
 
-        if (needsMigration) {
+        if (needsMigration || needsVocabularyMigration) {
+            // 确保默认词库存在
+            let vocabularies = JSON.parse(localStorage.getItem('vocabularies') || '[]');
+            const defaultVocabulary = vocabularies.find(v => v.id === 'default');
+            if (!defaultVocabulary) {
+                vocabularies.push({
+                    id: 'default',
+                    name: '默认词库',
+                    description: '',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                });
+                localStorage.setItem('vocabularies', JSON.stringify(vocabularies));
+            }
+
             const migratedWordBank = wordBank.map(word => {
-                if (word.modes) return word; // Already in new format
+                let newWord = { ...word };
 
-                // Create new structure
-                const newWord = {
-                    ...word,
-                    modes: {
+                // 迁移模式数据结构
+                if (!word.modes) {
+                    newWord.modes = {
                         context: {
                             errors: word.errors || 0,
                             practiceCount: word.practiceCount || 0
                         },
                         blank: { errors: 0, practiceCount: 0 }
-                    }
-                };
-                // Delete old properties
-                delete newWord.errors;
-                delete newWord.practiceCount;
+                    };
+                    // 删除旧属性
+                    delete newWord.errors;
+                    delete newWord.practiceCount;
+                }
+
+                // 迁移词库归属
+                if (!word.vocabularyId) {
+                    newWord.vocabularyId = 'default';
+                }
+
                 return newWord;
             });
 
             localStorage.setItem('wordBank', JSON.stringify(migratedWordBank));
-            console.log('Word data has been migrated to the new format.');
+            console.log('单词数据已迁移到新格式，包含词库归属信息。');
         }
     } catch (error) {
-        console.error('Error migrating word data:', error);
+        console.error('迁移单词数据时出错:', error);
     }
 }
 
 
 // =================================================================
-// Data Access & Utility Functions
+// 数据访问和工具函数
 // =================================================================
 
 /**
@@ -111,11 +143,18 @@ function getWordModeData(word, mode) {
  * Selects a word from the word bank using a weighted random algorithm.
  * The algorithm prioritizes words that are new, have a high error rate, or haven't been practiced recently.
  * @param {string} currentMode - The learning mode to calculate weights for.
+ * @param {string} vocabularyId - (可选) 限制词库ID，如果提供则只从该词库选择单词
  * @returns {Object|null} - The selected word object or null if the bank is empty.
  */
-function getWeightedWord(currentMode) {
-    const words = JSON.parse(localStorage.getItem('wordBank') || '[]');
+function getWeightedWord(currentMode, vocabularyId = null) {
+    let words = JSON.parse(localStorage.getItem('wordBank') || '[]');
     if (!words || words.length === 0) return null;
+
+    // 如果指定了词库ID，则只使用该词库的单词
+    if (vocabularyId) {
+        words = words.filter(word => word.vocabularyId === vocabularyId);
+        if (words.length === 0) return null;
+    }
 
     const records = JSON.parse(localStorage.getItem('practiceRecords') || '[]');
     const modeRecords = records.filter(record => record.mode === currentMode);
@@ -273,4 +312,148 @@ function showSkeleton(container) {
             <div class="skeleton skeleton-line medium"></div>
         </div>
     `;
+}
+
+// =================================================================
+// 词库管理函数
+// =================================================================
+
+/**
+ * 获取所有词库列表
+ * @returns {Array} 词库数组
+ */
+function getVocabularies() {
+    return JSON.parse(localStorage.getItem('vocabularies') || '[]');
+}
+
+/**
+ * 根据ID获取特定词库
+ * @param {string} vocabularyId - 词库ID
+ * @returns {Object|null} 词库对象或null
+ */
+function getVocabularyById(vocabularyId) {
+    const vocabularies = getVocabularies();
+    return vocabularies.find(v => v.id === vocabularyId) || null;
+}
+
+/**
+ * 获取特定词库下的所有单词
+ * @param {string} vocabularyId - 词库ID
+ * @returns {Array} 单词数组
+ */
+function getWordsByVocabulary(vocabularyId) {
+    const wordBank = JSON.parse(localStorage.getItem('wordBank') || '[]');
+    return wordBank.filter(word => word.vocabularyId === vocabularyId);
+}
+
+/**
+ * 创建新词库
+ * @param {string} name - 词库名称
+ * @param {string} description - 词库描述
+ * @returns {string} 新词库的ID
+ */
+function createVocabulary(name, description = '') {
+    const vocabularies = getVocabularies();
+    const id = 'vocab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+    const newVocabulary = {
+        id,
+        name,
+        description,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+
+    vocabularies.push(newVocabulary);
+    localStorage.setItem('vocabularies', JSON.stringify(vocabularies));
+
+    return id;
+}
+
+/**
+ * 更新词库信息
+ * @param {string} vocabularyId - 词库ID
+ * @param {string} name - 新名称
+ * @param {string} description - 新描述
+ * @returns {boolean} 是否更新成功
+ */
+function updateVocabulary(vocabularyId, name, description = '') {
+    const vocabularies = getVocabularies();
+    const index = vocabularies.findIndex(v => v.id === vocabularyId);
+
+    if (index === -1) return false;
+
+    vocabularies[index].name = name;
+    vocabularies[index].description = description;
+    vocabularies[index].updatedAt = new Date().toISOString();
+
+    localStorage.setItem('vocabularies', JSON.stringify(vocabularies));
+    return true;
+}
+
+/**
+ * 删除词库及其下所有单词
+ * @param {string} vocabularyId - 词库ID
+ * @returns {boolean} 是否删除成功
+ */
+function deleteVocabulary(vocabularyId) {
+    if (vocabularyId === 'default') {
+        throw new Error('不能删除默认词库');
+    }
+
+    const vocabularies = getVocabularies();
+    const index = vocabularies.findIndex(v => v.id === vocabularyId);
+
+    if (index === -1) return false;
+
+    // 删除词库下的所有单词
+    const wordBank = JSON.parse(localStorage.getItem('wordBank') || '[]');
+    const filteredWords = wordBank.filter(word => word.vocabularyId !== vocabularyId);
+    localStorage.setItem('wordBank', JSON.stringify(filteredWords));
+
+    // 删除词库
+    vocabularies.splice(index, 1);
+    localStorage.setItem('vocabularies', JSON.stringify(vocabularies));
+
+    return true;
+}
+
+/**
+ * 合并词库（将源词库的单词移动到目标词库，然后删除源词库）
+ * @param {string} sourceVocabularyId - 源词库ID
+ * @param {string} targetVocabularyId - 目标词库ID
+ * @returns {boolean} 是否合并成功
+ */
+function mergeVocabularies(sourceVocabularyId, targetVocabularyId) {
+    if (sourceVocabularyId === 'default') {
+        throw new Error('不能合并默认词库');
+    }
+
+    if (sourceVocabularyId === targetVocabularyId) {
+        throw new Error('源词库和目标词库不能相同');
+    }
+
+    const vocabularies = getVocabularies();
+    const sourceVocab = vocabularies.find(v => v.id === sourceVocabularyId);
+    const targetVocab = vocabularies.find(v => v.id === targetVocabularyId);
+
+    if (!sourceVocab || !targetVocab) {
+        throw new Error('词库不存在');
+    }
+
+    // 将源词库的单词转移到目标词库
+    const wordBank = JSON.parse(localStorage.getItem('wordBank') || '[]');
+    wordBank.forEach(word => {
+        if (word.vocabularyId === sourceVocabularyId) {
+            word.vocabularyId = targetVocabularyId;
+        }
+    });
+    localStorage.setItem('wordBank', JSON.stringify(wordBank));
+
+    // 删除源词库
+    const sourceIndex = vocabularies.findIndex(v => v.id === sourceVocabularyId);
+    vocabularies.splice(sourceIndex, 1);
+    localStorage.setItem('vocabularies', JSON.stringify(vocabularies));
+
+    return true;
 }

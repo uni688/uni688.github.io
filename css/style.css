@@ -1,4 +1,4 @@
-/* General Reset & Root Variables */
+/* 通用重置和根变量 */
 :root {
     --primary: #4f46e5;
     --secondary: #6366f1;
@@ -21,7 +21,7 @@
     padding: 0;
 }
 
-/* Body & Layout */
+/* 主体和布局 */
 body {
     font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     background: linear-gradient(90deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
@@ -31,6 +31,7 @@ body {
     padding: 2rem;
     color: var(--text-primary);
     line-height: 1.6;
+    height: auto;
 }
 
 @keyframes gradientBG {
@@ -49,15 +50,24 @@ body {
 
 .container {
     margin: 0 auto;
+    max-width: 1200px;
     background: rgba(255, 255, 255, 0.92);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-lg);
     padding: 2.5rem;
     backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
+    transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        min-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 0.3s ease,
+        transform 0.3s ease;
+    min-height: auto;
+    height: auto;
+    width: 100%;
+    will-change: height, min-height, max-height;
 }
 
-/* Header */
+/* 页面标题 */
 .header,
 .page-header {
     text-align: center;
@@ -81,7 +91,7 @@ body {
     font-size: 1.1rem;
 }
 
-/* Buttons */
+/* 按钮样式 */
 .btn {
     padding: 0.75rem 1.25rem;
     border: none;
@@ -96,9 +106,9 @@ body {
     gap: 0.5rem;
     white-space: nowrap;
     text-decoration: none;
-    /* For <a> tags styled as buttons */
+    /* 为按钮样式的<a>标签设置 */
     color: white;
-    /* Default text color for buttons */
+    /* 按钮默认文字颜色 */
     background: var(--primary);
 }
 
@@ -126,6 +136,53 @@ body {
     color: white;
 }
 
+/* 合并操作（紫色） - 与信息色区分开 */
+.btn-merge {
+    background: #8b5cf6;
+    color: white;
+}
+
+/* 表格内操作按钮容器与尺寸（统一 admin 等页面的尺寸与间距） */
+.action-btns {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    white-space: nowrap;
+}
+
+.action-btns .btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    min-width: 60px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 操作按钮配色变体 */
+.btn-edit {
+    background: var(--info);
+    color: white;
+}
+
+.btn-delete {
+    background: var(--error);
+    color: white;
+}
+
+.btn-favorite {
+    background: #fbbf24;
+    color: white;
+}
+
+.btn-favorite.active {
+    background: #f59e0b;
+    color: white;
+}
+
 .btn-secondary {
     background-color: #e2e8f0;
     color: #4b5563;
@@ -141,7 +198,7 @@ body {
     color: white;
 }
 
-/* Generic button from blank/context pages */
+/* 来自空格填充/上下文页面的通用按钮 */
 button {
     padding: 0.85rem 1.5rem;
     border: none;
@@ -186,7 +243,7 @@ button:disabled {
     box-shadow: none;
 }
 
-/* Forms */
+/* 表单样式 */
 .form-group {
     margin-bottom: 1.5rem;
 }
@@ -220,7 +277,7 @@ input:focus {
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
-/* Toast Notifications */
+/* 提示消息通知 */
 .toast-container {
     position: fixed;
     top: 2rem;
@@ -301,7 +358,7 @@ input:focus {
     }
 }
 
-/* Skeleton Loader */
+/* 骨架屏加载动画 */
 .skeleton {
     background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
     background-size: 200% 100%;
@@ -357,7 +414,7 @@ input:focus {
     }
 }
 
-/* Utility */
+/* 工具类样式 */
 .error {
     color: #dc2626;
     background: #fee2e2;
@@ -402,7 +459,7 @@ input:focus {
     }
 }
 
-/* Highlighted word */
+/* 高亮显示的单词 */
 mark.highlight {
     background: linear-gradient(120deg, #a8e6cf 0%, #dcedc8 100%);
     color: #2e7d32;
@@ -419,7 +476,7 @@ mark.highlight:hover {
     box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
 }
 
-/* Responsive Design */
+/* 响应式设计 */
 @media (max-width: 768px) {
     body {
         padding: 1rem;
@@ -433,5 +490,19 @@ mark.highlight:hover {
         top: 1rem;
         right: 1rem;
         max-width: 320px;
+    }
+}
+
+/* 表格操作按钮在小屏的更紧凑尺寸 */
+@media (max-width: 480px) {
+    .action-btns {
+        gap: 0.25rem;
+    }
+
+    .action-btns .btn {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+        min-width: 50px;
+        height: 28px;
     }
 }

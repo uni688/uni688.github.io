@@ -1,13 +1,13 @@
 const CURRENT_MODE = "blank";
 
-// Page-specific elements
+// 页面特定元素
 const contextBox = document.getElementById('contextBox');
 const answerBox = document.getElementById('answerBox');
 const submitBtn = document.getElementById('submitBtn');
 const hintBtn = document.querySelector('button[onclick="getHint()"]');
 const answerBtn = document.getElementById('answerBtn');
 
-// Page state
+// 页面状态
 let currentWord = null;
 let sentenceText = '';
 let hasErrorInCurrentWord = false;
@@ -169,7 +169,7 @@ function showAnswer() {
     showToast('已显示答案，点击 next 进入下一题', 'info');
 }
 
-// Initial Load
+// 初始加载
 document.addEventListener('DOMContentLoaded', () => {
     initializeStorage();
     startNewSession();
