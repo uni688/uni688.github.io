@@ -1,5 +1,16 @@
 const CURRENT_MODE = "context";
 
+// HTML escaping helper to prevent XSS
+function escapeHTML(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/\//g, '&#x2F;');
+}
+
 // 页面特定元素
 const contextBox = document.getElementById('contextBox');
 const answerBox = document.getElementById('answerBox');
@@ -65,7 +76,7 @@ async function startNewSession() {
         <div class="skeleton skeleton-line full"></div>
         <div class="skeleton skeleton-line medium"></div>
     </div>
-    <p style="margin-top: 1rem;"><strong>Target Word: ${currentWord.word}</strong></p>
+    <p style="margin-top: 1rem;"><strong>Target Word: ${escapeHTML(currentWord.word)}</strong></p>
 `;
     contextBox.style.opacity = '0';
     setTimeout(() => contextBox.style.opacity = '1', 50);
@@ -75,8 +86,15 @@ async function startNewSession() {
         const contextPara = contextBox.querySelector('div.skeleton-fade-in');
         if (contextPara) {
             // 高亮显示段落中目标单词的出现位置（不区分大小写）
-            const re = new RegExp(`\\b${currentWord.word}\\b`, 'gi');
-            const highlighted = contextText.replace(re, match => `<mark class="highlight">${match}</mark>`);
+            const wordFragment = escapeHTML(currentWord.word);
+            // Escape contextText but preserve the mark highlight for the word
+            // Replace occurrences of the word with a mark, escaping the rest
+            // This slightly more complex splitting ensures no XSS from contextText
+            const re = new RegExp(`(${currentWord.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            const highlighted = escapeHTML(contextText).replace(
+                re, 
+                match => `<mark class="highlight">${escapeHTML(match)}</mark>`
+            );
             contextPara.outerHTML = `<p>${highlighted}</p>`;
         }
     } catch (error) {
