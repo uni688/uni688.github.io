@@ -442,7 +442,7 @@ const openBatchMergeVocab = () => {
     const modal = document.getElementById('mergeVocabularyModal');
     const select = document.getElementById('targetVocabularySelect');
     const vocabularies = getVocabularies().filter(v => !sources.includes(v.id));
-    select.innerHTML = vocabularies.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+    select.innerHTML = vocabularies.map(v => `<option value="${escapeHTML(v.id)}">${escapeHTML(v.name)}</option>`).join('');
     // 临时将 mergeSourceVocabularyId 保存为数组的 JSON 字符串，复用确认逻辑时识别
     mergeSourceVocabularyId = JSON.stringify(sources);
     openModal(modal);
