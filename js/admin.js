@@ -1,3 +1,18 @@
+/**
+ * Escape HTML special characters in a string to prevent XSS.
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeHTML(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/\//g, '&#x2F;');
+}
+
 let currentEditIndex = -1;
 let currentRecordEditIndex = -1;
 let currentVocabularyEditId = null;
@@ -1010,8 +1025,8 @@ const refreshRecords = () => {
             </td>
             <td>${new Date(record.date).toLocaleString()}</td>
             <td><span class="badge ${record.correct ? 'badge-success' : 'badge-error'}">${record.correct ? '正确' : '错误'}</span></td>
-            <td>${record.word}</td>
-            <td>${modeInfo ? modeInfo.name : (record.mode || 'N/A')}</td>
+            <td>${escapeHTML(record.word)}</td>
+            <td>${modeInfo ? escapeHTML(modeInfo.name) : (record.mode ? escapeHTML(record.mode) : 'N/A')}</td>
             <td class="action-btns">
                  <button class="btn btn-edit" onclick="showEditRecordModal(${practiceRecords.indexOf(record)})">编辑</button>
                  <button class="btn btn-delete" onclick="deleteRecord(event, ${practiceRecords.indexOf(record)})">删除</button>
