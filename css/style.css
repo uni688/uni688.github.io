@@ -423,6 +423,33 @@ input:focus {
     text-align: center;
 }
 
+/* 错误提示中的刷新按钮 */
+.error-refresh-btn {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.5rem 1rem;
+    background: var(--error);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.error-refresh-btn:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.error-refresh-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(239, 68, 68, 0.3);
+}
+
 .loading {
     text-align: center;
     color: #64748b;
@@ -504,5 +531,237 @@ mark.highlight:hover {
         font-size: 0.8rem;
         min-width: 50px;
         height: 28px;
+    }
+}
+
+/* 词库状态按钮样式已集成到vocabulary-status-button组件中 */
+
+/* 词库状态按钮容器样式 */
+vocabulary-status-button {
+    display: inline-block;
+    vertical-align: middle;
+    /* 调整尺寸以完整显示按钮 */
+    width: 60px;
+    height: 24px;
+    overflow: visible;
+}
+
+vocabulary-status-button .components {
+    box-shadow: 2px 2px 4px 0px rgba(0, 0, 0, 0.1);
+}
+
+/* 确保状态按钮在表格中居中对齐 */
+.data-table td:has(vocabulary-status-button),
+.data-table td[style*="text-align: center"] {
+    text-align: center !important;
+    vertical-align: middle !important;
+    /* 为状态按钮提供足够的列宽 */
+    min-width: 80px;
+    padding: 1.2rem 0.5rem;
+}
+
+/* ====================================================== */
+/* 提示面板样式 */
+/* ====================================================== */
+
+.hint-panel-container {
+    margin: 0.5rem 0 1rem 0;
+    max-width: 100%;
+}
+
+.hint-panel {
+    background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+    border: 2px solid #bfdbfe;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    animation: hintPanelSlideIn 0.3s ease-out;
+    position: relative;
+}
+
+@keyframes hintPanelSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hint-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.hint-counter {
+    font-size: 0.85rem;
+    opacity: 0.95;
+}
+
+.hint-nav {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.hint-nav-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.hint-nav-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.hint-nav-btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.hint-nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.hint-content {
+    padding: 1rem 1.25rem;
+}
+
+.hint-text {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    word-wrap: break-word;
+    transition: all 0.2s ease;
+}
+
+/* 提示级别样式 - 随着级别增加，样式越来越突出 */
+.hint-level-1 {
+    color: #4f46e5;
+    font-style: normal;
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    border-left: 4px solid #4f46e5;
+    font-weight: 500;
+}
+
+.hint-level-2 {
+    color: var(--info);
+    font-weight: 500;
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    border-left: 4px solid var(--info);
+}
+
+.hint-level-3 {
+    color: #f59e0b;
+    font-weight: 600;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    border-left: 4px solid #f59e0b;
+}
+
+.hint-level-4 {
+    color: #dc2626;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    border-left: 4px solid #dc2626;
+    animation: hintPulse 2s ease-in-out infinite;
+}
+
+@keyframes hintPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.9;
+        transform: scale(1.02);
+    }
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .hint-panel-container {
+        margin: 0.25rem 0 0.75rem 0;
+    }
+
+    .hint-header {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+    }
+
+    .hint-counter {
+        font-size: 0.8rem;
+    }
+
+    .hint-nav-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 1rem;
+    }
+
+    .hint-content {
+        padding: 0.8rem 1rem;
+    }
+
+    .hint-text {
+        font-size: 0.95rem;
+    }
+
+    .hint-level-3,
+    .hint-level-4 {
+        padding: 0.4rem 0.6rem;
+    }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 480px) {
+    .hint-header {
+        padding: 0.5rem 0.7rem;
+        font-size: 0.8rem;
+    }
+
+    .hint-nav {
+        gap: 0.3rem;
+    }
+
+    .hint-nav-btn {
+        width: 22px;
+        height: 22px;
+        font-size: 0.9rem;
+    }
+
+    .hint-content {
+        padding: 0.7rem 0.8rem;
     }
 }

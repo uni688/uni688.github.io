@@ -104,9 +104,10 @@
             /* 修复行背景不连续 */
             border-spacing: 0;
             background: white;
-            overflow: hidden;
-            table-layout: fixed;
-            /* 统一列宽，减少错位 */
+            table-layout: auto;
+            /* 允许表格自动调整列宽 */
+            min-width: 800px;
+            /* 确保表格有最小宽度以容纳所有列 */
         }
 
         .data-table th,
@@ -116,6 +117,41 @@
             border-bottom: 1px solid rgba(226, 232, 240, 0.8);
             vertical-align: middle;
             /* 按钮与文本垂直居中，避免错位 */
+        }
+
+        /* 为不同列设置合适的宽度 */
+        .data-table .batch-column {
+            width: 40px;
+            min-width: 40px;
+        }
+
+        .data-table th:nth-child(2),
+        /* 单词列 */
+        .data-table td:nth-child(2) {
+            min-width: 120px;
+            max-width: 200px;
+        }
+
+        .data-table th:nth-child(3),
+        /* 翻译列 */
+        .data-table td:nth-child(3) {
+            min-width: 150px;
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+
+        .data-table th:nth-child(4),
+        /* 错误次数列 */
+        .data-table td:nth-child(4),
+        .data-table th:nth-child(5),
+        /* 练习次数列 */
+        .data-table td:nth-child(5),
+        .data-table th:nth-child(6),
+        /* 权重列 */
+        .data-table td:nth-child(6) {
+            min-width: 80px;
+            max-width: 120px;
+            text-align: center;
         }
 
         .data-table th {
@@ -427,7 +463,6 @@
 
             .data-table td:last-child {
                 min-width: 180px;
-                width: 180px;
             }
         }
 
@@ -609,9 +644,16 @@
 
         .data-table td:last-child {
             min-width: 200px;
-            width: 200px;
             white-space: nowrap;
             padding-right: 1.5rem;
+        }
+
+        /* 确保操作按钮容器有足够空间 */
+        .data-table .action-btns {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: nowrap;
+            justify-content: flex-start;
         }
 
         /* 词库批量列（默认隐藏，通过JS切换显示） */
@@ -823,9 +865,6 @@
                                 <button id="batchDeleteVocabBtn" class="btn btn-delete-large"
                                     onclick="batchDeleteVocab(event)">批量删除</button>
                             </div>
-                            <button class="btn btn-success" onclick="toggleBatchModeVocab()">
-                                <span id="batchModeVocabText">批量管理</span>
-                            </button>
                             <div style="flex: 1;"></div>
                         </div>
 
@@ -833,13 +872,14 @@
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th class="batch-column-vocab" style="display: none;">
+                                        <th class="batch-column-vocab" style="display: none; width: 40px;">
                                             <input type="checkbox" id="selectAllVocab"
                                                 onchange="toggleSelectAllVocab()">
                                         </th>
                                         <th>词库名称</th>
                                         <th>描述</th>
                                         <th>单词数量</th>
+                                        <th>状态</th>
                                         <th>创建时间</th>
                                         <th>操作</th>
                                     </tr>
@@ -1043,7 +1083,7 @@
                 </div>
                 <div class="form-group">
                     <label for="editTranslations">翻译（用逗号分隔多个翻译）</label>
-                    <input type="text" id="editTranslations" placeholder="如：生动的,鲜明的">
+                    <input type="text" id="editTranslations" placeholder="如：生动的, 鲜明的">
                 </div>
                 <div id="wordStatsContainer">
                     <!-- 动态单词统计信息将在此处注入 -->
@@ -1147,7 +1187,7 @@
                 <div class="format-help" id="jsonHelp">
                     <p>JSON格式示例:</p>
                     <pre id="jsonHelpExample">[
-  {"word": "vivid", "translations": ["生动的"]},
+  {"word": "vivid", "translations": ["生动的, 鲜明的"]},
   {"word": "ambiguous", "translations": ["模糊的"]}
 ]</pre>
                     <p id="jsonHelpText">选择全部模式时，只需提供单词和翻译；选择特定模式时，可额外提供errors和practiceCount数据。</p>
@@ -1155,14 +1195,14 @@
 
                 <div class="format-help" id="csvHelp" style="display: none;">
                     <p>CSV格式示例:</p>
-                    <pre id="csvHelpExample">vivid,生动的,0,0
+                    <pre id="csvHelpExample">vivid,生动的,鲜明的,0,0
 ambiguous,模糊的,0,0</pre>
                     <p id="csvHelpText">选择全部模式时，只需提供单词和翻译（前两列）；选择特定模式时，可额外提供错误次数和练习次数（后两列）。</p>
                 </div>
 
                 <div class="format-help" id="excelHelp" style="display: none;">
                     <p>Excel复制数据示例:</p>
-                    <pre id="excelHelpExample">vivid    生动的    0    0
+                    <pre id="excelHelpExample">vivid    生动的    鲜明的    0    0
 ambiguous    模糊的    0    0</pre>
                     <p id="excelHelpText">选择全部模式时，只需提供单词和翻译（前两列）；选择特定模式时，可额外提供错误次数和练习次数（后两列）。</p>
                 </div>
@@ -1184,6 +1224,7 @@ ambiguous    模糊的    0    0</pre>
     <div id="toastContainer" class="toast-container"></div>
 
     <script src="js/common.js"></script>
+    <script src="js/vocabulary-status-button.js"></script>
     <script src="js/admin.js"></script>
 </body>
 

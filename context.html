@@ -11,6 +11,12 @@
             max-width: 800px;
         }
 
+        .btn-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
         .context-box {
             background: #f8fafc;
             padding: 1.8rem;
@@ -53,11 +59,11 @@
 
         /* Explicit button styles to avoid nth-child brittleness */
         #hintBtn {
-            background: #0ea5e9;
+            background: #7c3aed;
         }
 
         #answerBtn {
-            background: #7c3aed;
+            background: #0ea5e9;
         }
 
         .stats {
@@ -137,12 +143,15 @@
         </div>
 
         <div class="context-box" id="contextBox">
-            <!-- Context will be loaded here -->
+            <!-- 上下文会在这里加载 -->
         </div>
 
         <div class="input-group">
             <input type="text" id="translationInput" placeholder="Based on the context, translate this word in Chinese">
         </div>
+
+        <!-- 提示面板容器 -->
+        <div id="hintPanelContainer" class="hint-panel-container"></div>
 
         <div class="btn-container">
             <button id="submitBtn" onclick="checkTranslation()">Submit</button>
@@ -151,13 +160,9 @@
         </div>
 
         <div id="answerBox" class="answer-box" style="display: none;">
-            <!-- Answer will be shown here -->
+            <!-- 答案会显示在这里 -->
         </div>
 
-        <div class="stats">
-            <div>Practice Count: <span id="practiceCount">0</span></div>
-            <div>Accuracy: <span id="accuracy">100%</span></div>
-        </div>
     </div>
 
     <div id="toastContainer" class="toast-container"></div>

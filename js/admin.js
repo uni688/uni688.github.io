@@ -1,35 +1,23 @@
-/**
- * Escape HTML special characters in a string to prevent XSS.
- * @param {string} str
- * @returns {string}
- */
-function escapeHTML(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-        .replace(/\//g, '&#x2F;');
-}
-
 let currentEditIndex = -1;
 let currentRecordEditIndex = -1;
 let currentVocabularyEditId = null;
 let currentVocabularyId = null; // 当前选中的词库ID
 let mergeSourceVocabularyId = null; // 合并操作的源词库ID
-let selectedVocabularyIds = new Set(); // 词库多选集合
-let isBatchModeVocab = false; // 词库批量模式
-let lastCheckedVocabIndex = -1; // 词库批量选择的最后索引（支持Shift选择）
+let lastCheckedWordIndex = -1; // 单词批量选择的最后索引（支持Shift选择）
 
-// 确认提示框
+/**
+ * 创建确认提示框的工具函数
+ * @param {string} message - 要显示的确认消息
+ * @param {Function} onConfirm - 用户点击确认时执行的回调函数
+ */
 const createConfirmTip = (message, onConfirm) => {
-    // 移除已存在的提示框
+    // 移除已存在的提示框，确保同时只有一个提示框
     const existingTip = document.querySelector('.confirm-tip');
     if (existingTip) {
         existingTip.remove();
     }
 
+    // 创建提示框DOM元素
     const tip = document.createElement('div');
     tip.className = 'confirm-tip';
     tip.innerHTML = `
@@ -40,29 +28,36 @@ const createConfirmTip = (message, onConfirm) => {
         </div>
     `;
 
+    // 将提示框添加到页面
     document.body.appendChild(tip);
 
+    // 获取按钮元素
     const confirmBtn = tip.querySelector('.confirm-tip-confirm');
     const cancelBtn = tip.querySelector('.confirm-tip-cancel');
 
+    // 移除提示框的统一方法
     const removeTip = () => {
         tip.remove();
         document.removeEventListener('click', handleOutsideClick, true);
     };
 
+    // 处理点击提示框外部区域关闭提示框
     const handleOutsideClick = (event) => {
         if (!tip.contains(event.target)) {
             removeTip();
         }
     };
 
+    // 绑定确认按钮事件
     confirmBtn.onclick = () => {
         onConfirm();
         removeTip();
     };
+
+    // 绑定取消按钮事件
     cancelBtn.onclick = removeTip;
 
-    // 延迟以确保事件监听器不会立即捕捉到创建提示的点击
+    // 延迟添加外部点击监听器，确保创建提示的点击事件不会立即触发关闭
     setTimeout(() => {
         document.addEventListener('click', handleOutsideClick, true);
     }, 0);
@@ -158,10 +153,14 @@ const setupTabs = () => {
     window.__panelsEl = panels;
 };
 
+/**
+ * 显示指定的标签页
+ * @param {string} tabName - 要显示的标签页名称（'words', 'records', 'backup'）
+ */
 const showTab = (tabName) => {
     currentTab = tabName;
     const panels = window.__panelsEl || document.getElementById('tabPanels');
-    const order = ['words', 'records', 'backup'];
+    const order = ['words', 'records', 'backup']; // 标签页顺序
     const index = order.indexOf(tabName);
 
     if (panels && index >= 0) {
@@ -169,6 +168,7 @@ const showTab = (tabName) => {
         const allPanels = panels.querySelectorAll('.tab-panel');
 
         // 在transform之前，确保所有panel都显示（移除可能的隐藏样式）
+        // 这样可以确保滑动动画的流畅性
         allPanels.forEach(panel => {
             panel.style.display = '';
             panel.style.visibility = '';
@@ -176,7 +176,7 @@ const showTab = (tabName) => {
             panel.style.overflow = '';
         });
 
-        // 执行transform动画
+        // 执行transform动画，通过平移来切换标签页
         panels.style.transform = `translateX(-${index * 100}%)`;
 
         // 等待transform动画完成后隐藏其他panel
@@ -184,7 +184,7 @@ const showTab = (tabName) => {
         setTimeout(() => {
             allPanels.forEach((panel, panelIndex) => {
                 if (panelIndex !== index) {
-                    // 隐藏非当前panel，但保持其宽度占位
+                    // 隐藏非当前panel，但保持其宽度占位以维持布局
                     panel.style.visibility = 'hidden';
                     panel.style.height = '0';
                     panel.style.overflow = 'hidden';
@@ -195,7 +195,7 @@ const showTab = (tabName) => {
                     panel.style.overflow = '';
                 }
             });
-        }, 430); // 与CSS transition时间匹配
+        }, 300); // 与CSS transition时间匹配
     }
 
     if (typeof window.__moveSegIndicator === 'function') {
@@ -216,9 +216,6 @@ const showVocabularyView = () => {
     document.getElementById('breadcrumbText').textContent = '词库管理';
     document.getElementById('backToVocabularies').style.display = 'none';
     currentVocabularyId = null;
-    // 退出批量模式并清空选择
-    isBatchModeVocab = false;
-    selectedVocabularyIds.clear();
     refreshVocabularies();
 };
 
@@ -244,14 +241,19 @@ const refreshVocabularies = () => {
 
     vocabularies.forEach(vocabulary => {
         const wordCount = getWordsByVocabulary(vocabulary.id).length;
+        const isEnabled = vocabulary.enabled !== false;
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td class="batch-column-vocab" style="${isBatchModeVocab ? '' : 'display:none;'}; text-align:center; width:40px;">
-                <input type="checkbox" class="vocab-checkbox" value="${vocabulary.id}" ${selectedVocabularyIds.has(vocabulary.id) ? 'checked' : ''}>
-            </td>
             <td class="word-cell" style="cursor: pointer;" onclick="showWordView('${vocabulary.id}')">${vocabulary.name}</td>
             <td>${vocabulary.description || '暂无描述'}</td>
             <td>${wordCount}</td>
+            <td style="text-align: center;">
+                <vocabulary-status-button 
+                    status="${isEnabled ? 'enabled' : 'disabled'}" 
+                    vocabulary-id="${vocabulary.id}" 
+                    size="1.0">
+                </vocabulary-status-button>
+            </td>
             <td>${new Date(vocabulary.createdAt).toLocaleString()}</td>
             <td class="action-btns">
                 <button class="btn btn-edit" onclick="showVocabularyModal('${vocabulary.id}')">编辑</button>
@@ -267,192 +269,48 @@ const refreshVocabularies = () => {
     if (vocabularies.length === 0) {
         const tr = document.createElement('tr');
         const td = document.createElement('td');
-        td.colSpan = isBatchModeVocab ? 6 : 5;
+        td.colSpan = 6; // 更新列数
         td.innerHTML = `<div class="empty-state">暂无词库数据，点击"新建词库"开始创建。</div>`;
         tr.appendChild(td);
         tbody.appendChild(tr);
     }
-
-    // 控制批量列显示
-    const batchColumnsVocab = document.querySelectorAll('.batch-column-vocab');
-    if (isBatchModeVocab) {
-        batchColumnsVocab.forEach(el => {
-            el.style.display = '';
-            el.style.width = '40px';
-            el.style.opacity = '1';
-        });
-    } else {
-        batchColumnsVocab.forEach(el => {
-            el.style.opacity = '0';
-            el.style.width = '0';
-            setTimeout(() => {
-                if (!isBatchModeVocab) el.style.display = 'none';
-            }, 300);
-        });
-    }
-    updateBatchVocabActionsVisibility();
 };
 
-// 词库表行点击选择（批量模式），支持Shift连续选择
-document.getElementById('vocabulariesTable').addEventListener('click', (event) => {
-    if (!isBatchModeVocab) return;
-    const row = event.target.closest('tr');
-    if (!row) return;
-
-    // 点击按钮不触发
-    if (event.target.closest('button')) return;
-
-    // 在批量模式下，禁止跳转查看词库内容
-    if (event.target.closest('.word-cell')) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-
-    const checkbox = row.querySelector('.vocab-checkbox');
-    if (!checkbox) return;
-
-    const checkboxes = Array.from(document.querySelectorAll('#vocabulariesTable .vocab-checkbox'));
-    const currentIndex = checkboxes.indexOf(checkbox);
-
-    if (event.target.tagName !== 'INPUT') {
-        checkbox.checked = !checkbox.checked;
-        checkbox.dispatchEvent(new Event('change'));
-    }
-
-    if (lastCheckedVocabIndex !== -1 && event.shiftKey) {
-        const start = Math.min(lastCheckedVocabIndex, currentIndex);
-        const end = Math.max(lastCheckedVocabIndex, currentIndex);
-        const shouldBeChecked = checkboxes[currentIndex].checked;
-        for (let i = start; i <= end; i++) {
-            if (checkboxes[i].checked !== shouldBeChecked) {
-                checkboxes[i].checked = shouldBeChecked;
-                checkboxes[i].dispatchEvent(new Event('change'));
-            }
+// 监听单词checkbox变化（事件委托）
+document.addEventListener('change', (e) => {
+    // 监听单词checkbox变化
+    if (e.target && e.target.classList.contains('word-checkbox')) {
+        updateBatchActionsVisibility();
+        const all = document.getElementById('selectAllWords');
+        if (all) {
+            const boxes = document.querySelectorAll('.word-checkbox');
+            const allChecked = boxes.length > 0 && Array.from(boxes).every(cb => cb.checked);
+            all.checked = allChecked;
         }
     }
 
-    lastCheckedVocabIndex = currentIndex;
-});
-
-// 捕获阶段拦截名称单元格点击，避免批量模式下触发 showWordView
-document.getElementById('vocabulariesTable').addEventListener('click', (event) => {
-    if (isBatchModeVocab && event.target.closest('.word-cell')) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-}, true);
-
-// 词库批量模式切换
-const toggleBatchModeVocab = () => {
-    isBatchModeVocab = !isBatchModeVocab;
-    document.getElementById('batchModeVocabText').textContent = isBatchModeVocab ? '退出批量管理' : '批量管理';
-    if (!isBatchModeVocab) {
-        selectedVocabularyIds.clear();
-        const selAll = document.getElementById('selectAllVocab');
-        if (selAll) selAll.checked = false;
-    }
-    refreshVocabularies();
-};
-
-// 词库全选
-const toggleSelectAllVocab = () => {
-    const isChecked = document.getElementById('selectAllVocab').checked;
-    const checkboxes = document.querySelectorAll('.vocab-checkbox');
-    selectedVocabularyIds.clear();
-    checkboxes.forEach(cb => {
-        cb.checked = isChecked;
-        if (isChecked) selectedVocabularyIds.add(cb.value);
-    });
-    updateBatchVocabActionsVisibility();
-};
-
-// 监听词库checkbox变化（事件委托）
-document.addEventListener('change', (e) => {
-    if (e.target && e.target.classList.contains('vocab-checkbox')) {
-        const id = e.target.value;
-        if (e.target.checked) selectedVocabularyIds.add(id); else selectedVocabularyIds.delete(id);
-        updateBatchVocabActionsVisibility();
-        const all = document.getElementById('selectAllVocab');
+    // 监听记录checkbox变化
+    if (e.target && e.target.classList.contains('record-checkbox')) {
+        updateBatchRecordsActionsVisibility();
+        const all = document.getElementById('selectAllRecords');
         if (all) {
-            const boxes = document.querySelectorAll('.vocab-checkbox');
+            const boxes = document.querySelectorAll('.record-checkbox');
             const allChecked = boxes.length > 0 && Array.from(boxes).every(cb => cb.checked);
             all.checked = allChecked;
         }
     }
 });
 
-const updateBatchVocabActionsVisibility = () => {
-    const batchBar = document.querySelector('.batch-actions-vocab');
-    if (!batchBar) return;
-
-    const shouldShow = isBatchModeVocab && selectedVocabularyIds.size > 0;
-
-    if (shouldShow) {
-        batchBar.style.display = 'flex';
-        batchBar.classList.remove('hiding');
-        batchBar.classList.add('showing');
-    } else {
-        batchBar.classList.remove('showing');
-        batchBar.classList.add('hiding');
-        // 延迟隐藏以等待动画完成
-        setTimeout(() => {
-            if (batchBar.classList.contains('hiding')) {
-                batchBar.style.display = 'none';
-            }
-        }, 300);
-    }
-};
-
-// 批量删除词库（保护默认词库）
-const batchDeleteVocab = (event) => {
-    event.stopPropagation();
-    const ids = Array.from(selectedVocabularyIds).filter(id => id !== 'default');
-    const blocked = Array.from(selectedVocabularyIds).filter(id => id === 'default');
-    if (ids.length === 0) {
-        showToast(blocked.length ? '默认词库不可删除' : '请先选择要删除的词库', 'info');
-        return;
-    }
-
-    const message = `确定要删除选中的 ${ids.length} 个词库吗？其下单词也会一并删除。`;
-    const tip = createConfirmTip(message, () => {
-        try {
-            ids.forEach(id => deleteVocabulary(id));
-            showToast('批量删除成功', 'success');
-            selectedVocabularyIds.clear();
-            refreshVocabularies();
-        } catch (error) {
-            showToast('删除失败: ' + error.message, 'error');
-        }
-    });
-    const rect = event.target.getBoundingClientRect();
-    tip.style.left = `${rect.left + rect.width / 2}px`;
-    tip.style.top = `${rect.top - 10}px`;
-    tip.style.transform = 'translate(-50%, -100%)';
-};
-
-// 批量合并：弹出共用的合并对话框，源为多选
-const openBatchMergeVocab = () => {
-    const ids = Array.from(selectedVocabularyIds);
-    const sources = ids.filter(id => id !== 'default');
-    if (sources.length < 1) {
-        showToast('请选择要合并的词库（默认词库不可作为源）', 'info');
-        return;
-    }
-    // 复用现有合并弹窗：目标选项去除所有源
-    const modal = document.getElementById('mergeVocabularyModal');
-    const select = document.getElementById('targetVocabularySelect');
-    const vocabularies = getVocabularies().filter(v => !sources.includes(v.id));
-    select.innerHTML = vocabularies.map(v => `<option value="${escapeHTML(v.id)}">${escapeHTML(v.name)}</option>`).join('');
-    // 临时将 mergeSourceVocabularyId 保存为数组的 JSON 字符串，复用确认逻辑时识别
-    mergeSourceVocabularyId = JSON.stringify(sources);
-    openModal(modal);
-};
-
+/**
+ * 显示词库编辑模态框
+ * @param {string|null} vocabularyId - 词库ID，null表示新建，有值表示编辑
+ */
 const showVocabularyModal = (vocabularyId) => {
     currentVocabularyEditId = vocabularyId;
     const modal = document.getElementById('vocabularyModal');
 
     if (vocabularyId) {
+        // 编辑模式：加载现有词库数据
         const vocabulary = getVocabularyById(vocabularyId);
         if (!vocabulary) {
             showToast('词库不存在', 'error');
@@ -462,24 +320,33 @@ const showVocabularyModal = (vocabularyId) => {
         document.getElementById('vocabularyName').value = vocabulary.name;
         document.getElementById('vocabularyDescription').value = vocabulary.description;
     } else {
+        // 新建模式：清空表单
         document.getElementById('vocabularyModalTitle').textContent = '新建词库';
         document.getElementById('vocabularyName').value = '';
         document.getElementById('vocabularyDescription').value = '';
     }
 
+    // 打开模态框并聚焦到第一个输入框
     openModal(modal);
     focusFirstInput(modal);
 };
 
+/**
+ * 关闭词库编辑模态框
+ */
 const closeVocabularyModal = () => {
     closeModalEl(document.getElementById('vocabularyModal'));
-    currentVocabularyEditId = null;
+    currentVocabularyEditId = null; // 重置编辑状态
 };
 
+/**
+ * 保存词库（新建或更新）
+ */
 const saveVocabulary = () => {
     const name = document.getElementById('vocabularyName').value.trim();
     const description = document.getElementById('vocabularyDescription').value.trim();
 
+    // 验证输入
     if (!name) {
         showToast('词库名称不能为空', 'error');
         return;
@@ -487,12 +354,12 @@ const saveVocabulary = () => {
 
     try {
         if (currentVocabularyEditId) {
-            // 编辑词库
+            // 编辑现有词库
             const success = updateVocabulary(currentVocabularyEditId, name, description);
             if (success) {
                 showToast('词库更新成功', 'success');
                 closeVocabularyModal();
-                refreshVocabularies();
+                refreshVocabularies(); // 刷新词库列表
             } else {
                 showToast('词库更新失败', 'error');
             }
@@ -565,28 +432,32 @@ const confirmMergeVocabulary = () => {
     }
 
     try {
-        const tryParse = () => {
-            try { return JSON.parse(mergeSourceVocabularyId); } catch (_) { return null; }
-        };
-        const sources = tryParse();
-        if (Array.isArray(sources)) {
-            const targetVocab = getVocabularyById(targetVocabularyId);
-            sources.forEach(srcId => {
-                if (srcId === 'default') return; // 保护
-                mergeVocabularies(srcId, targetVocabularyId);
-            });
-            showToast(`已将 ${sources.length} 个词库合并到 "${targetVocab.name}"`, 'success');
-        } else {
-            const sourceVocab = getVocabularyById(mergeSourceVocabularyId);
-            const targetVocab = getVocabularyById(targetVocabularyId);
-            mergeVocabularies(mergeSourceVocabularyId, targetVocabularyId);
-            showToast(`词库 "${sourceVocab.name}" 已成功合并到 "${targetVocab.name}"`, 'success');
-        }
+        const sourceVocab = getVocabularyById(mergeSourceVocabularyId);
+        const targetVocab = getVocabularyById(targetVocabularyId);
+        mergeVocabularies(mergeSourceVocabularyId, targetVocabularyId);
+        showToast(`词库 "${sourceVocab.name}" 已成功合并到 "${targetVocab.name}"`, 'success');
         closeMergeVocabularyModal();
-        selectedVocabularyIds.clear();
         refreshVocabularies();
     } catch (error) {
         showToast('合并失败: ' + error.message, 'error');
+    }
+};
+
+/**
+ * 切换词库的启用/禁用状态
+ * @param {string} vocabularyId - 词库ID
+ */
+const toggleVocabularyStatus = (vocabularyId) => {
+    try {
+        const vocabulary = getVocabularyById(vocabularyId);
+        const newStatus = !vocabulary.enabled;
+
+        toggleVocabularyEnabled(vocabularyId);
+
+        const statusText = newStatus ? '启用' : '禁用';
+        showToast(`词库 "${vocabulary.name}" 已${statusText}`, 'success');
+    } catch (error) {
+        showToast('操作失败: ' + error.message, 'error');
     }
 };
 
@@ -609,6 +480,16 @@ const refreshWords = () => {
     // 只显示当前词库的单词
     const vocabularyWords = wordBank.filter(word => word.vocabularyId === currentVocabularyId);
 
+    // 对单词进行排序：收藏的单词排在前面，然后按单词字母顺序排序
+    vocabularyWords.sort((a, b) => {
+        // 如果一个收藏一个不收藏，收藏的排在前面
+        if (a.favorite !== b.favorite) {
+            return b.favorite ? 1 : -1;
+        }
+        // 都收藏或都不收藏时，按单词字母顺序排序
+        return a.word.toLowerCase().localeCompare(b.word.toLowerCase());
+    });
+
     const lastPracticeTime = {};
     practiceRecords.forEach(record => {
         if (record.word) {
@@ -630,7 +511,7 @@ const refreshWords = () => {
             row.classList.add('favorite-row');
         }
         row.innerHTML = `
-            <td class="batch-column" style="display: none;">
+            <td class="batch-column" style="${isBatchMode ? '' : 'display: none;'}">
                 <input type="checkbox" class="word-checkbox" value="${originalIndex}">
             </td>
             <td class="word-cell">${word.word}</td>
@@ -639,9 +520,9 @@ const refreshWords = () => {
             <td>${modeData.practiceCount}</td>
             <td>${weight.toFixed(2)}</td>
             <td class="action-btns">
-                <button class="btn btn-edit" onclick="showEditModal(${originalIndex})">编辑</button>
-                <button class="btn btn-delete" onclick="deleteWord(event, ${originalIndex})">删除</button>
-                <button class="btn btn-favorite ${word.favorite ? 'active' : ''}" onclick="toggleFavorite(${originalIndex})">
+                <button class="btn btn-edit ${isBatchMode ? 'disabled' : ''}" onclick="${isBatchMode ? '' : `showEditModal(${originalIndex})`}">编辑</button>
+                <button class="btn btn-delete ${isBatchMode ? 'disabled' : ''}" onclick="${isBatchMode ? '' : `deleteWord(event, ${originalIndex})`}">删除</button>
+                <button class="btn btn-favorite ${word.favorite ? 'active' : ''} ${isBatchMode ? 'disabled' : ''}" onclick="${isBatchMode ? '' : `toggleFavorite(${originalIndex})`}">
                     ${word.favorite ? '★' : '☆'}
                 </button>
             </td>
@@ -870,8 +751,10 @@ const toggleBatchMode = () => {
     if (!isBatchMode) {
         document.getElementById('selectAllWords').checked = false;
         document.querySelectorAll('.word-checkbox').forEach(cb => cb.checked = false);
+        lastCheckedWordIndex = -1; // 重置Shift选择索引
     }
     updateBatchActionsVisibility();
+    refreshWords(); // 重新刷新表格以更新按钮状态
 }
 
 const updateBatchActionsVisibility = () => {
@@ -903,7 +786,17 @@ const toggleSelectAllWords = () => {
 
 document.getElementById('wordsTable').addEventListener('click', (event) => {
     const row = event.target.closest('tr');
-    if (!row || !isBatchMode) return; // 只在批量模式下生效
+    if (!row) return;
+
+    // 在批量模式下阻止操作按钮的点击
+    if (isBatchMode && event.target.closest('button')) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+    }
+
+    // 只在批量模式下进行批量选择操作
+    if (!isBatchMode) return;
 
     const checkbox = row.querySelector('.word-checkbox');
     if (!checkbox) return;
@@ -923,11 +816,13 @@ document.getElementById('wordsTable').addEventListener('click', (event) => {
         checkbox.dispatchEvent(new Event('change'));
     }
 
+    // 支持Shift键进行范围选择
     if (lastCheckedWordIndex !== -1 && event.shiftKey) {
         const start = Math.min(lastCheckedWordIndex, currentIndex);
         const end = Math.max(lastCheckedWordIndex, currentIndex);
         const shouldBeChecked = checkboxes[currentIndex].checked;
 
+        // 批量设置范围内所有复选框的状态
         for (let i = start; i <= end; i++) {
             if (checkboxes[i].checked !== shouldBeChecked) {
                 checkboxes[i].checked = shouldBeChecked;
@@ -936,15 +831,30 @@ document.getElementById('wordsTable').addEventListener('click', (event) => {
         }
     }
 
+    // 记录当前选择的索引，用于下次Shift选择
     lastCheckedWordIndex = currentIndex;
 });
 
-
+// 记录练习记录表格中最后选择的复选框索引，用于Shift范围选择
 let lastCheckedRecordIndex = -1;
 
+/**
+ * 练习记录表格的批量选择事件处理
+ * 支持单击选择和Shift键范围选择
+ */
 document.getElementById('recordsTable').addEventListener('click', (event) => {
     const row = event.target.closest('tr');
-    if (!row || !isBatchModeRecords) return; // 只在批量模式下生效
+    if (!row) return;
+
+    // 在批量模式下阻止操作按钮的点击，防止误操作
+    if (isBatchModeRecords && event.target.closest('button')) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+    }
+
+    // 只在批量模式下进行批量选择操作
+    if (!isBatchModeRecords) return;
 
     const checkbox = row.querySelector('.record-checkbox');
     if (!checkbox) return;
@@ -963,11 +873,13 @@ document.getElementById('recordsTable').addEventListener('click', (event) => {
         checkbox.dispatchEvent(new Event('change'));
     }
 
+    // 支持Shift键进行范围选择（与单词表格相同的逻辑）
     if (lastCheckedRecordIndex !== -1 && event.shiftKey) {
         const start = Math.min(lastCheckedRecordIndex, currentIndex);
         const end = Math.max(lastCheckedRecordIndex, currentIndex);
         const shouldBeChecked = checkboxes[currentIndex].checked;
 
+        // 批量设置范围内所有复选框的状态
         for (let i = start; i <= end; i++) {
             if (checkboxes[i].checked !== shouldBeChecked) {
                 checkboxes[i].checked = shouldBeChecked;
@@ -976,10 +888,15 @@ document.getElementById('recordsTable').addEventListener('click', (event) => {
         }
     }
 
+    // 记录当前选择的索引，用于下次Shift选择
     lastCheckedRecordIndex = currentIndex;
 });
 
 
+/**
+ * 批量删除选中的单词
+ * @param {Event} event - 点击事件
+ */
 const batchDelete = (event) => {
     const selectedCheckboxes = document.querySelectorAll('.word-checkbox:checked');
     if (selectedCheckboxes.length === 0) {
@@ -990,7 +907,13 @@ const batchDelete = (event) => {
     const message = `确定要删除选中的 ${selectedCheckboxes.length} 个单词吗？`;
     const tip = createConfirmTip(message, () => {
         let { wordBank } = loadData();
-        const indicesToDelete = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value)).sort((a, b) => b - a);
+
+        // 获取要删除的索引并按降序排列，从后往前删除以避免索引变化问题
+        const indicesToDelete = Array.from(selectedCheckboxes)
+            .map(cb => parseInt(cb.value))
+            .sort((a, b) => b - a);
+
+        // 执行删除操作
         indicesToDelete.forEach(index => wordBank.splice(index, 1));
         localStorage.setItem('wordBank', JSON.stringify(wordBank));
         showToast('批量删除成功', 'success');
@@ -1020,16 +943,16 @@ const refreshRecords = () => {
         const modeInfo = getModeById(record.mode);
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td class="batch-column-records" style="display: none;">
+            <td class="batch-column-records" style="${isBatchModeRecords ? '' : 'display: none;'}">
                 <input type="checkbox" class="record-checkbox" value="${practiceRecords.indexOf(record)}">
             </td>
             <td>${new Date(record.date).toLocaleString()}</td>
             <td><span class="badge ${record.correct ? 'badge-success' : 'badge-error'}">${record.correct ? '正确' : '错误'}</span></td>
-            <td>${escapeHTML(record.word)}</td>
-            <td>${modeInfo ? escapeHTML(modeInfo.name) : (record.mode ? escapeHTML(record.mode) : 'N/A')}</td>
+            <td>${record.word}</td>
+            <td>${modeInfo ? modeInfo.name : (record.mode || 'N/A')}</td>
             <td class="action-btns">
-                 <button class="btn btn-edit" onclick="showEditRecordModal(${practiceRecords.indexOf(record)})">编辑</button>
-                 <button class="btn btn-delete" onclick="deleteRecord(event, ${practiceRecords.indexOf(record)})">删除</button>
+                 <button class="btn btn-edit ${isBatchModeRecords ? 'disabled' : ''}" onclick="${isBatchModeRecords ? '' : `showEditRecordModal(${practiceRecords.indexOf(record)})`}">编辑</button>
+                 <button class="btn btn-delete ${isBatchModeRecords ? 'disabled' : ''}" onclick="${isBatchModeRecords ? '' : `deleteRecord(event, ${practiceRecords.indexOf(record)})`}">删除</button>
             </td>
         `;
         tbody.appendChild(row);
@@ -1127,8 +1050,10 @@ const toggleBatchModeRecords = () => {
     if (!isBatchModeRecords) {
         document.getElementById('selectAllRecords').checked = false;
         document.querySelectorAll('.record-checkbox').forEach(cb => cb.checked = false);
+        lastCheckedRecordIndex = -1; // 重置Shift选择索引
     }
     updateBatchRecordsActionsVisibility();
+    refreshRecords(); // 重新刷新表格以更新按钮状态
 }
 
 const updateBatchRecordsActionsVisibility = () => {
@@ -1157,44 +1082,6 @@ const toggleSelectAllRecords = () => {
     document.querySelectorAll('.record-checkbox').forEach(cb => cb.checked = isChecked);
     updateBatchRecordsActionsVisibility();
 }
-
-document.getElementById('recordsTable').addEventListener('click', (event) => {
-    const row = event.target.closest('tr');
-    if (!row || !isBatchModeRecords) return; // 只在批量模式下生效
-
-    const checkbox = row.querySelector('.record-checkbox');
-    if (!checkbox) return;
-
-    // 如果点击的是按钮，则不进行选择操作
-    if (event.target.closest('button')) {
-        return;
-    }
-
-    const checkboxes = Array.from(document.querySelectorAll('#recordsTable .record-checkbox'));
-    const currentIndex = checkboxes.indexOf(checkbox);
-
-    // 如果点击的不是checkbox本身，则切换其状态
-    if (event.target.tagName !== 'INPUT') {
-        checkbox.checked = !checkbox.checked;
-        checkbox.dispatchEvent(new Event('change'));
-    }
-
-    if (lastCheckedRecordIndex !== -1 && event.shiftKey) {
-        const start = Math.min(lastCheckedRecordIndex, currentIndex);
-        const end = Math.max(lastCheckedRecordIndex, currentIndex);
-        const shouldBeChecked = checkboxes[currentIndex].checked;
-
-        for (let i = start; i <= end; i++) {
-            if (checkboxes[i].checked !== shouldBeChecked) {
-                checkboxes[i].checked = shouldBeChecked;
-                checkboxes[i].dispatchEvent(new Event('change'));
-            }
-        }
-    }
-
-    lastCheckedRecordIndex = currentIndex;
-});
-
 
 const batchDeleteRecords = (event) => {
     const selectedCheckboxes = document.querySelectorAll('.record-checkbox:checked');
@@ -1338,11 +1225,11 @@ const updateBatchFormatHelp = () => {
         : '选择特定模式时，可额外提供 "errors" 和 "practiceCount" 字段。';
     document.getElementById('jsonHelpExample').textContent = isAllModes
         ? `[
-  {"word": "vivid", "translations": ["生动的"]},
+  {"word": "vivid", "translations": ["生动的, 鲜明的"]},
   {"word": "ambiguous", "translations": ["模糊的"]}
 ]`
         : `[
-  {"word": "vivid", "translations": ["生动的"], "errors": 1, "practiceCount": 5},
+  {"word": "vivid", "translations": ["生动的, 鲜明的"], "errors": 1, "practiceCount": 5},
   {"word": "ambiguous", "translations": ["模糊的"], "errors": 0, "practiceCount": 2}
 ]`;
 
@@ -1504,7 +1391,7 @@ document.addEventListener('DOMContentLoaded', initializePage);
         }
     });
 
-    document.addEventListener('click', (e) => {
+    document.addEventListener('mousedown', (e) => {
         const modals = getVisibleModals();
         if (!modals.length) return;
         const top = modals[modals.length - 1];
@@ -1515,3 +1402,153 @@ document.addEventListener('DOMContentLoaded', initializePage);
         }
     }, true);
 })();
+
+// =================================================================
+// 开发者测试函数 - 用于测试合并去重功能
+// =================================================================
+
+/**
+ * 测试词库合并去重功能
+ * 在浏览器控制台调用：testMergeWithDuplicates()
+ */
+window.testMergeWithDuplicates = function () {
+    console.log('开始测试词库合并去重功能...');
+
+    try {
+        // 备份当前数据
+        const backupVocabularies = localStorage.getItem('vocabularies');
+        const backupWordBank = localStorage.getItem('wordBank');
+
+        // 创建测试数据
+        const testVocabularies = [
+            { id: 'test_source', name: '测试源词库', enabled: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+            { id: 'test_target', name: '测试目标词库', enabled: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+        ];
+
+        const testWords = [
+            // 源词库中的单词
+            {
+                word: 'apple',
+                translations: ['苹果'],
+                vocabularyId: 'test_source',
+                favorite: false,
+                modes: {
+                    context: { errors: 2, practiceCount: 5 },
+                    blank: { errors: 1, practiceCount: 3 }
+                }
+            },
+            {
+                word: 'banana',
+                translations: ['香蕉'],
+                vocabularyId: 'test_source',
+                favorite: true,
+                modes: {
+                    context: { errors: 0, practiceCount: 2 },
+                    blank: { errors: 1, practiceCount: 1 }
+                }
+            },
+            // 目标词库中的单词（包含重复）
+            {
+                word: 'apple', // 与源词库重复
+                translations: ['苹果', '果实'],
+                vocabularyId: 'test_target',
+                favorite: false,
+                modes: {
+                    context: { errors: 1, practiceCount: 3 },
+                    blank: { errors: 2, practiceCount: 4 }
+                }
+            },
+            {
+                word: 'orange',
+                translations: ['橙子'],
+                vocabularyId: 'test_target',
+                favorite: false,
+                modes: {
+                    context: { errors: 0, practiceCount: 1 },
+                    blank: { errors: 0, practiceCount: 1 }
+                }
+            }
+        ];
+
+        // 设置测试数据
+        localStorage.setItem('vocabularies', JSON.stringify(testVocabularies));
+        localStorage.setItem('wordBank', JSON.stringify(testWords));
+
+        console.log('测试前数据:');
+        console.log('源词库单词:', testWords.filter(w => w.vocabularyId === 'test_source'));
+        console.log('目标词库单词:', testWords.filter(w => w.vocabularyId === 'test_target'));
+
+        // 执行合并
+        mergeVocabularies('test_source', 'test_target');
+
+        // 检查结果
+        const resultWords = JSON.parse(localStorage.getItem('wordBank'));
+        const resultVocabularies = JSON.parse(localStorage.getItem('vocabularies'));
+        const targetWords = resultWords.filter(w => w.vocabularyId === 'test_target');
+
+        console.log('合并后结果:');
+        console.log('目标词库单词:', targetWords);
+        console.log('剩余词库:', resultVocabularies);
+
+        // 验证结果
+        const appleWord = targetWords.find(w => w.word.toLowerCase() === 'apple');
+        const bananaWord = targetWords.find(w => w.word.toLowerCase() === 'banana');
+        const orangeWord = targetWords.find(w => w.word.toLowerCase() === 'orange');
+
+        console.log('验证结果:');
+
+        // 验证apple单词的合并
+        if (appleWord) {
+            console.log('✓ apple单词存在');
+            console.log('翻译:', appleWord.translations);
+            console.log('应该包含: ["苹果", "果实"]');
+            console.log('context统计 - errors: ', appleWord.modes.context.errors, '(应为3)', 'practiceCount:', appleWord.modes.context.practiceCount, '(应为8)');
+            console.log('blank统计 - errors: ', appleWord.modes.blank.errors, '(应为3)', 'practiceCount:', appleWord.modes.blank.practiceCount, '(应为7)');
+        } else {
+            console.error('✗ apple单词缺失');
+        }
+
+        // 验证banana单词的转移
+        if (bananaWord) {
+            console.log('✓ banana单词存在');
+            console.log('收藏状态:', bananaWord.favorite, '(应为true)');
+        } else {
+            console.error('✗ banana单词缺失');
+        }
+
+        // 验证orange单词的保留
+        if (orangeWord) {
+            console.log('✓ orange单词保留');
+        } else {
+            console.error('✗ orange单词缺失');
+        }
+
+        // 验证源词库是否被删除
+        const sourceVocabExists = resultVocabularies.some(v => v.id === 'test_source');
+        if (!sourceVocabExists) {
+            console.log('✓ 源词库已删除');
+        } else {
+            console.error('✗ 源词库未删除');
+        }
+
+        // 恢复原始数据
+        if (backupVocabularies) {
+            localStorage.setItem('vocabularies', backupVocabularies);
+        }
+        if (backupWordBank) {
+            localStorage.setItem('wordBank', backupWordBank);
+        }
+
+        console.log('测试完成，数据已恢复');
+
+    } catch (error) {
+        console.error('测试过程中发生错误:', error);
+    }
+};
+
+// 监听词库状态按钮的状态变化事件
+document.addEventListener('statuschange', function (event) {
+    const { vocabularyId, status } = event.detail;
+    // 调用现有的toggleVocabularyStatus函数来处理状态变化
+    toggleVocabularyStatus(vocabularyId);
+});
