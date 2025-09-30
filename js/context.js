@@ -38,15 +38,24 @@ function updateStats() {
 }
 
 /**
+ * 处理重试按钮点击事件
+ */
+async function handleRetry() {
+  const sessionSuccess = await startNewSession();
+  if (!sessionSuccess) {
+    console.warn("重试会话创建失败：没有可用的单词或词库");
+  }
+}
+
+/**
  * 设置新的练习会话。
+ * @returns {Promise<boolean>} 返回是否成功加载了新单词
  */
 async function startNewSession() {
   translationInput.value = "";
   answerBox.innerHTML = "";
   answerBox.style.display = "none";
   submitBtn.textContent = "Submit";
-  submitBtn.disabled = false;
-  answerBtn.disabled = false;
   hasErrorInCurrentWord = false;
   answerShown = false;
 
@@ -74,15 +83,11 @@ async function startNewSession() {
       errorMessage = "启用的词库中没有可用单词，请检查词库设置。";
     }
 
-    contextBox.innerHTML = "";
-    const errorDiv = document.createElement("div");
-    errorDiv.className = "error";
-    errorDiv.textContent = errorMessage;
-    contextBox.appendChild(errorDiv);
+    contextBox.innerHTML = `<div class="error">${errorMessage}</div>`;
     submitBtn.disabled = true;
     hintBtn.disabled = true;
     answerBtn.disabled = true;
-    return;
+    return false; // 返回失败标志
   }
 
   contextBox.innerHTML = `
@@ -114,12 +119,21 @@ async function startNewSession() {
             <div class="error">
                 情境生成失败，请重试
                 <br>
-                <button class="error-refresh-btn" onclick="startNewSession()">🔄 重新生成</button>
+                <button class="error-refresh-btn" onclick="handleRetry()">🔄 重新生成</button>
             </div>
         `;
+    return false; // 返回失败标志
   } finally {
-    translationInput.focus();
+    if (currentWord) {
+      translationInput.focus();
+    }
   }
+
+  // 成功加载新单词，启用所有按钮
+  submitBtn.disabled = false;
+  hintBtn.disabled = false;
+  answerBtn.disabled = false;
+  return true;
 }
 
 /**
@@ -128,12 +142,21 @@ async function startNewSession() {
 async function checkTranslation() {
   // 如果答案已显示，点击提交按钮进入下一题
   if (answerShown) {
-    await startNewSession();
+    const sessionSuccess = await startNewSession();
+    if (!sessionSuccess) {
+      console.warn("新会话创建失败：没有可用的单词或词库");
+    }
     return;
   }
 
   const userInput = translationInput.value.trim();
   if (!userInput) return;
+
+  // 检查是否有可用的当前单词
+  if (!currentWord) {
+    showToast("当前没有可用的单词", "error");
+    return;
+  }
 
   submitBtn.disabled = true;
   submitBtn.textContent = "Submitting...";
@@ -172,20 +195,29 @@ async function checkTranslation() {
 
     if (isCorrect) {
       showToast("回答正确！", "success");
-      await startNewSession();
+      const sessionSuccess = await startNewSession();
+      // 如果新会话创建失败（没有可用单词），不重新启用按钮
+      if (!sessionSuccess) {
+        return;
+      }
     } else {
       showToast("回答错误，请再试一次", "error");
     }
   } catch (error) {
-    showToast("验证过程中发生错误", "error");
+    showToast("验证过程中发生错误: " + error.message, "error");
   } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = "Submit";
+    // 只有在没有成功创建新会话的情况下才重新启用按钮
+    if (currentWord) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit";
+    }
     // 答错时不清空输入框，允许用户修正
     if (isCorrect) {
       translationInput.value = "";
     }
-    translationInput.focus();
+    if (currentWord) {
+      translationInput.focus();
+    }
   }
 }
 
@@ -193,6 +225,12 @@ async function checkTranslation() {
  * 获取并显示提示。
  */
 async function getHint() {
+  // 检查是否有可用的当前单词
+  if (!currentWord) {
+    showToast("当前没有可用的单词", "error");
+    return;
+  }
+
   hintBtn.disabled = true;
   hintBtn.textContent = "Hinting...";
 
@@ -223,7 +261,7 @@ async function getHint() {
     }
   } catch (error) {
     console.error("生成提示失败:", error);
-    showToast("生成提示失败", "error");
+    showToast("生成提示失败: " + error.message, "error");
   } finally {
     hintBtn.disabled = false;
     hintBtn.textContent = "Hint";
@@ -234,6 +272,12 @@ async function getHint() {
  * 显示正确答案。
  */
 function showAnswer() {
+  // 检查是否有可用的当前单词
+  if (!currentWord) {
+    showToast("当前没有可用的单词", "error");
+    return;
+  }
+
   answerShown = true;
 
   // 记录为错误，因为用户放弃了
@@ -280,8 +324,11 @@ translationInput.addEventListener("keypress", (event) => {
   }
 });
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   initializeStorage();
   updateStats();
-  startNewSession();
+  const sessionSuccess = await startNewSession();
+  if (!sessionSuccess) {
+    console.warn("初始会话创建失败：没有可用的单词或词库");
+  }
 });

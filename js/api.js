@@ -4,8 +4,8 @@
 
 const API_BASE_URL = "https://aliyun.zaiwen.top/admin/chatbot";
 const API_KEY = "test";
-// const MODEL_NAME = "claude-sonnet-4";
-const MODEL_NAME = "gpt-4o";
+const MODEL_NAME = "claude-sonnet-4";
+// const MODEL_NAME = "gpt-4o";
 
 // =================================================================
 // 通用 API 获取函数
@@ -158,7 +158,7 @@ async function getSynonymsHint(word) {
  * @returns {Promise<string>} - 语境提示文本。
  */
 async function getContextualHint(word, contextText = "") {
-  let content = `Analyze this sentence with a blank: "${contextText}". What type of word should fill the blank? Describe the meaning and function needed in this context, but DO NOT say the actual word "${word.word}". Give a brief hint about what the missing word should express. Do NOT respond any other words.`;
+  let content = `Analyze this complete sentence with a blank(target word:${word.word}): "${contextText}". What type of word should fill the blank? Describe the meaning and function needed in this context, but DO NOT say the actual word "${word.word}". Give a brief hint about what the missing word should express. Do NOT respond any other words.`;
 
   if (!contextText) {
     content = `What kind of word would fit in a sentence context for "${word.word}"? Describe the function and meaning this type of word should have, but DO NOT mention "${word.word}" itself. Do NOT respond any other words.`;
