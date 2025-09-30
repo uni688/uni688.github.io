@@ -83,7 +83,11 @@ async function startNewSession() {
       errorMessage = "启用的词库中没有可用单词，请检查词库设置。";
     }
 
-    contextBox.innerHTML = `<div class="error">${errorMessage}</div>`;
+    contextBox.innerHTML = "";
+    const errorDiv = document.createElement("div");
+    errorDiv.className = "error";
+    errorDiv.textContent = errorMessage;
+    contextBox.appendChild(errorDiv);
     submitBtn.disabled = true;
     hintBtn.disabled = true;
     answerBtn.disabled = true;
