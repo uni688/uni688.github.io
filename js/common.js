@@ -765,8 +765,18 @@ const HintPanelManager = {
       console.error("AI提示重试失败:", error);
       this.hints[
         failedHintIndex
-      ].text = `❌ AI提示获取失败，请检查网络连接<br><button class="error-refresh-btn" onclick="HintPanelManager.retryLastAiHint()">🔄 重试</button>`;
+      ].text = `❌ AI提示获取失败，请检查网络连接<br><button class="error-refresh-btn">🔄 重试</button>`;
       this.updatePanel();
+      // Attach event handler to the retry button
+      const panel = this.container.querySelector(".hint-panel");
+      if (panel) {
+        const retryBtn = panel.querySelector(".error-refresh-btn");
+        if (retryBtn) {
+          retryBtn.addEventListener("click", () => {
+            this.retryLastAiHint();
+          });
+        }
+      }
     }
   },
 
