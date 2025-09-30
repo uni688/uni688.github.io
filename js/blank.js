@@ -251,8 +251,9 @@ async function getHint() {
         aiType, // AI提示类型：complex、simple、synonyms
         null, // 成功回调
         (error) => {
+          const errorMsg = (error && error.message) ? error.message : String(error);
           showToast(
-            "获取AI提示失败，请检查网络连接。错误提示：" + error,
+            "获取AI提示失败，请检查网络连接。错误提示：" + errorMsg,
             "error"
           );
         }
