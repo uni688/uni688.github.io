@@ -6,11 +6,10 @@ let mergeSourceVocabularyId = null; // 合并操作的源词库ID
 let lastCheckedWordIndex = -1; // 单词批量选择的最后索引（支持Shift选择）
 
 /**
- * 创建确认提示框的工具函数
+ * 创建确认提示框的工具函数。该函数会修改DOM：在页面中添加一个确认提示框元素，移除已存在的提示框，并添加相关事件监听器。
  * @param {string} message - 要显示的确认消息
  * @param {Function} onConfirm - 用户点击确认时执行的回调函数
  * @returns {HTMLDivElement} 创建并添加到页面的提示框DOM元素
- * @sideEffects 修改DOM：会在页面中添加一个确认提示框元素，移除已存在的提示框，并添加相关事件监听器
  */
 const createConfirmTip = (message, onConfirm) => {
   // 移除已存在的提示框，确保同时只有一个提示框
