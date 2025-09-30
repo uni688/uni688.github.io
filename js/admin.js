@@ -6,6 +6,25 @@ let mergeSourceVocabularyId = null; // 合并操作的源词库ID
 let lastCheckedWordIndex = -1; // 单词批量选择的最后索引（支持Shift选择）
 
 /**
+ * 安全地将字符串中的特殊HTML字符进行转义，防止XSS。
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeHTML(str) {
+    return str.replace(/[&<>"'`]/g, function (char) {
+        const escapeChars = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '`': '&#96;',
+        };
+        return escapeChars[char] || char;
+    });
+}
+
+/**
  * 创建确认提示框的工具函数
  * @param {string} message - 要显示的确认消息
  * @param {Function} onConfirm - 用户点击确认时执行的回调函数
@@ -386,7 +405,8 @@ const deleteVocabularyConfirm = (event, vocabularyId) => {
     const vocabulary = getVocabularyById(vocabularyId);
     const wordCount = getWordsByVocabulary(vocabularyId).length;
 
-    const message = `确定要删除词库 "${vocabulary.name}" 吗？这将同时删除其下的 ${wordCount} 个单词。`;
+    const safeName = escapeHTML(vocabulary.name);
+    const message = `确定要删除词库 "${safeName}" 吗？这将同时删除其下的 ${wordCount} 个单词。`;
     const tip = createConfirmTip(message, () => {
         try {
             deleteVocabulary(vocabularyId);
