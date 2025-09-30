@@ -145,6 +145,7 @@ async function checkTranslation() {
     const sessionSuccess = await startNewSession();
     if (!sessionSuccess) {
       console.warn("新会话创建失败：没有可用的单词或词库");
+      return;
     }
     return;
   }
