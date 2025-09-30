@@ -237,7 +237,7 @@
 
         const cloudSons = root.querySelectorAll(".cloud-son");
         setInterval(() => {
-            cloudSons.forEach(moveElementRandomly);  // 对所有 .cloud-son 元素执行移动
+            cloudSons.forEach(moveElementRandomly);  // 仅对所有 .cloud-son 元素执行移动
         }, 600); // 缩短云朵移动间隔        // 无需在最后再次调用onclick，因为我们已经在上面设置了初始状态
     };
 

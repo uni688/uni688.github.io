@@ -29,6 +29,7 @@ function initializeStorage() {
       id: "default",
       name: "默认词库",
       description: "",
+      enabled: true, // 新创建的词库默认启用
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -72,6 +73,9 @@ function initializeStorage() {
     migrateWordData();
   }
 
+  // 迁移词库数据，确保所有词库都有enabled属性
+  migrateVocabularyData();
+
   // 如果不存在，则初始化练习记录。
   if (!localStorage.getItem("practiceRecords")) {
     localStorage.setItem("practiceRecords", JSON.stringify([]));
@@ -98,6 +102,7 @@ function migrateWordData() {
           id: "default",
           name: "默认词库",
           description: "",
+          enabled: true, // 确保迁移时创建的默认词库也是启用状态
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
@@ -134,6 +139,40 @@ function migrateWordData() {
     }
   } catch (error) {
     console.error("迁移单词数据时出错:", error);
+  }
+}
+
+/**
+ * 迁移词库数据，确保所有词库都有enabled属性
+ */
+function migrateVocabularyData() {
+  try {
+    const vocabularies = JSON.parse(
+      localStorage.getItem("vocabularies") || "[]"
+    );
+    let needsMigration = false;
+
+    const migratedVocabularies = vocabularies.map((vocabulary) => {
+      if (vocabulary.enabled === undefined) {
+        needsMigration = true;
+        return {
+          ...vocabulary,
+          enabled: true, // 现有词库默认为启用状态
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return vocabulary;
+    });
+
+    if (needsMigration) {
+      localStorage.setItem(
+        "vocabularies",
+        JSON.stringify(migratedVocabularies)
+      );
+      console.log("词库数据已迁移，添加了enabled属性。");
+    }
+  } catch (error) {
+    console.error("迁移词库数据时出错:", error);
   }
 }
 
@@ -183,9 +222,28 @@ function getWeightedWord(currentMode, vocabularyId = null) {
   let words = JSON.parse(localStorage.getItem("wordBank") || "[]");
   if (!words || words.length === 0) return null;
 
+  // 获取所有词库信息
+  const vocabularies = JSON.parse(localStorage.getItem("vocabularies") || "[]");
+
   // 如果指定了词库ID，则只使用该词库的单词
   if (vocabularyId) {
     words = words.filter((word) => word.vocabularyId === vocabularyId);
+    if (words.length === 0) return null;
+
+    // 检查指定词库是否启用
+    const vocabulary = vocabularies.find((v) => v.id === vocabularyId);
+    if (vocabulary && vocabulary.enabled === false) {
+      return null;
+    }
+  } else {
+    // 没有指定词库ID，只选择来自启用词库的单词
+    const enabledVocabularyIds = vocabularies
+      .filter((v) => v.enabled !== false) // 默认启用或明确启用的词库
+      .map((v) => v.id);
+
+    words = words.filter((word) =>
+      enabledVocabularyIds.includes(word.vocabularyId)
+    );
     if (words.length === 0) return null;
   }
 
@@ -401,6 +459,7 @@ function createVocabulary(name, description = "") {
     id,
     name,
     description,
+    enabled: true, // 新词库默认启用
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -500,6 +559,32 @@ function mergeVocabularies(sourceVocabularyId, targetVocabularyId) {
   vocabularies.splice(sourceIndex, 1);
   localStorage.setItem("vocabularies", JSON.stringify(vocabularies));
 
+  return true;
+}
+
+/**
+ * 切换词库的启用/禁用状态
+ * @param {string} vocabularyId - 词库ID
+ * @returns {boolean} 是否切换成功
+ */
+function toggleVocabularyEnabled(vocabularyId) {
+  const vocabularies = getVocabularies();
+  const index = vocabularies.findIndex((v) => v.id === vocabularyId);
+
+  if (index === -1) {
+    throw new Error("词库不存在");
+  }
+
+  // 如果词库没有enabled属性，默认为true
+  if (vocabularies[index].enabled === undefined) {
+    vocabularies[index].enabled = true;
+  }
+
+  // 切换状态
+  vocabularies[index].enabled = !vocabularies[index].enabled;
+  vocabularies[index].updatedAt = new Date().toISOString();
+
+  localStorage.setItem("vocabularies", JSON.stringify(vocabularies));
   return true;
 }
 
@@ -682,13 +767,13 @@ const HintPanelManager = {
         failedHintIndex
       ].text = `❌ AI提示获取失败，请检查网络连接<br><button class="error-refresh-btn">🔄 重试</button>`;
       this.updatePanel();
-      // Attach event listener securely
+      // Attach event handler to the retry button
       const panel = this.container.querySelector(".hint-panel");
       if (panel) {
-        const btn = panel.querySelector(".error-refresh-btn");
-        if (btn) {
-          btn.addEventListener("click", () => {
-            HintPanelManager.retryLastAiHint();
+        const retryBtn = panel.querySelector(".error-refresh-btn");
+        if (retryBtn) {
+          retryBtn.addEventListener("click", () => {
+            this.retryLastAiHint();
           });
         }
       }
