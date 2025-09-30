@@ -123,9 +123,14 @@ async function startNewSession() {
             <div class="error">
                 情境生成失败，请重试
                 <br>
-                <button class="error-refresh-btn" onclick="handleRetry()">🔄 重新生成</button>
+                <button class="error-refresh-btn" id="error-refresh-btn">🔄 重新生成</button>
             </div>
         `;
+    // Attach event listener for retry button
+    const retryBtn = document.getElementById("error-refresh-btn");
+    if (retryBtn) {
+      retryBtn.addEventListener("click", handleRetry);
+    }
     return false; // 返回失败标志
   } finally {
     if (currentWord) {
