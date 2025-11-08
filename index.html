@@ -2,140 +2,296 @@
 <html lang="zh-CN">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI English Learning Assistant</title>
-    <link rel="stylesheet" href="css/style.css">
-    <style>
-        .container {
-            max-width: 800px;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI English Learning Assistant</title>
 
-        .mode-selection {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 2rem;
-            margin: 3rem 0;
-            justify-content: center;
-        }
+  <!-- PWA Meta 标签 -->
+  <meta name="theme-color" content="#667eea">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AI英语学习">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="96x96" href="/icons/icon-96x96.png">
+  <link rel="apple-touch-icon" sizes="128x128" href="/icons/icon-128x128.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png">
+  <link rel="apple-touch-icon" sizes="384x384" href="/icons/icon-384x384.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512x512.png">
+  <link rel="icon" href="/icons/icon.png" type="image/png">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
 
-        .mode-card {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            padding: 2rem;
-            width: 300px;
-            text-align: center;
-            border: 1px solid #e2e8f0;
-            transition: all 0.3s ease;
-            position: relative;
-            cursor: pointer;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 280px;
-        }
+  <link rel="stylesheet" href="css/style.css">
+  <!-- PJAX 平滑页面切换 - 已暂停 -->
+  <!-- <script src="js/pjax.js"></script> -->
+  <style>
+    .container {
+      max-width: 800px;
+    }
 
-        .mode-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-            border-color: var(--primary);
-        }
+    .mode-selection {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      margin: 3rem 0;
+      justify-content: center;
+    }
 
-        .mode-card h3 {
-            color: var(--primary);
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
-        }
+    .mode-card {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      padding: 2rem;
+      width: 300px;
+      text-align: center;
+      border: 1px solid #e2e8f0;
+      transition: all 0.3s ease;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 280px;
+    }
 
-        .mode-card p {
-            color: #4b5563;
-            margin-bottom: 1.5rem;
-            flex-grow: 1;
-        }
+    .mode-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+      border-color: var(--primary);
+    }
 
-        .mode-card .btn {
-            margin-top: auto;
-        }
+    .mode-card h3 {
+      color: var(--primary);
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
 
-        .mode-card .icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: var(--secondary);
-        }
+    .mode-card p {
+      color: #4b5563;
+      margin-bottom: 1.5rem;
+      flex-grow: 1;
+    }
 
-        .mode-card-content {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
+    .mode-card .btn {
+      margin-top: auto;
+    }
 
-        .admin-link {
-            display: block;
-            text-align: center;
-            margin-top: 2rem;
-            color: #6b7280;
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.2s;
-        }
+    .mode-card .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: var(--secondary);
+    }
 
-        .admin-link:hover {
-            color: var(--primary);
-        }
+    .mode-card-content {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
 
-        /* 移动端适配 */
-        @media (max-width: 640px) {
-            .mode-selection {
-                flex-direction: column;
-                align-items: center;
-                gap: 1.5rem;
-            }
+    .user-info {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid #e2e8f0;
+    }
 
-            .mode-card {
-                width: 100%;
-                max-width: 320px;
-            }
-        }
-    </style>
+    .user-stats {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 0.25rem;
+    }
+
+    .theme-toggle {
+      padding: 0.5rem 1rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .theme-toggle:hover {
+      background: var(--secondary);
+      transform: translateY(-2px);
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .quick-action-btn {
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      color: white;
+      border: none;
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .quick-action-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+    }
+
+    .admin-link {
+      display: block;
+      text-align: center;
+      margin-top: 2rem;
+      color: #6b7280;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .admin-link:hover {
+      color: var(--primary);
+    }
+
+    /* 移动端适配 */
+    @media (max-width: 640px) {
+      .mode-selection {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+      }
+
+      .mode-card {
+        width: 100%;
+        max-width: 320px;
+      }
+    }
+  </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>AI English Learning Assistant</h1>
-            <p>选择学习模式开始练习</p>
-        </div>
-
-        <div class="mode-selection">
-            <div class="mode-card" onclick="location.href='context.html'">
-                <div class="mode-card-content">
-                    <div class="icon">📚</div>
-                    <h3>上下文猜词</h3>
-                    <p>根据英语上下文猜测单词的中文含义，提高词汇理解能力</p>
-                    <a href="context.html" class="btn">开始练习</a>
-                </div>
-            </div>
-
-            <div class="mode-card" onclick="location.href='blank.html'">
-                <div class="mode-card-content">
-                    <div class="icon">🔍</div>
-                    <h3>填空练习</h3>
-                    <p>根据句子上下文填入正确的单词，巩固单词拼写和使用</p>
-                    <a href="blank.html" class="btn">开始练习</a>
-                </div>
-            </div>
-        </div>
-
-        <a href="admin.html" class="admin-link">词库与数据管理</a>
+  <div class="container">
+    <div class="header">
+      <h1>AI English Learning Assistant</h1>
+      <p>选择学习模式开始练习</p>
     </div>
 
-    <script src="js/common.js"></script>
-    <script>
-        // 在主页面初始化存储，确保数据已准备好供其他页面使用
-        initializeStorage();
-    </script>
+    <!-- 用户信息卡片 -->
+    <div class="user-info">
+      <div class="user-stats">
+        <div class="stat-item">
+          <div class="stat-value" id="userLevel">1</div>
+          <div class="stat-label">🏆 等级</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="userCoins">0</div>
+          <div class="stat-label">💰 金币</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="userStreak">0</div>
+          <div class="stat-label">🔥 连续天数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="userWords">0</div>
+          <div class="stat-label">📚 累计单词</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mode-selection">
+      <div class="mode-card" onclick="location.href='context.html'">
+        <div class="mode-card-content">
+          <div class="icon">📚</div>
+          <h3>上下文猜词</h3>
+          <p>根据英语上下文猜测单词的中文含义，提高词汇理解能力</p>
+          <a href="context.html" class="btn">开始练习</a>
+        </div>
+      </div>
+
+      <div class="mode-card" onclick="location.href='blank.html'">
+        <div class="mode-card-content">
+          <div class="icon">🔍</div>
+          <h3>填空练习</h3>
+          <p>根据句子上下文填入正确的单词，巩固单词拼写和使用</p>
+          <a href="blank.html" class="btn">开始练习</a>
+        </div>
+      </div>
+
+      <div class="mode-card" onclick="location.href='mix.html'">
+        <div class="mode-card-content">
+          <div class="icon">🎲</div>
+          <h3>混合模式</h3>
+          <p>融合多种练习方式，随机挑战，全面提升英语能力</p>
+          <a href="mix.html" class="btn">开始练习</a>
+        </div>
+      </div>
+    </div>
+
+    <a href="admin.html" class="admin-link">高级数据管理</a>
+  </div>
+
+  <script src="js/common.js"></script>
+  <script>
+    // 在主页面初始化存储，确保数据已准备好供其他页面使用
+    initializeStorage();
+    initializeUserProfile();
+    initializeTheme();
+    updateStreak();
+
+    // 更新用户信息显示
+    function updateUserDisplay() {
+      const profile = getUserProfile();
+      document.getElementById('userLevel').textContent = profile.level;
+      document.getElementById('userCoins').textContent = profile.coins;
+      document.getElementById('userStreak').textContent = profile.streak;
+      document.getElementById('userWords').textContent = profile.totalWordsLearned;
+    }
+
+    updateUserDisplay();
+  </script>
+
+  <!-- Toast通知容器 -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- 主题切换按钮 -->
+  <script src="js/theme-toggle-button.js"></script>
+
+  <!-- 移动端导航栏 -->
+  <script src="js/mobile-nav.js"></script>
+
+  <!-- Service Worker 注册 -->
+  <script src="js/sw-register.js"></script>
 </body>
 
 </html>

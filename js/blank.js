@@ -15,12 +15,23 @@ let hasErrorInCurrentWord = false;
 let answerShown = false;
 
 /**
- * 在句子中创建空白输入框。
+ * 创建带有输入框的填空句子HTML。
  * @param {string} sentence - 完整的句子。
  * @param {string} word - 要留空的单词。
  * @returns {string} - 包含输入框的HTML字符串。
  */
 function createBlankSentenceHTML(sentence, word) {
+  // 参数验证
+  if (!sentence || typeof sentence !== "string") {
+    console.error("[createBlankSentenceHTML] Invalid sentence:", sentence);
+    return '<p style="color: var(--error);">句子生成失败</p>';
+  }
+
+  if (!word || typeof word !== "string") {
+    console.error("[createBlankSentenceHTML] Invalid word:", word);
+    return sentence; // 返回原句子
+  }
+
   // 使用正则表达式匹配完整单词并替换为输入框
   const regex = new RegExp(`\\b${word}\\b`, "gi");
   return sentence.replace(
@@ -44,121 +55,95 @@ function validateAnswer(userInput, correctWord) {
  * 处理重试按钮点击事件
  */
 async function handleRetry() {
-  const sessionSuccess = await startNewSession();
-  if (!sessionSuccess) {
-    console.warn("重试会话创建失败：没有可用的单词或词库");
+  const result = await startNewSession();
+  if (!result.success) {
+    logMessage("warn", "Blank", "重试会话创建失败：没有可用的单词或词库");
   }
 }
 
 /**
- * 设置新的练习会话。
- * @returns {Promise<boolean>} 返回是否成功加载了新单词
+ * 渲染填空内容到容器
+ * @param {HTMLElement} container - 容器元素
+ * @param {Object} word - 单词对象
+ * @param {string} content - 生成的句子内容
+ */
+function renderBlankContent(container, word, content) {
+  // 参数验证
+  if (!content || typeof content !== "string") {
+    console.error("[renderBlankContent] Invalid content:", content);
+    container.innerHTML = '<p style="color: var(--error);">句子生成失败</p>';
+    return;
+  }
+
+  if (!word || !word.word) {
+    console.error("[renderBlankContent] Invalid word:", word);
+    container.innerHTML = '<p style="color: var(--error);">单词数据错误</p>';
+    return;
+  }
+
+  // 将目标单词替换为输入框
+  const blankSentenceHTML = createBlankSentenceHTML(content, word.word);
+
+  container.innerHTML = `
+    <h3>Fill in the Blank</h3>
+    <p class="blank-sentence">${blankSentenceHTML}</p>
+  `;
+
+  // 为输入框绑定事件监听器
+  const blankInput = document.getElementById("blankInput");
+  if (blankInput) {
+    blankInput.focus(); // 自动聚焦到输入框
+
+    // 更新提示面板的输入框引用
+    HintPanelManager.inputElement = blankInput;
+
+    // 绑定回车键提交事件
+    blankInput.addEventListener("keypress", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        checkAnswer();
+      }
+    });
+  }
+
+  // 添加淡入动画
+  container.style.opacity = "0";
+  setTimeout(() => (container.style.opacity = "1"), 50);
+}
+
+/**
+ * 设置新的练习会话
+ * @returns {Promise<Object>} 返回包含成功状态和单词的对象
  */
 async function startNewSession() {
-  // 重置会话状态
+  // 重置UI状态
   answerShown = false;
   submitBtn.textContent = "Submit";
-  answerBox.style.display = "none";
-  answerBox.innerHTML = "";
   hasErrorInCurrentWord = false;
 
-  // 初始化并清空提示面板（这里inputEl将在生成填空句子后设置）
+  // 初始化并清空提示面板
   initHintPanel(hintPanelContainer, null);
   clearHints();
 
-  // 显示加载骨架屏
-  showSkeleton(contextBox);
+  // 使用公共会话启动函数
+  const result = await startPracticeSession(CURRENT_MODE, {
+    container: contextBox,
+    answerBox: answerBox,
+    buttons: {
+      submit: submitBtn,
+      hint: hintBtn,
+      answer: answerBtn,
+    },
+    contentGenerator: generateBlankSentence,
+    renderContent: renderBlankContent,
+    onSuccess: (word, content) => {
+      currentWord = word;
+      sentenceText = content;
+    },
+    onError: handleRetry,
+  });
 
-  // 获取权重随机选择的单词
-  currentWord = getWeightedWord(CURRENT_MODE);
-
-  // 处理无可用单词的情况
-  if (!currentWord) {
-    const vocabularies = JSON.parse(
-      localStorage.getItem("vocabularies") || "[]"
-    );
-    const enabledVocabs = vocabularies.filter((v) => v.enabled !== false);
-    const hasWords =
-      JSON.parse(localStorage.getItem("wordBank") || "[]").length > 0;
-
-    // 根据不同情况显示相应错误信息
-    let errorMessage;
-    if (!hasWords) {
-      errorMessage = "词库为空，请先在管理页面添加单词。";
-    } else if (enabledVocabs.length === 0) {
-      errorMessage = "所有词库都已被禁用，请在管理页面启用至少一个词库。";
-    } else {
-      errorMessage = "启用的词库中没有可用单词，请检查词库设置。";
-    }
-
-    // 显示错误信息并禁用相关按钮
-    contextBox.innerHTML = `<div class="error">${errorMessage}</div>`;
-    submitBtn.disabled = true;
-    hintBtn.disabled = true;
-    answerBtn.disabled = true;
-    return false; // 返回失败标志
-  }
-
-  // 显示加载界面
-  contextBox.innerHTML = `
-        <h3>fill in the blank</h3>
-        <div class="skeleton-fade-in">
-            <div class="skeleton skeleton-line full"></div>
-            <div class="skeleton skeleton-line full"></div>
-            <div class="skeleton skeleton-line medium"></div>
-        </div>
-    `;
-  contextBox.style.opacity = "0";
-  setTimeout(() => (contextBox.style.opacity = "1"), 50);
-
-  try {
-    // 调用API生成包含当前单词的句子
-    sentenceText = await generateBlankSentence(currentWord);
-
-    // 将目标单词替换为输入框
-    const blankSentenceHTML = createBlankSentenceHTML(
-      sentenceText,
-      currentWord.word
-    );
-
-    // 替换骨架屏为实际内容
-    const sentenceArea = contextBox.querySelector("div.skeleton-fade-in");
-    if (sentenceArea) {
-      sentenceArea.outerHTML = `<p class="blank-sentence">${blankSentenceHTML}</p>`;
-    }
-
-    // 为输入框绑定事件监听器
-    const blankInput = document.getElementById("blankInput");
-    if (blankInput) {
-      blankInput.focus(); // 自动聚焦到输入框
-
-      // 更新提示面板的输入框引用
-      HintPanelManager.inputElement = blankInput;
-
-      // 绑定回车键提交事件
-      blankInput.addEventListener("keypress", (event) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          checkAnswer();
-        }
-      });
-    }
-  } catch (error) {
-    contextBox.innerHTML = `
-            <div class="error">
-                生成失败，请重试
-                <br>
-                <button class="error-refresh-btn" onclick="handleRetry()">🔄 重新生成</button>
-            </div>
-        `;
-    return false; // 返回失败标志
-  }
-
-  // 成功加载新单词，启用所有按钮
-  submitBtn.disabled = false;
-  hintBtn.disabled = false;
-  answerBtn.disabled = false;
-  return true;
+  return result;
 }
 
 /**
@@ -167,13 +152,18 @@ async function startNewSession() {
 async function checkAnswer() {
   if (answerShown) {
     const sessionSuccess = await startNewSession();
-    if (!sessionSuccess) {
-      console.warn("新会话创建失败：没有可用的单词或词库");
+    if (!sessionSuccess.success) {
+      logMessage("warn", "Blank", "新会话创建失败：没有可用的单词或词库");
     }
     return;
   }
 
   const blankInput = document.getElementById("blankInput");
+  if (!blankInput) {
+    showToast("输入框不存在", "error");
+    return;
+  }
+
   const userInput = blankInput.value.trim();
   if (!userInput) {
     showToast("请输入答案", "info");
@@ -192,22 +182,47 @@ async function checkAnswer() {
   try {
     const isCorrect = validateAnswer(userInput, currentWord.word);
 
+    // 更新单词统计数据
+    const wordBank = safeGetItem(STORAGE_KEYS.WORD_BANK, []);
+    const wordIndex = wordBank.findIndex((w) => w.word === currentWord.word);
+    if (wordIndex !== -1) {
+      const modeData = getWordModeData(wordBank[wordIndex], CURRENT_MODE);
+      modeData.practiceCount++;
+      if (!isCorrect && !hasErrorInCurrentWord) {
+        modeData.errors++;
+        hasErrorInCurrentWord = true;
+      }
+      wordBank[wordIndex].modes[CURRENT_MODE] = modeData;
+      safeSetItem(STORAGE_KEYS.WORD_BANK, wordBank);
+    }
+
     updateRecords(currentWord.word, isCorrect, CURRENT_MODE);
 
     if (isCorrect) {
+      // 奖励正确答案
+      rewardCorrectAnswer(CURRENT_MODE, !hasErrorInCurrentWord);
+
+      // 更新用户信息栏
+      if (typeof updateUserInfoBar === "function") {
+        updateUserInfoBar();
+      }
+
       showToast("回答正确！", "success");
       const sessionSuccess = await startNewSession();
       // 如果新会话创建失败（没有可用单词），不重新启用按钮
-      if (!sessionSuccess) {
+      if (!sessionSuccess.success) {
         return;
       }
     } else {
       showToast("回答错误，请再试一次", "error");
       blankInput.value = "";
-      blankInput.focus();
+      if (blankInput.focus) {
+        blankInput.focus();
+      }
     }
   } catch (error) {
-    showToast("验证过程中发生错误: " + error.message, "error");
+    console.error("验证过程错误:", error);
+    showToast("验证过程中发生错误", "error");
   } finally {
     // 只有在没有成功创建新会话的情况下才重新启用按钮
     if (currentWord) {
@@ -251,7 +266,8 @@ async function getHint() {
         aiType, // AI提示类型：complex、simple、synonyms
         null, // 成功回调
         (error) => {
-          const errorMsg = (error && error.message) ? error.message : String(error);
+          const errorMsg =
+            error && error.message ? error.message : String(error);
           showToast(
             "获取AI提示失败，请检查网络连接。错误提示：" + errorMsg,
             "error"
@@ -297,11 +313,39 @@ function showAnswer() {
   showToast("已显示答案，点击 Next 进入下一题", "info");
 }
 
-// 初始加载
-document.addEventListener("DOMContentLoaded", async () => {
-  initializeStorage();
-  const sessionSuccess = await startNewSession();
-  if (!sessionSuccess) {
-    console.warn("初始会话创建失败：没有可用的单词或词库");
-  }
+// 初始化键盘快捷键
+initKeyboardShortcuts({
+  submit: checkAnswer,
+  hint: getHint,
+  answer: showAnswer,
+  next: () => {
+    if (answerShown) {
+      startNewSession();
+    }
+  },
 });
+
+// 页面初始化
+const initPage = async () => {
+  try {
+    const storageReady = initializeStorage();
+    if (!storageReady) {
+      console.warn("存储初始化失败，应用可能无法正常工作");
+    }
+    const result = await startNewSession();
+    if (!result.success) {
+      logMessage("warn", "Blank", "初始会话创建失败：没有可用的单词或词库");
+    }
+  } catch (error) {
+    console.error("页面初始化失败:", error);
+    showToast("页面加载失败，请刷新页面", "error", 5000);
+  }
+};
+
+// 检查DOM是否已准备好
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initPage);
+} else {
+  // DOM已经加载完成
+  initPage();
+}
