@@ -399,10 +399,7 @@ function performGacha() {
     rarity = "legendary";
   } else if (random < rarityRates.legendary + rarityRates.epic) {
     rarity = "epic";
-  } else if (
-    random <
-    rarityRates.legendary + rarityRates.epic + rarityRates.rare
-  ) {
+  } else if (random < rarityRates.legendary + rarityRates.epic + rarityRates.rare) {
     rarity = "rare";
   } else {
     rarity = "common";
