@@ -306,7 +306,7 @@ async function getSimpleHint(word, contextText = "") {
 /**
  * 获取AI生成的近义词提示（第三层提示）。
  * @param {Object} word - 包含单词和翻译的对象。
- * @returns {Promise<string>} - 近义词提示文本。
+ * @returns {Promise<string>} - 包含若干近义词（several synonyms）提示文本。
  */
 async function getSynonymsHint(word) {
   const content = `List several synonyms for the word "${word.word}". Only provide the synonyms, separated by commas. Do not include the original word. Do NOT respond any other words.`;
