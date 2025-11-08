@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商店 - AI English Learning</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/icons/icon.png" type="image/png">
+
+    <link rel="stylesheet" href="css/style.css">
+    <!-- PJAX 平滑页面切换 - 已暂停 -->
+    <!-- <script src="js/pjax.js"></script> -->
+    <style>
+        .container {
+            max-width: 1200px;
+        }
+
+        .balance-card {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+        }
+
+        .balance-amount {
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 1rem 0;
+        }
+
+        .shop-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            padding: 0.5rem;
+            background: #f1f5f9;
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: #64748b;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+
+        .tab-btn.active {
+            color: white;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: var(--primary);
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-btn:active {
+            transform: translateY(0);
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .shop-item {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border: 2px solid #e2e8f0;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .shop-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+        }
+
+        .item-preview {
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
+        }
+
+        .item-info {
+            padding: 1.5rem;
+        }
+
+        .item-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .item-desc {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-price {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #f59e0b;
+        }
+
+        .buy-btn {
+            padding: 0.6rem 1.2rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .buy-btn:hover {
+            background: var(--secondary);
+            transform: scale(1.05);
+        }
+
+        .buy-btn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .owned-badge {
+            background: #10b981;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .gacha-section {
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            color: white;
+            padding: 3rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .gacha-title {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .gacha-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .gacha-btn {
+            padding: 1rem 2rem;
+            background: white;
+            color: var(--primary);
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .gacha-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .gacha-result {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: white;
+            padding: 3rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            text-align: center;
+            min-width: 350px;
+            animation: resultShow 0.5s ease forwards;
+        }
+
+        @keyframes resultShow {
+            to {
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .result-item {
+            font-size: 5rem;
+            margin: 1rem 0;
+            animation: bounce 0.6s ease infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .items-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .shop-tabs {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 商店</h1>
+            <p>使用金币购买主题皮肤和特殊道具</p>
+        </div>
+
+        <!-- 金币余额 -->
+        <div class="balance-card">
+            <div>💰 我的金币</div>
+            <div class="balance-amount" id="coinBalance">0</div>
+            <p style="font-size: 0.9rem; opacity: 0.9;">通过学习获得更多金币</p>
+        </div>
+
+        <!-- 抽卡系统 -->
+        <div class="gacha-section">
+            <div class="gacha-title">🎰 幸运抽卡</div>
+            <p>试试你的运气，抽取稀有皮肤和道具！</p>
+            <div class="gacha-buttons">
+                <button class="gacha-btn" onclick="drawGacha(1)">
+                    单抽 100 金币
+                </button>
+                <button class="gacha-btn" onclick="drawGacha(10)">
+                    十连抽 900 金币 <span style="color: #ef4444;">（9折优惠）</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 商店标签页 -->
+        <div class="shop-tabs">
+            <button class="tab-btn active" data-tab="themes" onclick="switchTab('themes')">
+                🎨 主题皮肤
+            </button>
+            <button class="tab-btn" data-tab="items" onclick="switchTab('items')">
+                ✨ 特殊道具
+            </button>
+            <button class="tab-btn" data-tab="inventory" onclick="switchTab('inventory')">
+                🎒 我的物品
+            </button>
+        </div>
+
+        <!-- 主题皮肤 -->
+        <div class="tab-content" id="tab-themes">
+            <div class="items-grid" id="themesGrid">
+                <!-- 主题将通过 JS 动态生成 -->
+            </div>
+        </div>
+
+        <!-- 特殊道具 -->
+        <div class="tab-content" id="tab-items" style="display: none;">
+            <div class="items-grid" id="itemsGrid">
+                <!-- 道具将通过 JS 动态生成 -->
+            </div>
+        </div>
+
+        <!-- 我的物品 -->
+        <div class="tab-content" id="tab-inventory" style="display: none;">
+            <div class="items-grid" id="inventoryGrid">
+                <!-- 已购物品将通过 JS 动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast通知容器 -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="js/common.js"></script>
+    <script src="js/shop.js"></script>
+    <script src="js/theme-toggle-button.js"></script>
+    <script src="js/mobile-nav.js"></script>
+</body>
+
+</html>

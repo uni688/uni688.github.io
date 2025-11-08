@@ -16,12 +16,13 @@ let currentWord = null;
 let contextText = "";
 let hasErrorInCurrentWord = false;
 let answerShown = false;
+let isSubmitting = false; // 防止重复提交标志
 
 /**
  * 更新页面上当前模式的统计数据显示。
  */
 function updateStats() {
-  const records = JSON.parse(localStorage.getItem("practiceRecords") || "[]");
+  const records = safeGetItem(STORAGE_KEYS.PRACTICE_RECORDS, []);
   const modeRecords = records.filter((r) => r.mode === CURRENT_MODE);
   const total = modeRecords.length;
   const correct = modeRecords.filter((r) => r.correct).length;
@@ -41,20 +42,61 @@ function updateStats() {
  * 处理重试按钮点击事件
  */
 async function handleRetry() {
-  const sessionSuccess = await startNewSession();
-  if (!sessionSuccess) {
-    console.warn("重试会话创建失败：没有可用的单词或词库");
+  const result = await startNewSession();
+  if (!result.success) {
+    logMessage("warn", "Context", "重试会话创建失败：没有可用的单词或词库");
   }
 }
 
 /**
- * 设置新的练习会话。
- * @returns {Promise<boolean>} 返回是否成功加载了新单词
+ * 渲染上下文内容到容器
+ * @param {HTMLElement} container - 容器元素
+ * @param {Object} word - 单词对象
+ * @param {string} content - 生成的上下文内容
+ */
+function renderContextContent(container, word, content) {
+  // 参数验证
+  if (!content || typeof content !== "string") {
+    console.error("[renderContextContent] Invalid content:", content);
+    container.innerHTML = '<p style="color: var(--error);">内容生成失败</p>';
+    return;
+  }
+
+  if (!word || !word.word) {
+    console.error("[renderContextContent] Invalid word:", word);
+    container.innerHTML = '<p style="color: var(--error);">单词数据错误</p>';
+    return;
+  }
+
+  container.innerHTML = `
+    <h3>Contextual Situation</h3>
+    <p id="contextParagraph"></p>
+    <p style="margin-top: 1rem;"><strong>Target Word: ${word.word}</strong></p>
+  `;
+
+  // 高亮显示段落中目标单词的出现位置（不区分大小写）
+  const contextPara = container.querySelector("#contextParagraph");
+  if (contextPara) {
+    const re = new RegExp(`\\b${word.word}\\b`, "gi");
+    const highlighted = content.replace(
+      re,
+      (match) => `<mark class="highlight">${match}</mark>`
+    );
+    contextPara.innerHTML = highlighted;
+  }
+
+  // 添加淡入动画
+  container.style.opacity = "0";
+  setTimeout(() => (container.style.opacity = "1"), 50);
+}
+
+/**
+ * 设置新的练习会话
+ * @returns {Promise<Object>} 返回包含成功状态和单词的对象
  */
 async function startNewSession() {
+  // 重置UI状态
   translationInput.value = "";
-  answerBox.innerHTML = "";
-  answerBox.style.display = "none";
   submitBtn.textContent = "Submit";
   hasErrorInCurrentWord = false;
   answerShown = false;
@@ -63,104 +105,54 @@ async function startNewSession() {
   initHintPanel(hintPanelContainer, translationInput);
   clearHints();
 
-  showSkeleton(contextBox);
-  currentWord = getWeightedWord(CURRENT_MODE);
-
-  if (!currentWord) {
-    const vocabularies = JSON.parse(
-      localStorage.getItem("vocabularies") || "[]"
-    );
-    const enabledVocabs = vocabularies.filter((v) => v.enabled !== false);
-    const hasWords =
-      JSON.parse(localStorage.getItem("wordBank") || "[]").length > 0;
-
-    let errorMessage;
-    if (!hasWords) {
-      errorMessage = "词库为空，请先在管理页面添加单词。";
-    } else if (enabledVocabs.length === 0) {
-      errorMessage = "所有词库都已被禁用，请在管理页面启用至少一个词库。";
-    } else {
-      errorMessage = "启用的词库中没有可用单词，请检查词库设置。";
-    }
-
-    contextBox.innerHTML = "";
-    const errorDiv = document.createElement("div");
-    errorDiv.className = "error";
-    errorDiv.textContent = errorMessage;
-    contextBox.appendChild(errorDiv);
-    submitBtn.disabled = true;
-    hintBtn.disabled = true;
-    answerBtn.disabled = true;
-    return false; // 返回失败标志
-  }
-
-  contextBox.innerHTML = `
-    <h3>Contextual Situation</h3>
-    <div class="skeleton-fade-in">
-        <div class="skeleton skeleton-line full"></div>
-        <div class="skeleton skeleton-line full"></div>
-        <div class="skeleton skeleton-line medium"></div>
-    </div>
-    <p style="margin-top: 1rem;"><strong>Target Word: ${currentWord.word}</strong></p>
-`;
-  contextBox.style.opacity = "0";
-  setTimeout(() => (contextBox.style.opacity = "1"), 50);
-
-  try {
-    contextText = await generateContext(currentWord);
-    const contextPara = contextBox.querySelector("div.skeleton-fade-in");
-    if (contextPara) {
-      // 高亮显示段落中目标单词的出现位置（不区分大小写）
-      const re = new RegExp(`\\b${currentWord.word}\\b`, "gi");
-      const highlighted = contextText.replace(
-        re,
-        (match) => `<mark class="highlight">${match}</mark>`
-      );
-      contextPara.outerHTML = `<p>${highlighted}</p>`;
-    }
-  } catch (error) {
-    contextBox.innerHTML = `
-            <div class="error">
-                情境生成失败，请重试
-                <br>
-                <button class="error-refresh-btn" id="error-refresh-btn">🔄 重新生成</button>
-            </div>
-        `;
-    // Attach event listener for retry button
-    const retryBtn = document.getElementById("error-refresh-btn");
-    if (retryBtn) {
-      retryBtn.addEventListener("click", handleRetry);
-    }
-    return false; // 返回失败标志
-  } finally {
-    if (currentWord) {
+  // 使用公共会话启动函数
+  const result = await startPracticeSession(CURRENT_MODE, {
+    container: contextBox,
+    answerBox: answerBox,
+    buttons: {
+      submit: submitBtn,
+      hint: hintBtn,
+      answer: answerBtn,
+    },
+    contentGenerator: generateContext,
+    renderContent: renderContextContent,
+    onSuccess: (word, content) => {
+      currentWord = word;
+      contextText = content;
       translationInput.focus();
-    }
-  }
+    },
+    onError: handleRetry,
+  });
 
-  // 成功加载新单词，启用所有按钮
-  submitBtn.disabled = false;
-  hintBtn.disabled = false;
-  answerBtn.disabled = false;
-  return true;
+  return result;
 }
 
 /**
  * 检查用户提交的翻译。
  */
 async function checkTranslation() {
+  // 防止重复提交
+  if (isSubmitting) {
+    return;
+  }
+
   // 如果答案已显示，点击提交按钮进入下一题
   if (answerShown) {
+    isSubmitting = true;
     const sessionSuccess = await startNewSession();
-    if (!sessionSuccess) {
-      console.warn("新会话创建失败：没有可用的单词或词库");
+    isSubmitting = false;
+    if (!sessionSuccess.success) {
+      logMessage("warn", "Context", "新会话创建失败：没有可用的单词或词库");
       return;
     }
     return;
   }
 
   const userInput = translationInput.value.trim();
-  if (!userInput) return;
+  if (!userInput) {
+    showToast("请输入翻译", "error");
+    return;
+  }
 
   // 检查是否有可用的当前单词
   if (!currentWord) {
@@ -168,6 +160,15 @@ async function checkTranslation() {
     return;
   }
 
+  // 验证输入长度
+  const validation = validateTranslationInput(userInput);
+  if (!validation.valid) {
+    showToast(validation.error, "error");
+    return;
+  }
+
+  // 设置提交状态
+  isSubmitting = true;
   submitBtn.disabled = true;
   submitBtn.textContent = "Submitting...";
 
@@ -187,7 +188,7 @@ async function checkTranslation() {
     }
 
     // 更新本地存储中的单词统计数据
-    const wordBank = JSON.parse(localStorage.getItem("wordBank"));
+    const wordBank = safeGetItem(STORAGE_KEYS.WORD_BANK, []);
     const wordIndex = wordBank.findIndex((w) => w.word === currentWord.word);
     if (wordIndex !== -1) {
       const modeData = getWordModeData(wordBank[wordIndex], CURRENT_MODE);
@@ -197,13 +198,21 @@ async function checkTranslation() {
         hasErrorInCurrentWord = true; // 标记该单词发生了错误
       }
       wordBank[wordIndex].modes[CURRENT_MODE] = modeData;
-      localStorage.setItem("wordBank", JSON.stringify(wordBank));
+      safeSetItem(STORAGE_KEYS.WORD_BANK, wordBank);
     }
 
     updateRecords(currentWord.word, isCorrect, CURRENT_MODE);
     updateStats(); // 更新统计显示
 
     if (isCorrect) {
+      // 奖励正确答案
+      rewardCorrectAnswer(CURRENT_MODE, !hasErrorInCurrentWord);
+
+      // 更新用户信息栏
+      if (typeof updateUserInfoBar === "function") {
+        updateUserInfoBar();
+      }
+
       showToast("回答正确！", "success");
       const sessionSuccess = await startNewSession();
       // 如果新会话创建失败（没有可用单词），不重新启用按钮
@@ -215,7 +224,11 @@ async function checkTranslation() {
     }
   } catch (error) {
     showToast("验证过程中发生错误: " + error.message, "error");
+    handleError(error, { source: "Context", action: "检查翻译" }, false);
   } finally {
+    // 重置提交状态
+    isSubmitting = false;
+
     // 只有在没有成功创建新会话的情况下才重新启用按钮
     if (currentWord) {
       submitBtn.disabled = false;
@@ -291,7 +304,7 @@ function showAnswer() {
   answerShown = true;
 
   // 记录为错误，因为用户放弃了
-  const wordBank = JSON.parse(localStorage.getItem("wordBank"));
+  const wordBank = safeGetItem(STORAGE_KEYS.WORD_BANK, []);
   const wordIndex = wordBank.findIndex((w) => w.word === currentWord.word);
   if (wordIndex !== -1) {
     const modeData = getWordModeData(wordBank[wordIndex], CURRENT_MODE);
@@ -301,7 +314,7 @@ function showAnswer() {
       hasErrorInCurrentWord = true;
     }
     wordBank[wordIndex].modes[CURRENT_MODE] = modeData;
-    localStorage.setItem("wordBank", JSON.stringify(wordBank));
+    safeSetItem(STORAGE_KEYS.WORD_BANK, wordBank);
   }
 
   // 在练习记录中记录为错误
@@ -326,19 +339,52 @@ function showAnswer() {
   showToast("已显示答案，点击 Next 进入下一题", "info");
 }
 
-// 事件监听器
-translationInput.addEventListener("keypress", (event) => {
+// 事件监听器 - 使用命名函数以便需要时移除
+const handleTranslationInputKeypress = (event) => {
   if (event.key === "Enter") {
     event.preventDefault();
     checkTranslation();
   }
+};
+
+if (translationInput) {
+  translationInput.addEventListener("keypress", handleTranslationInputKeypress);
+}
+
+// 初始化键盘快捷键
+initKeyboardShortcuts({
+  submit: checkTranslation,
+  hint: getHint,
+  answer: showAnswer,
+  next: () => {
+    if (answerShown) {
+      startNewSession();
+    }
+  },
 });
 
-document.addEventListener("DOMContentLoaded", async () => {
-  initializeStorage();
-  updateStats();
-  const sessionSuccess = await startNewSession();
-  if (!sessionSuccess) {
-    console.warn("初始会话创建失败：没有可用的单词或词库");
+// 页面初始化
+const initPage = async () => {
+  try {
+    const storageReady = initializeStorage();
+    if (!storageReady) {
+      console.warn("存储初始化失败，应用可能无法正常工作");
+    }
+    updateStats();
+    const result = await startNewSession();
+    if (!result.success) {
+      logMessage("warn", "Context", "初始会话创建失败：没有可用的单词或词库");
+    }
+  } catch (error) {
+    console.error("页面初始化失败:", error);
+    showToast("页面加载失败，请刷新页面", "error", 5000);
   }
-});
+};
+
+// 检查DOM是否已准备好
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initPage);
+} else {
+  // DOM已经加载完成
+  initPage();
+}
