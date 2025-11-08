@@ -613,7 +613,14 @@
     }
 
     const href = link.getAttribute("href");
-    if (!href || href === "#" || href.startsWith("javascript:")) {
+    const safeHref = decodeURI(href).trim().toLowerCase();
+    if (
+      !href ||
+      href === "#" ||
+      safeHref.startsWith("javascript:") ||
+      safeHref.startsWith("data:") ||
+      safeHref.startsWith("vbscript:")
+    ) {
       return;
     }
 
