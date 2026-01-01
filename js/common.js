@@ -2546,7 +2546,7 @@ function needsHintBooster(hintCount) {
  */
 function canUseAdvancedHint(hintCount, mode = "blank") {
   // 第一次提示和警告提示无需道具
-  if (!needsHintBooster(hintCount, mode)) {
+  if (!needsHintBooster(hintCount)) {
     return { canUse: true, reason: "basic_hint" };
   }
 
