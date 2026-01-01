@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>排位赛 - AI English Learning Assistant</title>
+
+    <!-- PWA Meta 标签 -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AI英语学习">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+    <link rel="icon" href="/icons/icon.png" type="image/png">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        .container {
+            max-width: 900px;
+        }
+
+        /* 赛季信息卡片 */
+        .season-info {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            color: white;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);
+        }
+
+        .season-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .season-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .season-timer {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius-sm);
+            font-size: 0.9rem;
+        }
+
+        /* 玩家段位卡片 */
+        .player-rank-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--card-border);
+            text-align: center;
+        }
+
+        .tier-display {
+            margin-bottom: 1.5rem;
+        }
+
+        .tier-icon {
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .tier-name {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .tier-score {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .next-tier-progress {
+            margin-top: 1rem;
+        }
+
+        .progress-bar-container {
+            background: #e2e8f0;
+            border-radius: 10px;
+            height: 12px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* 玩家统计 */
+        .player-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* 开始比赛按钮 */
+        .start-match-section {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .start-match-btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border: none;
+            padding: 1rem 3rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .start-match-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5);
+        }
+
+        .start-match-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .match-info {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.75rem;
+        }
+
+        /* 排行榜 */
+        .leaderboard-section {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--card-border);
+        }
+
+        .leaderboard-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: var(--border-radius-sm);
+            margin-bottom: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .leaderboard-item:hover {
+            background: rgba(79, 70, 229, 0.05);
+        }
+
+        .leaderboard-item.is-player {
+            background: linear-gradient(90deg, rgba(79, 70, 229, 0.1), rgba(99, 102, 241, 0.05));
+            border: 1px solid var(--primary);
+        }
+
+        .leaderboard-rank {
+            width: 40px;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .leaderboard-rank.top-3 {
+            font-size: 1.25rem;
+        }
+
+        .leaderboard-name {
+            flex: 1;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .leaderboard-tier {
+            margin-right: 1rem;
+        }
+
+        .leaderboard-score {
+            font-weight: 700;
+            color: var(--primary);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* 比赛界面 */
+        .match-container {
+            display: none;
+        }
+
+        .match-container.active {
+            display: block;
+        }
+
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .match-progress {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .match-score {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .score-correct {
+            color: #10b981;
+            font-weight: 700;
+        }
+
+        .score-wrong {
+            color: #ef4444;
+            font-weight: 700;
+        }
+
+        .question-box {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--card-border);
+        }
+
+        .question-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .question-content .blank {
+            display: inline-block;
+            min-width: 80px;
+            border-bottom: 2px dashed var(--primary);
+            margin: 0 4px;
+            text-align: center;
+        }
+
+        .answer-section {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .answer-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--card-border);
+            border-radius: var(--border-radius-sm);
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .answer-btn {
+            padding: 0.75rem 2rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .answer-btn:hover {
+            background: var(--secondary);
+        }
+
+        .answer-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* 比赛结果 */
+        .match-result {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .match-result.active {
+            display: block;
+        }
+
+        .result-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-title.win {
+            color: #10b981;
+        }
+
+        .result-title.lose {
+            color: #ef4444;
+        }
+
+        .result-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 1.5rem 0;
+        }
+
+        .result-score-change {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 1rem 0;
+        }
+
+        .result-score-change.positive {
+            color: #10b981;
+        }
+
+        .result-score-change.negative {
+            color: #ef4444;
+        }
+
+        .tier-change {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            font-size: 1.25rem;
+            margin: 1rem 0;
+        }
+
+        .tier-change-arrow {
+            color: var(--primary);
+        }
+
+        .continue-btn {
+            margin-top: 1.5rem;
+            padding: 1rem 2rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .continue-btn:hover {
+            background: var(--secondary);
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 640px) {
+            .season-header {
+                flex-direction: column;
+                gap: 0.75rem;
+                text-align: center;
+            }
+
+            .player-stats {
+                gap: 1rem;
+            }
+
+            .stat-item {
+                min-width: 80px;
+            }
+
+            .leaderboard-item {
+                padding: 0.5rem;
+            }
+
+            .leaderboard-score {
+                min-width: 50px;
+            }
+
+            .answer-section {
+                flex-direction: column;
+            }
+
+            .answer-input {
+                min-width: unset;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚔️ 排位赛</h1>
+            <p>与其他玩家一较高下，争夺赛季荣耀！</p>
+        </div>
+
+        <!-- 主界面 -->
+        <div id="mainView">
+            <!-- 赛季信息 -->
+            <div class="season-info">
+                <div class="season-header">
+                    <div class="season-title">🏅 第 <span id="seasonNumber">1</span> 赛季</div>
+                    <div class="season-timer">⏱️ 剩余 <span id="seasonRemaining">14天</span></div>
+                </div>
+            </div>
+
+            <!-- 玩家段位卡片 -->
+            <div class="player-rank-card">
+                <div class="tier-display">
+                    <span class="tier-icon" id="tierIcon">🥉</span>
+                    <div class="tier-name" id="tierName">青铜</div>
+                    <div class="tier-score"><span id="playerScore">0</span> 分</div>
+                </div>
+
+                <div class="next-tier-progress" id="nextTierProgress">
+                    <div class="progress-text">距离 <span id="nextTierName">白银</span> 还需 <span
+                            id="nextTierNeeded">500</span> 分</div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="tierProgressBar" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="player-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="playerWins">0</div>
+                        <div class="stat-label">胜场</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="playerLosses">0</div>
+                        <div class="stat-label">负场</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="winRate">0%</div>
+                        <div class="stat-label">胜率</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="maxStreak">0</div>
+                        <div class="stat-label">最高连胜</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 开始比赛 -->
+            <div class="start-match-section">
+                <button class="start-match-btn" id="startMatchBtn" onclick="startMatch()">
+                    🎮 开始比赛
+                </button>
+                <div class="match-info">每场比赛10道题，答对6题以上获胜</div>
+            </div>
+
+            <!-- 排行榜 -->
+            <div class="leaderboard-section">
+                <div class="leaderboard-title">
+                    <span>🏆</span>
+                    <span>赛季排行榜</span>
+                </div>
+                <ul class="leaderboard-list" id="leaderboardList">
+                    <!-- 动态生成 -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- 比赛界面 -->
+        <div id="matchView" class="match-container">
+            <div class="match-header">
+                <div class="match-progress">
+                    <span>题目 <span id="currentQuestion">1</span>/10</span>
+                </div>
+                <div class="match-score">
+                    <span class="score-correct">✓ <span id="correctCount">0</span></span>
+                    <span class="score-wrong">✗ <span id="wrongCount">0</span></span>
+                </div>
+            </div>
+
+            <div class="question-box">
+                <div class="question-content" id="questionContent">
+                    <!-- 动态生成题目内容 -->
+                </div>
+                <div class="answer-section">
+                    <input type="text" class="answer-input" id="answerInput" placeholder="输入你的答案..." autocomplete="off">
+                    <button class="answer-btn" id="submitAnswerBtn" onclick="submitAnswer()">提交</button>
+                </div>
+            </div>
+
+            <!-- 提示面板 -->
+            <div id="hintPanel" class="hint-panel"></div>
+        </div>
+
+        <!-- 比赛结果 -->
+        <div id="matchResult" class="match-result">
+            <div class="result-icon" id="resultIcon">🎉</div>
+            <div class="result-title" id="resultTitle">胜利！</div>
+            <div class="result-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="resultCorrect">0</div>
+                    <div class="stat-label">正确</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="resultWrong">0</div>
+                    <div class="stat-label">错误</div>
+                </div>
+            </div>
+            <div class="result-score-change" id="resultScoreChange">+30</div>
+            <div class="tier-change" id="tierChangeDisplay" style="display: none;">
+                <span id="oldTierDisplay">🥉 青铜</span>
+                <span class="tier-change-arrow">→</span>
+                <span id="newTierDisplay">🥈 白银</span>
+            </div>
+            <button class="continue-btn" onclick="backToMain()">继续</button>
+        </div>
+
+        <a href="index.html" class="admin-link">← 返回首页</a>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ranked.js"></script>
+
+    <!-- Toast通知容器 -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- 主题切换按钮 -->
+    <script src="js/theme-toggle-button.js"></script>
+
+    <!-- 移动端导航栏 -->
+    <script src="js/mobile-nav.js"></script>
+
+    <!-- Service Worker 注册 -->
+    <script src="js/sw-register.js"></script>
+</body>
+
+</html>

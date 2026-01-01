@@ -315,11 +315,7 @@ const createConfirmTip = (message, onConfirm) => {
   return tip;
 };
 
-// 模式管理
-const getSupportedModes = () => {
-  return safeGetItem(STORAGE_KEYS.SUPPORTED_MODES, []);
-};
-
+// 模式管理（使用 common.js 中的 getSupportedModes）
 const getActiveModes = () => {
   return getSupportedModes().filter((mode) => mode.active);
 };
@@ -351,6 +347,11 @@ const generateModeSelectorsHTML = (
   } else if (includeAll) {
     select.value = "all";
   }
+
+  // 刷新自定义下拉组件
+  if (typeof refreshCustomSelect === "function") {
+    refreshCustomSelect(select);
+  }
 };
 
 // 数据加载
@@ -369,14 +370,33 @@ const setupTabs = () => {
   const labels = Array.from(group?.querySelectorAll("label") || []);
   const panels = document.getElementById("tabPanels");
 
-  const moveIndicator = (tab) => {
+  const ensureLabelVisible = (label) => {
+    if (!group) return;
+    const padding = 16;
+    const labelLeft = label.offsetLeft;
+    const labelRight = labelLeft + label.offsetWidth;
+    const visibleLeft = group.scrollLeft;
+    const visibleRight = visibleLeft + group.clientWidth;
+
+    if (labelLeft < visibleLeft + padding) {
+      group.scrollLeft = Math.max(0, labelLeft - padding);
+    } else if (labelRight > visibleRight - padding) {
+      group.scrollLeft = Math.max(0, labelRight - group.clientWidth + padding);
+    }
+  };
+
+  const moveIndicator = (tab, ensureVisible = false) => {
     const label = labels.find((l) => l.dataset.tab === tab);
     if (!label || !indicator) return;
-    const rect = label.getBoundingClientRect();
-    const parentRect = group.getBoundingClientRect();
-    indicator.style.width = `${rect.width}px`;
-    const offset = rect.left - parentRect.left;
-    indicator.style.transform = `translateX(${offset}px)`;
+
+    // 仅在切换标签/初始化时，才自动对齐可视区域；滚动时不要干预用户手势
+    if (ensureVisible) {
+      ensureLabelVisible(label);
+    }
+
+    // 使用 offsetLeft/offsetWidth（基于容器内容坐标），避免 getBoundingClientRect 在 scrollLeft 变化时计算错误
+    indicator.style.width = `${label.offsetWidth}px`;
+    indicator.style.transform = `translateX(${label.offsetLeft}px)`;
   };
 
   const updateAria = (tab) => {
@@ -398,9 +418,25 @@ const setupTabs = () => {
   const onResize = () => moveIndicator(currentTab);
   window.addEventListener("resize", onResize);
 
+  // 横向滚动时同步指示条位置（移动端常见）
+  if (group) {
+    let rafId = 0;
+    group.addEventListener(
+      "scroll",
+      () => {
+        if (rafId) return;
+        rafId = requestAnimationFrame(() => {
+          rafId = 0;
+          moveIndicator(currentTab, false);
+        });
+      },
+      { passive: true }
+    );
+  }
+
   // 初始位置
   requestAnimationFrame(() => {
-    moveIndicator(currentTab);
+    moveIndicator(currentTab, true);
   });
 
   // 暴露辅助函数
@@ -437,7 +473,7 @@ const showTab = (tabName) => {
   }
 
   if (typeof window.__moveSegIndicator === "function") {
-    window.__moveSegIndicator(tabName);
+    window.__moveSegIndicator(tabName, true);
   }
 
   // 同步单选按钮以支持无障碍访问和状态管理
@@ -686,6 +722,11 @@ const showMergeVocabularyModal = (sourceVocabularyId) => {
   select.innerHTML = vocabularies
     .map((v) => `<option value="${v.id}">${v.name}</option>`)
     .join("");
+
+  // 刷新自定义下拉组件
+  if (typeof refreshCustomSelect === "function") {
+    refreshCustomSelect(select);
+  }
 
   openModal(modal);
   focusFirstInput(modal);
@@ -1241,6 +1282,15 @@ const exportData = () => {
     vocabularies: getVocabularies(), // 导出词库列表
     practiceRecords: loadData().practiceRecords,
     supportedModes: getSupportedModes(),
+    // 游戏化数据
+    userProfile: getUserProfile(), // 金币、经验值、等级、连续天数
+    achievements: safeGetItem(STORAGE_KEYS.ACHIEVEMENTS, null), // 成就数据
+    shopItems: safeGetItem(STORAGE_KEYS.SHOP_ITEMS, null), // 商店物品
+    userInventory: safeGetItem(STORAGE_KEYS.USER_INVENTORY, null), // 用户库存（道具）
+    themeSetting: safeGetItem(STORAGE_KEYS.THEME_SETTING, null), // 主题设置
+    // 导出时间和版本信息
+    exportDate: new Date().toISOString(),
+    version: "0.4",
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: "application/json",
@@ -1253,7 +1303,7 @@ const exportData = () => {
   }.json`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast("数据已导出", "success");
+  showToast("数据已导出（包含所有用户数据）", "success");
 };
 
 const updateFileName = () => {
@@ -1282,6 +1332,33 @@ const importData = () => {
       }
 
       const summaryEl = document.getElementById("importDataSummary");
+
+      // 生成用户数据预览
+      let userDataHtml = "";
+      if (importedData.userProfile) {
+        const profile = importedData.userProfile;
+        userDataHtml = `
+          <li>用户等级: ${profile.level || 1}</li>
+          <li>金币: ${profile.coins || 0}</li>
+          <li>经验值: ${profile.exp || 0}</li>
+          <li>连续天数: ${profile.streak || 0}</li>
+        `;
+      }
+
+      let achievementHtml = "";
+      if (importedData.achievements) {
+        achievementHtml = `<li>成就数量: ${
+          importedData.achievements.unlocked?.length || 0
+        }</li>`;
+      }
+
+      let inventoryHtml = "";
+      if (importedData.userInventory) {
+        inventoryHtml = `<li>拥有物品: ${
+          importedData.userInventory.owned?.length || 0
+        }</li>`;
+      }
+
       summaryEl.innerHTML = `
                 <p><strong>文件内容预览:</strong></p>
                 <ul>
@@ -1295,7 +1372,22 @@ const importData = () => {
                     <li>模式数量: ${
                       importedData.supportedModes?.length || "N/A"
                     }</li>
+                    ${userDataHtml}
+                    ${achievementHtml}
+                    ${inventoryHtml}
                 </ul>
+                ${
+                  importedData.version
+                    ? `<p><small>数据版本: ${importedData.version}</small></p>`
+                    : ""
+                }
+                ${
+                  importedData.exportDate
+                    ? `<p><small>导出时间: ${new Date(
+                        importedData.exportDate
+                      ).toLocaleString("zh-CN")}</small></p>`
+                    : ""
+                }
             `;
 
       const modal = document.getElementById("importConfirmModal");
@@ -1315,24 +1407,56 @@ const closeImportConfirmModal = () => {
 
 const confirmImport = () => {
   if (importedData) {
+    // 导入单词库
     if (!safeSetItem(STORAGE_KEYS.WORD_BANK, importedData.wordBank)) {
       return;
     }
+
     // 导入词库列表（如果存在）
     if (importedData.vocabularies && importedData.vocabularies.length > 0) {
       if (!safeSetItem(STORAGE_KEYS.VOCABULARIES, importedData.vocabularies)) {
         return;
       }
     }
+
+    // 导入练习记录
     if (
       !safeSetItem(STORAGE_KEYS.PRACTICE_RECORDS, importedData.practiceRecords)
     ) {
       return;
     }
+
+    // 导入支持的模式
     if (importedData.supportedModes) {
       safeSetItem(STORAGE_KEYS.SUPPORTED_MODES, importedData.supportedModes);
     }
-    showToast("数据导入成功", "success");
+
+    // 导入用户档案（金币、经验值、等级、连续天数）
+    if (importedData.userProfile) {
+      safeSetItem(STORAGE_KEYS.USER_PROFILE, importedData.userProfile);
+    }
+
+    // 导入成就数据
+    if (importedData.achievements) {
+      safeSetItem(STORAGE_KEYS.ACHIEVEMENTS, importedData.achievements);
+    }
+
+    // 导入商店物品
+    if (importedData.shopItems) {
+      safeSetItem(STORAGE_KEYS.SHOP_ITEMS, importedData.shopItems);
+    }
+
+    // 导入用户库存（道具）
+    if (importedData.userInventory) {
+      safeSetItem(STORAGE_KEYS.USER_INVENTORY, importedData.userInventory);
+    }
+
+    // 导入主题设置
+    if (importedData.themeSetting) {
+      safeSetItem(STORAGE_KEYS.THEME_SETTING, importedData.themeSetting);
+    }
+
+    showToast("数据导入成功（包含所有用户数据）", "success");
     closeImportConfirmModal();
     // 刷新所有视图
     initializePage();
@@ -1527,6 +1651,7 @@ const processBatchAdd = () => {
 const initializePage = () => {
   initializeStorage(); // 来自 common.js
   migrateWordData(); // 来自 common.js
+  initializeTheme(); // 初始化主题
 
   generateModeSelectorsHTML("wordModeSelector", true);
   generateModeSelectorsHTML("recordModeSelector", true);
@@ -1546,6 +1671,12 @@ const initializePage = () => {
   refreshVocabularies(); // 初始显示词库管理
   refreshRecords();
   showTab("words");
+
+  // 初始化设置页面（主题下拉框等）
+  initSettings();
+
+  // 初始化开发者模式
+  initDeveloperMode();
 };
 
 document.addEventListener("DOMContentLoaded", initializePage);
@@ -1798,6 +1929,8 @@ function loadUserDataDisplay() {
 
   // 更新显示卡片
   document.getElementById("userCoinsDisplay").textContent = profile.coins || 0;
+  document.getElementById("userDiamondsDisplay").textContent =
+    profile.diamonds || 0;
   document.getElementById("userLevelDisplay").textContent = profile.level || 1;
   document.getElementById("userStreakDisplay").textContent =
     profile.streak || 0;
@@ -1806,6 +1939,7 @@ function loadUserDataDisplay() {
 
   // 更新表单输入
   document.getElementById("editCoins").value = profile.coins || 0;
+  document.getElementById("editDiamonds").value = profile.diamonds || 0;
   document.getElementById("editExp").value = profile.exp || 0;
   document.getElementById("editLevel").value = profile.level || 1;
   document.getElementById("editStreak").value = profile.streak || 0;
@@ -1813,6 +1947,14 @@ function loadUserDataDisplay() {
     profile.totalWordsLearned || 0;
   document.getElementById("editPracticeTime").value =
     profile.totalPracticeTime || 0;
+
+  // 加载 Mix 模式题目数量设置
+  const mixSettings = safeGetItem("mixModeSettings", { totalQuestions: 10 });
+  document.getElementById("editMixQuestions").value =
+    mixSettings.totalQuestions || 10;
+
+  // 加载并显示当前 Mix 进度
+  loadMixProgressStatus();
 
   // 更新详细信息
   const createdAt = profile.createdAt
@@ -1831,6 +1973,7 @@ function loadUserDataDisplay() {
  */
 function saveUserData() {
   const coins = parseInt(document.getElementById("editCoins").value) || 0;
+  const diamonds = parseInt(document.getElementById("editDiamonds").value) || 0;
   const exp = parseInt(document.getElementById("editExp").value) || 0;
   const level = parseInt(document.getElementById("editLevel").value) || 1;
   const streak = parseInt(document.getElementById("editStreak").value) || 0;
@@ -1838,10 +1981,13 @@ function saveUserData() {
     parseInt(document.getElementById("editTotalWords").value) || 0;
   const practiceTime =
     parseInt(document.getElementById("editPracticeTime").value) || 0;
+  const mixQuestions =
+    parseInt(document.getElementById("editMixQuestions").value) || 10;
 
   // 验证输入
   if (
     coins < 0 ||
+    diamonds < 0 ||
     exp < 0 ||
     level < 1 ||
     streak < 0 ||
@@ -1852,9 +1998,16 @@ function saveUserData() {
     return;
   }
 
+  // 验证 Mix 题目数量范围
+  if (mixQuestions < 1 || mixQuestions > 50) {
+    showToast("❌ Mix 题目数量必须在 1-50 之间！", "error");
+    return;
+  }
+
   // 更新用户档案
   const updates = {
     coins,
+    diamonds,
     exp,
     level,
     streak,
@@ -1863,6 +2016,9 @@ function saveUserData() {
   };
 
   updateUserProfile(updates);
+
+  // 保存 Mix 模式设置
+  safeSetItem("mixModeSettings", { totalQuestions: mixQuestions });
 
   // 重新加载显示
   loadUserDataDisplay();
@@ -1873,6 +2029,137 @@ function saveUserData() {
   window.dispatchEvent(
     new CustomEvent("userProfileUpdated", { detail: updates })
   );
+}
+
+/**
+ * 加载并显示 Mix 进度状态
+ */
+function loadMixProgressStatus() {
+  const savedProgress = safeGetItem("mixPracticeProgress", null);
+  const statusDiv = document.getElementById("mixProgressStatus");
+  const editSection = document.getElementById("mixProgressEditSection");
+  const saveBtn = document.getElementById("saveMixProgressBtn");
+
+  if (!savedProgress || savedProgress.completed) {
+    // 没有进行中的进度
+    statusDiv.innerHTML =
+      '<p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">暂无进行中的 Mix 练习</p>';
+    editSection.style.display = "none";
+    saveBtn.style.display = "none";
+    return;
+  }
+
+  // 显示当前进度
+  const { currentQuestion, totalQuestions, correct, errors, streak } =
+    savedProgress;
+  const accuracy =
+    currentQuestion > 0 ? ((correct / currentQuestion) * 100).toFixed(1) : 0;
+
+  statusDiv.innerHTML = `
+    <div style="display: grid; gap: 0.75rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="color: var(--text-primary); font-weight: 600; font-size: 1.1rem;">📊 进度：${currentQuestion} / ${totalQuestions}</span>
+        <span style="color: var(--primary); font-weight: 600;">${accuracy}% 正确率</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; font-size: 0.9rem;">
+        <div><span style="color: var(--success);">✓ ${correct}</span> 正确</div>
+        <div><span style="color: var(--error);">✗ ${errors}</span> 错误</div>
+        <div><span style="color: var(--info);">🔥 ${streak}</span> 连击</div>
+      </div>
+    </div>
+  `;
+
+  // 显示编辑区域
+  editSection.style.display = "block";
+  saveBtn.style.display = "block";
+  document.getElementById("editMixCurrentQuestion").value = currentQuestion;
+  document.getElementById("mixTotalQuestions").textContent = totalQuestions;
+}
+
+/**
+ * 保存 Mix 进度修改
+ */
+function saveMixProgress() {
+  const savedProgress = safeGetItem("mixPracticeProgress", null);
+
+  if (!savedProgress || savedProgress.completed) {
+    showToast("❌ 没有找到进行中的 Mix 练习", "error");
+    return;
+  }
+
+  const newCurrentQuestion = parseInt(
+    document.getElementById("editMixCurrentQuestion").value
+  );
+  const totalQuestions = savedProgress.totalQuestions;
+
+  // 验证输入
+  if (
+    isNaN(newCurrentQuestion) ||
+    newCurrentQuestion < 0 ||
+    newCurrentQuestion > totalQuestions
+  ) {
+    showToast(`❌ 题号必须在 0 到 ${totalQuestions} 之间！`, "error");
+    return;
+  }
+
+  // 更新进度
+  savedProgress.currentQuestion = newCurrentQuestion;
+
+  // 保存
+  safeSetItem("mixPracticeProgress", savedProgress);
+
+  logMessage(
+    "info",
+    "Mix进度修改",
+    `已将进度修改为 ${newCurrentQuestion}/${totalQuestions}`
+  );
+  showToast(
+    `✅ 进度已修改为 ${newCurrentQuestion}/${totalQuestions}`,
+    "success"
+  );
+
+  // 刷新显示
+  setTimeout(() => {
+    loadMixProgressStatus();
+  }, 500);
+}
+
+/**
+ * 清除未完成的 Mix 进度
+ */
+function clearMixProgress() {
+  const confirmMsg =
+    "确定要清除未完成的 Mix 练习进度吗？\n\n这将删除当前保存的进度数据，但不会影响已完成的练习记录。";
+
+  if (!confirm(confirmMsg)) {
+    return;
+  }
+
+  // 检查是否存在未完成进度
+  const savedProgress = safeGetItem("mixPracticeProgress", null);
+
+  if (!savedProgress) {
+    showToast("ℹ️ 没有找到未完成的 Mix 进度", "info");
+    return;
+  }
+
+  if (savedProgress.completed) {
+    showToast("ℹ️ 当前进度已完成，无需清除", "info");
+    return;
+  }
+
+  // 删除进度数据
+  safeRemoveItem("mixPracticeProgress");
+
+  logMessage("info", "Mix进度管理", "已清除未完成的 Mix 练习进度");
+  showToast("✅ 已清除未完成的 Mix 进度", "success");
+
+  // 显示进度信息
+  const progressInfo = `已清除进度：${savedProgress.currentQuestion}/${savedProgress.totalQuestions} 题`;
+  setTimeout(() => {
+    showToast(progressInfo, "info", 4000);
+    loadMixProgressStatus(); // 刷新显示
+  }, 500);
 }
 
 /**
@@ -1950,60 +2237,105 @@ function testShowMixReward() {
  * 创建测试用的奖励弹窗
  */
 function showTestRewardPopup(rewards) {
-  // 移除已存在的弹窗
-  const existingPopup = document.querySelector(".reward-popup");
-  if (existingPopup) {
-    existingPopup.remove();
-  }
+  // 移除已存在的弹窗和遮罩
+  const existingPopup = document.querySelector(".test-reward-popup");
+  const existingOverlay = document.querySelector(".test-reward-overlay");
+  if (existingPopup) existingPopup.remove();
+  if (existingOverlay) existingOverlay.remove();
 
-  const popup = document.createElement("div");
-  popup.className = "reward-popup";
-  popup.innerHTML = `
-    <div class="reward-content">
-      <div class="reward-icon">🎁</div>
-      <h3 class="reward-title">恭喜完成练习！</h3>
-      <div class="reward-stats">
-        <div class="reward-item">
-          <span class="reward-label">💰 金币奖励</span>
-          <span class="reward-value">+${rewards.coins}</span>
-        </div>
-        <div class="reward-item">
-          <span class="reward-label">⭐ 经验奖励</span>
-          <span class="reward-value">+${rewards.exp}</span>
-        </div>
-        <div class="reward-item">
-          <span class="reward-label">🎯 正确率</span>
-          <span class="reward-value">${(rewards.accuracy * 100).toFixed(
-            0
-          )}%</span>
-        </div>
-        ${
-          rewards.streak >= 5
-            ? `
-        <div class="reward-item bonus">
-          <span class="reward-label">🔥 连击奖励</span>
-          <span class="reward-value">+5 金币</span>
-        </div>
-        `
-            : ""
-        }
-      </div>
-      <button class="btn btn-primary" onclick="this.closest('.reward-popup').remove()" style="margin-top: 1.5rem; width: 100%;">
-        太棒了！
-      </button>
-    </div>
+  // 创建遮罩层
+  const overlay = document.createElement("div");
+  overlay.className = "test-reward-overlay";
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
   `;
 
+  const popup = document.createElement("div");
+  popup.className = "test-reward-popup";
+  popup.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: white;
+    padding: 2.5rem;
+    border-radius: 1.5rem;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    text-align: center;
+    min-width: 320px;
+    max-width: 90vw;
+    opacity: 0;
+    transition: all 0.3s ease;
+  `;
+
+  popup.innerHTML = `
+    <div style="font-size: 4rem; margin-bottom: 1rem; animation: iconBounce 0.6s ease;">🎁</div>
+    <h3 style="color: var(--primary); font-size: 1.5rem; margin-bottom: 1.5rem;">恭喜完成练习！</h3>
+    <div style="background: #f8fafc; border-radius: 1rem; padding: 1.25rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
+        <span style="color: #64748b;">💰 金币奖励</span>
+        <span style="color: var(--primary); font-weight: 600;">+${
+          rewards.coins
+        }</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
+        <span style="color: #64748b;">⭐ 经验奖励</span>
+        <span style="color: var(--primary); font-weight: 600;">+${
+          rewards.exp
+        }</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+        <span style="color: #64748b;">🎯 正确率</span>
+        <span style="color: var(--success); font-weight: 600;">${(
+          rewards.accuracy * 100
+        ).toFixed(0)}%</span>
+      </div>
+      ${
+        rewards.streak >= 5
+          ? `
+      <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; margin-top: 0.5rem; background: linear-gradient(90deg, #fef3c7, #fde68a); border-radius: 0.5rem; padding: 0.75rem;">
+        <span style="color: #92400e;">🔥 连击奖励</span>
+        <span style="color: #92400e; font-weight: 600;">+5 金币</span>
+      </div>
+      `
+          : ""
+      }
+    </div>
+    <button onclick="this.closest('.test-reward-popup').remove(); document.querySelector('.test-reward-overlay').remove();"
+      style="width: 100%; padding: 1rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border: none; border-radius: 3rem; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+      太棒了！
+    </button>
+  `;
+
+  document.body.appendChild(overlay);
   document.body.appendChild(popup);
 
   // 添加显示动画
-  setTimeout(() => popup.classList.add("show"), 10);
+  requestAnimationFrame(() => {
+    overlay.style.opacity = "1";
+    popup.style.opacity = "1";
+    popup.style.transform = "translate(-50%, -50%) scale(1)";
+  });
 
-  // 3秒后自动关闭
-  setTimeout(() => {
-    popup.classList.remove("show");
-    setTimeout(() => popup.remove(), 300);
-  }, 3000);
+  // 点击遮罩关闭
+  overlay.addEventListener("click", () => {
+    popup.style.opacity = "0";
+    popup.style.transform = "translate(-50%, -50%) scale(0.8)";
+    overlay.style.opacity = "0";
+    setTimeout(() => {
+      popup.remove();
+      overlay.remove();
+    }, 300);
+  });
 
   showToast("💡 这是测试弹窗，仅用于预览效果", "info");
 }
@@ -2041,50 +2373,44 @@ function loadAchievementsList() {
   container.innerHTML = achievements.definitions
     .map((achievement) => {
       const isUnlocked = achievements.unlocked.includes(achievement.id);
+      const requirementBadges = [];
+
+      if (achievement.type === "TOTAL_WORDS") {
+        requirementBadges.push(`📚 要求: ${achievement.requirement} 个单词`);
+      }
+
+      if (achievement.type === "STREAK") {
+        requirementBadges.push(`🔥 要求: 连续 ${achievement.requirement} 天`);
+      }
+
+      const requirementsHtml = requirementBadges
+        .map((text) => `<span>${text}</span>`)
+        .join("");
+      const statusClass = isUnlocked ? "status-unlocked" : "";
+      const actionButton = isUnlocked
+        ? `<button class="btn btn-secondary btn-compact" onclick="lockAchievement('${achievement.id}')">🔒 锁定</button>`
+        : `<button class="btn btn-success btn-compact" onclick="unlockAchievementManually('${achievement.id}')">🔓 解锁</button>`;
 
       return `
-      <div style="
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        background: ${isUnlocked ? "rgba(16, 185, 129, 0.08)" : "#f8fafc"};
-        border-radius: var(--border-radius-sm);
-        border: 1px solid ${isUnlocked ? "rgba(16, 185, 129, 0.2)" : "#e2e8f0"};
-      ">
-        <div style="font-size: 2rem; flex-shrink: 0;">${achievement.icon}</div>
-        <div style="flex: 1; min-width: 0;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-            <strong style="color: var(--primary);">${achievement.name}</strong>
-            ${
-              isUnlocked
-                ? '<span style="background: #10b981; color: white; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600;">✓ 已解锁</span>'
-                : ""
-            }
+      <div class="admin-achievement-card ${isUnlocked ? "unlocked" : ""}">
+        <div class="admin-achievement-icon">${achievement.icon}</div>
+        <div class="admin-achievement-content">
+          <div class="admin-achievement-header">
+            <strong>${achievement.name}</strong>
+            <span class="admin-achievement-status ${statusClass}">
+              ${isUnlocked ? "✓ 已解锁" : "未解锁"}
+            </span>
           </div>
-          <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.25rem;">${
+          <p class="admin-achievement-description">${
             achievement.description
-          }</div>
-          <div style="font-size: 0.85rem; color: #94a3b8;">
-            💰 奖励: ${achievement.reward} 金币
-            ${
-              achievement.type === "TOTAL_WORDS"
-                ? ` | 📚 要求: ${achievement.requirement} 个单词`
-                : ""
-            }
-            ${
-              achievement.type === "STREAK"
-                ? ` | 🔥 要求: 连续 ${achievement.requirement} 天`
-                : ""
-            }
+          }</p>
+          <div class="admin-achievement-meta">
+            <span>💰 奖励: ${achievement.reward} 金币</span>
+            ${requirementsHtml}
           </div>
         </div>
-        <div style="flex-shrink: 0;">
-          ${
-            isUnlocked
-              ? `<button class="btn btn-secondary" onclick="lockAchievement('${achievement.id}')" style="font-size: 0.85rem; padding: 0.5rem 1rem;">🔒 锁定</button>`
-              : `<button class="btn btn-success" onclick="unlockAchievementManually('${achievement.id}')" style="font-size: 0.85rem; padding: 0.5rem 1rem;">🔓 解锁</button>`
-          }
+        <div class="admin-achievement-actions">
+          ${actionButton}
         </div>
       </div>
     `;
@@ -2182,3 +2508,127 @@ function resetAllAchievements() {
 
   showToast("🔄 所有成就已重置！", "success");
 }
+
+// =================================================================
+// 设置功能
+// =================================================================
+
+/**
+ * 初始化设置页面
+ */
+function initSettings() {
+  const themeSelect = document.getElementById("themeSelect");
+  if (!themeSelect) return;
+
+  // 获取所有可用主题
+  const allThemes = Object.keys(THEME_CONFIGS).map((id) => ({
+    id: id,
+    name: THEME_CONFIGS[id].name,
+    isDefault: THEME_CONFIGS[id].isDefault || false,
+  }));
+
+  // 填充主题选项
+  themeSelect.innerHTML = allThemes
+    .map(
+      (theme) => `
+      <option value="${theme.id}">
+        ${theme.name}${theme.isDefault ? " ⭐" : ""}
+      </option>
+    `
+    )
+    .join("");
+
+  // 获取当前装备的主题
+  const inventory = initializeInventory();
+  const currentThemeId = inventory.equipped || "theme_light";
+  themeSelect.value = currentThemeId;
+}
+
+/**
+ * 处理主题切换
+ */
+function handleThemeChange() {
+  const themeSelect = document.getElementById("themeSelect");
+  if (!themeSelect) return;
+
+  const selectedThemeId = themeSelect.value;
+
+  // 装备选择的主题
+  if (typeof equipTheme !== "undefined") {
+    equipTheme(selectedThemeId);
+  } else {
+    // 直接应用主题（回退方案，带动画）
+    const inventory = initializeInventory();
+    inventory.equipped = selectedThemeId;
+    safeSetItem(STORAGE_KEYS.USER_INVENTORY, inventory);
+    applyEquippedThemeSkin(true);
+
+    // 获取主题名称
+    const themeName = THEME_CONFIGS[selectedThemeId]?.name || "未知主题";
+    showToast(`🎨 主题已切换为 ${themeName}`, "success");
+  }
+}
+
+/**
+ * 清除 Service Worker 缓存
+ */
+async function clearServiceWorkerCache() {
+  try {
+    // 检查是否支持 Service Worker
+    if (!("serviceWorker" in navigator)) {
+      showToast("❌ 您的浏览器不支持 Service Worker", "error");
+      return;
+    }
+
+    // 确认操作
+    if (
+      !confirm(
+        "确定要清除所有缓存吗？\n\n清除后需要重新加载页面以应用最新版本。"
+      )
+    ) {
+      return;
+    }
+
+    // 先尝试调用 cacheManager 使用 Service Worker API 清理,以便 SW 能感知到
+    if (navigator.serviceWorker.controller && window.cacheManager) {
+      const success = await window.cacheManager.clearAll();
+      if (success) {
+        showToast("✅ 缓存已清除！页面将在 3 秒后刷新...", "success", 3000);
+        setTimeout(() => window.location.reload(), 3000);
+        return;
+      }
+    }
+
+    // 如果 cacheManager 不可用,退回到直接删除所有缓存 + 注销 SW
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(
+      registrations.map((registration) => registration.unregister())
+    );
+
+    showToast(
+      "⚠️ 已手动清除缓存并注销 SW，需重新打开页面以重建最新版本",
+      "info",
+      4000
+    );
+    setTimeout(() => window.location.reload(), 2000);
+  } catch (error) {
+    console.error("清除缓存失败:", error);
+    showToast("❌ 清除缓存失败: " + error.message, "error");
+  }
+}
+
+// 页面加载时初始化设置
+document.addEventListener("DOMContentLoaded", () => {
+  // 监听标签切换，当切换到设置标签时初始化
+  const settingsTab = document.getElementById("tab-settings");
+  if (settingsTab) {
+    settingsTab.addEventListener("change", () => {
+      if (settingsTab.checked) {
+        initSettings();
+      }
+    });
+  }
+});

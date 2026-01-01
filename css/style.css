@@ -4,6 +4,7 @@
   --secondary: #6366f1;
   --background: #f8fafc;
   --text-primary: #1e293b;
+  --text-secondary: #475569;
   --border-radius: 0.75rem;
   --border-radius-sm: 0.5rem;
   --success: #10b981;
@@ -12,7 +13,54 @@
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --table-row-hover-bg: rgba(99, 102, 241, 0.08);
+  --card-bg: #ffffff;
+  --card-border: rgba(226, 232, 240, 0.8);
+  --input-bg: #ffffff;
+  --input-border: #e2e8f0;
+  --panel-bg: rgba(255, 255, 255, 0.92);
   font-size: 110%;
+}
+
+/* 暗色主题颜色变量（合并到根变量以便复用） */
+:root {
+  /* 暗色背景层级 */
+  --dark-bg-primary: rgba(15, 23, 42, 0.95);
+  --dark-bg-secondary: rgba(30, 41, 59, 0.85);
+  --dark-bg-tertiary: rgba(51, 65, 85, 0.7);
+  /* 暗色边框 */
+  --dark-border: rgba(99, 102, 241, 0.15);
+  --dark-border-hover: rgba(129, 140, 248, 0.35);
+  /* 暗色文本 */
+  --dark-text-primary: #e0e7ff;
+  --dark-text-secondary: #cbd5e1;
+  --dark-text-muted: #94a3b8;
+  --dark-text-highlight: #a5b4fc;
+  --dark-glow: rgba(99, 102, 241, 0.3);
+}
+
+/* View Transition API 圆形扩散动画 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="white"/></svg>') center / 0 no-repeat;
+  animation: scale-up 1.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+  animation-fill-mode: both;
+}
+
+::view-transition-old(root) {
+  animation: none;
+  z-index: -1;
+}
+
+@keyframes scale-up {
+  to {
+    mask-size: 350vmax;
+  }
 }
 
 * {
@@ -51,7 +99,7 @@ body {
 .container {
   margin: 0 auto;
   max-width: 1200px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--panel-bg, rgba(255, 255, 255, 0.9));
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-lg);
   padding: 2.5rem;
@@ -124,6 +172,12 @@ body {
 .btn:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow);
+}
+
+.btn-compact {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  min-height: 36px;
 }
 
 .btn-primary {
@@ -201,7 +255,6 @@ body {
   background: #cbd5e1;
 }
 
-
 .btn-delete-large {
   background: var(--error);
   color: white;
@@ -261,7 +314,7 @@ button:disabled {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: #475569;
+  color: var(--text-secondary, #475569);
 }
 
 input {
@@ -273,9 +326,11 @@ input {
 .form-control {
   width: 100%;
   padding: 0.85rem 1rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--input-border, #e2e8f0);
   border-radius: var(--border-radius-sm);
   box-shadow: var(--shadow-sm);
+  background: var(--input-bg, white);
+  color: var(--text-primary);
 }
 
 .form-group input:focus,
@@ -284,6 +339,198 @@ input:focus {
   outline: none;
   border-color: var(--secondary);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* =================================================================
+   自定义下拉选择组件样式
+   ================================================================= */
+
+/* 隐藏原生 select（由 JS 组件接管） */
+select[data-custom-select-init="true"] {
+  display: none !important;
+}
+
+/* 包装容器 */
+.custom-select-wrapper {
+  position: relative;
+  display: inline-block;
+  min-width: 140px;
+  font-family: inherit;
+  z-index: 10;
+}
+
+/* 打开状态时提升层级 */
+.custom-select-wrapper.open {
+  z-index: 9999;
+}
+
+.custom-select-wrapper.form-control {
+  width: 100%;
+  border: none;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* 触发按钮 */
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--input-bg, #fff);
+  border: 2px solid var(--input-border, #e2e8f0);
+  border-radius: var(--border-radius-sm, 0.5rem);
+  color: var(--text-primary, #1e293b);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
+  user-select: none;
+}
+
+.custom-select-trigger:hover {
+  border-color: var(--secondary, #6366f1);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+}
+
+.custom-select-trigger:focus {
+  outline: none;
+  border-color: var(--secondary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.custom-select-wrapper.open .custom-select-trigger {
+  border-color: var(--secondary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* 显示文本 */
+.custom-select-display {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select-display.placeholder {
+  color: var(--text-secondary, #64748b);
+}
+
+/* 箭头图标 */
+.custom-select-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary, #64748b);
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+}
+
+.custom-select-wrapper.open .custom-select-arrow {
+  transform: rotate(180deg);
+}
+
+/* 下拉菜单（挂载到 body，使用 fixed 定位） */
+.custom-select-dropdown {
+  position: fixed;
+  z-index: 99999;
+  background: var(--card-bg, #fff);
+  border: 2px solid var(--input-border, #e2e8f0);
+  border-radius: var(--border-radius-sm, 0.5rem);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15), 0 6px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  overflow-y: auto;
+  /* 初始隐藏状态 */
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-10px);
+  transform-origin: top center;
+  /* 出现/消失动画 */
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 向下展开 */
+.custom-select-dropdown.dropdown-down {
+  transform-origin: top center;
+}
+
+/* 向上展开 */
+.custom-select-dropdown.dropdown-up {
+  transform: translateY(10px);
+  transform-origin: bottom center;
+}
+
+/* 打开状态 - 显示下拉菜单 */
+.custom-select-dropdown.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* 选项 */
+.custom-select-option {
+  padding: 0.75rem 1rem;
+  color: var(--text-primary, #1e293b);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.custom-select-option:hover,
+.custom-select-option.highlighted {
+  background: var(--primary, #4f46e5);
+  color: white;
+}
+
+.custom-select-option.selected {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary, #4f46e5);
+  font-weight: 600;
+}
+
+.custom-select-option.selected:hover,
+.custom-select-option.selected.highlighted {
+  background: var(--primary, #4f46e5);
+  color: white;
+}
+
+.custom-select-option.disabled {
+  color: var(--text-secondary, #94a3b8);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.custom-select-option.disabled:hover {
+  background: transparent;
+  color: var(--text-secondary, #94a3b8);
+}
+
+/* 滚动条样式 */
+.custom-select-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-select-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-select-dropdown::-webkit-scrollbar-thumb {
+  background: var(--text-secondary, #94a3b8);
+  border-radius: 3px;
+}
+
+.custom-select-dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--primary, #4f46e5);
 }
 
 /* 提示消息通知 */
@@ -634,8 +881,8 @@ vocabulary-status-button .components {
 /* 确保状态按钮在表格中居中对齐 */
 .data-table td:has(vocabulary-status-button),
 .data-table td[style*="text-align: center"] {
-  text-align: center !important;
-  vertical-align: middle !important;
+  text-align: center;
+  vertical-align: middle;
   /* 为状态按钮提供足够的列宽 */
   min-width: 80px;
   padding: 1.2rem 0.5rem;
@@ -1190,579 +1437,54 @@ body.offline-mode .requires-network::after {
   }
 }
 
-/* 夜间模式 */
-[data-theme="dark"] {
-  --primary: #6366f1;
-  --secondary: #818cf8;
-  --background: #0f172a;
-  --text-primary: #e2e8f0;
-  --border-radius: 0.75rem;
-  --border-radius-sm: 0.5rem;
-  --success: #10b981;
-  --error: #ef4444;
-  --info: #3b82f6;
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
-  --shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.7);
-}
-
-[data-theme="dark"] body {
-  background: linear-gradient(90deg, #1e1b4b, #312e81, #1e3a8a, #164e63);
-  background-size: 400% 400%;
-  color: var(--text-primary);
-}
-
-[data-theme="dark"] .container {
-  background: rgba(30, 41, 59, 0.95);
-  backdrop-filter: blur(20px);
-}
-
-[data-theme="dark"] .mode-card,
-[data-theme="dark"] .stat-card,
-[data-theme="dark"] .shop-item,
-[data-theme="dark"] .achievement-card,
-[data-theme="dark"] .section,
-[data-theme="dark"] .user-info {
-  background: rgba(51, 65, 85, 0.8);
-  border-color: rgba(100, 116, 139, 0.3);
-}
-
-[data-theme="dark"] .mode-card:hover,
-[data-theme="dark"] .shop-item:hover {
-  border-color: var(--primary);
-}
-
-[data-theme="dark"] input,
-[data-theme="dark"] textarea,
-[data-theme="dark"] select {
-  background: rgba(30, 41, 59, 0.6);
-  border-color: rgba(100, 116, 139, 0.5);
-  color: var(--text-primary);
-}
-
-[data-theme="dark"] input:focus,
-[data-theme="dark"] textarea:focus,
-[data-theme="dark"] select:focus {
-  border-color: var(--primary);
-  background: rgba(30, 41, 59, 0.8);
-}
-
-[data-theme="dark"] .context-box,
-[data-theme="dark"] .exercise-box,
-[data-theme="dark"] .vocab-item,
-[data-theme="dark"] .chart-container {
-  background: rgba(30, 41, 59, 0.6);
-  border-color: rgba(100, 116, 139, 0.3);
-}
-
-[data-theme="dark"] .data-table {
-  background: rgba(30, 41, 59, 0.6);
-}
-
-[data-theme="dark"] .data-table th {
-  background: rgba(51, 65, 85, 0.8);
-  border-color: rgba(100, 116, 139, 0.3);
-}
-
-[data-theme="dark"] .data-table td {
-  border-color: rgba(100, 116, 139, 0.2);
-}
-
-[data-theme="dark"] .data-table tbody tr:hover {
-  background: rgba(51, 65, 85, 0.6);
-}
-
-[data-theme="dark"] .toast {
-  background: rgba(51, 65, 85, 0.95);
-  color: var(--text-primary);
-  backdrop-filter: blur(10px);
-}
-
-[data-theme="dark"] .skeleton {
-  background: linear-gradient(90deg,
-      rgba(51, 65, 85, 0.4) 0%,
-      rgba(71, 85, 105, 0.6) 50%,
-      rgba(51, 65, 85, 0.4) 100%);
-}
-
-[data-theme="dark"] .admin-link,
-[data-theme="dark"] .stat-label,
-[data-theme="dark"] .item-desc,
-[data-theme="dark"] .achievement-desc,
-[data-theme="dark"] .vocab-stats {
-  color: #94a3b8;
-}
-
-[data-theme="dark"] h1,
-[data-theme="dark"] h2,
-[data-theme="dark"] h3,
-[data-theme="dark"] .mode-card h3,
-[data-theme="dark"] .stat-card-value,
-[data-theme="dark"] .achievement-name,
-[data-theme="dark"] .vocab-name,
-[data-theme="dark"] .item-name {
-  color: var(--text-primary);
-}
-
-/* 平滑过渡 */
-body,
-.container,
-.mode-card,
-.stat-card,
-.shop-item,
-input,
-textarea,
-select {
-  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
-
-/* 确认提示框样式 */
-.confirm-tip {
-  position: fixed;
-  background: white;
-  border-radius: var(--border-radius-sm);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  padding: 1.25rem;
-  z-index: 10000;
-  min-width: 250px;
-  max-width: 400px;
-  animation: confirmTipFadeIn 0.2s ease-out;
-}
-
-@keyframes confirmTipFadeIn {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -100%) scale(0.95);
-  }
-
-  to {
-    opacity: 1;
-    transform: translate(-50%, -100%) scale(1);
-  }
-}
-
-.confirm-tip p {
-  margin: 0 0 1rem 0;
-  color: var(--text-primary);
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-.confirm-tip-buttons {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-}
-
-.confirm-tip-cancel,
-.confirm-tip-confirm {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: var(--border-radius-sm);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.confirm-tip-cancel {
-  background: #e2e8f0;
-  color: #475569;
-}
-
-.confirm-tip-cancel:hover {
-  background: #cbd5e1;
-}
-
-.confirm-tip-confirm {
-  background: var(--error);
-  color: white;
-}
-
-.confirm-tip-confirm:hover {
-  background: #dc2626;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
-
-/* 夜间模式下的确认提示框 */
-[data-theme="dark"] .confirm-tip {
-  background: rgba(30, 41, 59, 0.95);
-  border: 1px solid rgba(71, 85, 105, 0.5);
-  backdrop-filter: blur(10px);
-}
-
-[data-theme="dark"] .confirm-tip p {
-  color: #e2e8f0;
-}
-
-[data-theme="dark"] .confirm-tip-cancel {
-  background: rgba(51, 65, 85, 0.8);
-  color: #cbd5e1;
-}
-
-[data-theme="dark"] .confirm-tip-cancel:hover {
-  background: rgba(71, 85, 105, 0.9);
-}
-
-/* =================================================================
-   成就通知系统 (Achievement Notification)
-   ================================================================= */
-
-/* 成就通知容器 */
-.achievement-notification {
-  position: fixed;
-  top: -200px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10001;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 1.5rem;
-  border-radius: 1.5rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 40px rgba(102, 126, 234, 0.5);
-  min-width: 360px;
-  max-width: 90%;
-  overflow: hidden;
-  transition: top 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-.achievement-notification.show {
-  top: 2rem;
-  animation: achievementSlideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-@keyframes achievementSlideIn {
-  0% {
-    transform: translateX(-50%) translateY(-20px);
-    opacity: 0;
-  }
-
-  100% {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
-  }
-}
-
-/* 成就通知光效背景 */
-.achievement-shine {
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg,
-      transparent 30%,
-      rgba(255, 255, 255, 0.3) 50%,
-      transparent 70%);
-  transform: rotate(45deg);
-  animation: achievementShine 2s infinite;
-  pointer-events: none;
-}
-
-@keyframes achievementShine {
-  0% {
-    transform: translateX(-100%) rotate(45deg);
-  }
-
-  100% {
-    transform: translateX(100%) rotate(45deg);
-  }
-}
-
-/* 成就通知内容 - 左右布局 */
-.achievement-content {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 1.25rem;
-  z-index: 1;
-}
-
-/* 左侧大图标 */
-.achievement-icon {
-  font-size: 4rem;
-  line-height: 1;
-  flex-shrink: 0;
-  animation: achievementIconPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-@keyframes achievementIconPop {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-
-  50% {
-    transform: scale(1.2);
-  }
-
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* 右侧文字区域 */
-.achievement-text {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  min-width: 0;
-}
-
-/* 成就名称 - 较大、加粗 */
-.achievement-title {
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: white;
-  margin: 0;
-  line-height: 1.3;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-/* 成就描述 - 中等、不加粗 */
-.achievement-description {
-  font-size: 1rem;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.95);
-  margin: 0;
-  line-height: 1.5;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-}
-
-/* 奖励信息 - 使用表情符号 */
-.achievement-reward {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: #fbbf24;
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-}
-
-/* 夜间模式适配 */
-[data-theme="dark"] .achievement-notification {
-  background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 100%);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(139, 92, 246, 0.4);
-}
-
-[data-theme="dark"] .achievement-title {
-  color: #f9fafb;
-}
-
-[data-theme="dark"] .achievement-description {
-  color: rgba(255, 255, 255, 0.9);
-}
-
-[data-theme="dark"] .achievement-reward {
-  color: #fde047;
-}
-
-/* 响应式设计 - 移动端优化 */
-@media (max-width: 480px) {
-  .achievement-notification {
-    min-width: 0;
-    width: calc(100% - 2rem);
-    padding: 1.25rem;
-  }
-
-  .achievement-icon {
-    font-size: 3rem;
-  }
-
-  .achievement-title {
-    font-size: 1.15rem;
-  }
-
-  .achievement-description {
-    font-size: 0.9rem;
-  }
-
-  .achievement-reward {
-    font-size: 0.95rem;
-  }
-}
-
-[data-theme="dark"] .achievement-reward {
-  color: #fbbf24;
-}
-
-/* =================================================================
-   奖励弹窗 (Reward Popup)
-   ================================================================= */
-
-.reward-popup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  background: white;
-  padding: 2rem;
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-lg);
-  z-index: 9999;
-  text-align: center;
-  min-width: 300px;
-  max-width: 500px;
-  opacity: 0;
-}
-
-.reward-popup.show {
-  animation: rewardPopupShow 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-}
-
-@keyframes rewardPopupShow {
-  0% {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0;
-  }
-
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-}
-
-.reward-popup.hide {
-  animation: rewardPopupHide 0.2s ease-out forwards;
-}
-
-@keyframes rewardPopupHide {
-  0% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-
-  100% {
-    transform: translate(-50%, -50%) scale(0.8);
-    opacity: 0;
-  }
-}
-
-.reward-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  animation: rewardBounce 0.6s ease-in-out infinite alternate;
-}
-
-@keyframes rewardBounce {
-  0% {
-    transform: translateY(0);
-  }
-
-  100% {
-    transform: translateY(-10px);
-  }
-}
-
-.reward-title {
-  font-size: 1.5rem;
-  color: var(--primary);
-  margin-bottom: 1.5rem;
-  font-weight: 700;
-}
-
-.reward-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.reward-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  background: #f8fafc;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
-}
-
-.reward-item.bonus {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.1));
-  border-color: rgba(251, 191, 36, 0.3);
-}
-
-.reward-label {
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.reward-value {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--primary);
-}
-
-.reward-item.bonus .reward-value {
-  color: #f59e0b;
-}
-
-[data-theme="dark"] .reward-popup {
-  background: var(--background);
-  color: var(--text-primary);
-}
-
-[data-theme="dark"] .reward-item {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .reward-item.bonus {
-  background: rgba(251, 191, 36, 0.15);
-  border-color: rgba(251, 191, 36, 0.3);
-}
-
-/* =================================================================
-   自定义确认弹窗 (Custom Dialog)
-   ================================================================= */
-
+/* ===================================================================
+   自定义弹窗样式（用于Mix模式等）
+   =================================================================== */
 .custom-dialog-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0);
-  backdrop-filter: blur(0px);
-  z-index: 10002;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  z-index: 10000;
   opacity: 0;
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(4px);
 }
 
 .custom-dialog-overlay.show {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
   opacity: 1;
 }
 
 .custom-dialog {
   background: white;
-  border-radius: 1rem;
-  padding: 2rem;
-  max-width: 450px;
-  width: 90%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  transform: scale(0.8) translateY(20px);
-  transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  border-radius: 1.5rem;
+  padding: 2.5rem 3rem;
+  max-width: 480px;
+  width: 92%;
+  text-align: center;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25);
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .custom-dialog-overlay.show .custom-dialog {
-  transform: scale(1) translateY(0);
+  transform: scale(1);
 }
 
 .dialog-icon {
-  font-size: 4rem;
-  text-align: center;
-  margin-bottom: 1rem;
-  animation: dialogIconPulse 2s ease-in-out infinite;
+  font-size: 4.5rem;
+  margin-bottom: 1.25rem;
+  display: inline-block;
+  animation: dialogIconPulse 1.5s ease-in-out infinite;
 }
 
 @keyframes dialogIconPulse {
@@ -1773,64 +1495,99 @@ select {
   }
 
   50% {
-    transform: scale(1.1);
+    transform: scale(1.15);
   }
 }
 
 .custom-dialog h3 {
-  text-align: center;
   color: var(--primary);
-  margin: 0 0 1.5rem 0;
   font-size: 1.5rem;
   font-weight: 700;
+  margin-bottom: 1.5rem;
 }
 
 .dialog-content {
   background: #f8fafc;
-  padding: 1.25rem;
-  border-radius: 0.75rem;
-  margin-bottom: 1.5rem;
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
   border: 2px solid #e2e8f0;
+  overflow: auto;
 }
 
 .dialog-progress {
+  color: var(--text-secondary);
   font-size: 1.1rem;
-  margin: 0 0 0.75rem 0;
-  color: var(--text-primary);
-  text-align: center;
+  margin-bottom: 0.75rem;
 }
 
 .dialog-progress strong {
   color: var(--primary);
   font-size: 1.3rem;
+  font-weight: 700;
 }
 
 .dialog-warning {
-  margin: 0;
   color: #f59e0b;
-  font-weight: 600;
-  text-align: center;
   font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .dialog-buttons {
   display: flex;
   gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .dialog-btn {
-  flex: 1;
-  padding: 0.875rem 1.5rem;
-  border: none;
-  border-radius: 0.5rem;
+  padding: 1rem 2rem;
+  border-radius: 3rem;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
+  border: none;
   transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  min-width: 140px;
+}
+
+/* 移动端：弹窗更紧凑，减少空白 */
+@media (max-width: 480px) {
+  .custom-dialog {
+    border-radius: 1.1rem;
+    padding: 1.25rem 1.1rem;
+    max-width: 520px;
+    width: calc(100vw - 1.5rem);
+    max-height: 85vh;
+  }
+
+  .dialog-icon {
+    font-size: 3.2rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .custom-dialog h3 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+  }
+
+  .dialog-content {
+    padding: 0.9rem 0.9rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .dialog-progress {
+    font-size: 0.98rem;
+  }
+
+  .dialog-progress strong {
+    font-size: 1.15rem;
+  }
+
+  .dialog-btn {
+    padding: 0.8rem 1.2rem;
+    min-width: 120px;
+  }
 }
 
 .dialog-btn-primary {
@@ -1840,38 +1597,237 @@ select {
 
 .dialog-btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
 }
 
 .dialog-btn-secondary {
-  background: #e2e8f0;
-  color: #475569;
+  background: #f1f5f9;
+  color: var(--text-secondary);
 }
 
 .dialog-btn-secondary:hover {
-  background: #cbd5e1;
+  background: #e2e8f0;
 }
 
-/* 夜间模式 */
-[data-theme="dark"] .custom-dialog {
-  background: #1e293b;
-  color: #e2e8f0;
+/* ===================================================================
+   成就通知样式
+   =================================================================== */
+.achievement-notification {
+  position: fixed;
+  top: 3rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(-150%) scale(0.3);
+  /* 多点渐变背景：使用多个 radial-gradient 叠加创建多点效果 */
+  background:
+    /* 左上角紫色光点 */
+    radial-gradient(ellipse 80% 80% at 10% 20%, rgba(138, 43, 226, 0.8) 0%, transparent 50%),
+    /* 右上角蓝色光点 */
+    radial-gradient(ellipse 60% 60% at 90% 15%, rgba(99, 102, 241, 0.7) 0%, transparent 45%),
+    /* 中心偏右紫粉光点 */
+    radial-gradient(ellipse 70% 70% at 70% 50%, rgba(168, 85, 247, 0.75) 0%, transparent 50%),
+    /* 左下角蓝色光点 */
+    radial-gradient(ellipse 65% 65% at 15% 80%, rgba(59, 130, 246, 0.7) 0%, transparent 45%),
+    /* 右下角深紫光点 */
+    radial-gradient(ellipse 55% 55% at 85% 85%, rgba(139, 92, 246, 0.65) 0%, transparent 40%),
+    /* 底层渐变 */
+    linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #6366f1 100%);
+  background-size:
+    200% 200%,
+    180% 180%,
+    160% 160%,
+    190% 190%,
+    170% 170%,
+    100% 100%;
+  animation: achievementBgFlow 6s ease-in-out infinite;
+  border: none;
+  border-radius: 1.25rem;
+  padding: 1.5rem 2rem;
+  box-shadow:
+    0 20px 60px rgba(102, 126, 234, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 0 40px rgba(118, 75, 162, 0.3);
+  z-index: 10001;
+  min-width: 320px;
+  max-width: 90vw;
+  opacity: 0;
+  overflow: hidden;
 }
 
-[data-theme="dark"] .dialog-content {
-  background: #0f172a;
-  border-color: #334155;
+/* 多点渐变背景流动动画 - 每个光点独立运动 */
+@keyframes achievementBgFlow {
+  0% {
+    background-position:
+      0% 0%,
+      100% 0%,
+      50% 50%,
+      0% 100%,
+      100% 100%,
+      0% 0%;
+  }
+
+  25% {
+    background-position:
+      50% 25%,
+      50% 50%,
+      100% 25%,
+      50% 75%,
+      25% 50%,
+      0% 0%;
+  }
+
+  50% {
+    background-position:
+      100% 50%,
+      0% 100%,
+      25% 75%,
+      100% 25%,
+      50% 0%,
+      0% 0%;
+  }
+
+  75% {
+    background-position:
+      50% 75%,
+      75% 25%,
+      0% 50%,
+      75% 100%,
+      100% 75%,
+      0% 0%;
+  }
+
+  100% {
+    background-position:
+      0% 0%,
+      100% 0%,
+      50% 50%,
+      0% 100%,
+      100% 100%,
+      0% 0%;
+  }
 }
 
-[data-theme="dark"] .dialog-progress {
-  color: #e2e8f0;
+/* 入场动画：纯贝塞尔曲线方案
+   cubic-bezier(0.175, 0.885, 0.32, 1.275) - 先极慢，后突然加速并过冲回弹 */
+.achievement-notification.show {
+  animation:
+    achievementEnter 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+    achievementBgFlow 6s ease-in-out infinite;
 }
 
-[data-theme="dark"] .dialog-btn-secondary {
-  background: #334155;
-  color: #cbd5e1;
+/* 入场关键帧：只定义起点和终点，速度完全由贝塞尔曲线控制 */
+@keyframes achievementEnter {
+  0% {
+    transform: translateX(-50%) translateY(-120%) scale(0.4);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
-[data-theme="dark"] .dialog-btn-secondary:hover {
-  background: #475569;
+/* 离场动画：向上非线性平移出屏幕
+   cubic-bezier(0.55, 0.055, 0.675, 0.19) - easeInCubic，先慢后快加速离开 */
+.achievement-notification.hide {
+  animation: achievementExit 0.6s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+}
+
+@keyframes achievementExit {
+  0% {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(-50%) translateY(-150%) scale(1);
+    opacity: 1;
+  }
+}
+
+.achievement-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent);
+  animation: achievementShine 3s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+@keyframes achievementShine {
+  0% {
+    left: -100%;
+  }
+
+  50%,
+  100% {
+    left: 100%;
+  }
+}
+
+.achievement-content {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* 仅在成就弹窗通知中的图标才有脉冲动画 */
+.achievement-notification .achievement-icon {
+  font-size: 3rem;
+  animation: achievementIconPulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+@keyframes achievementIconPulse {
+
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+
+  25% {
+    transform: scale(1.1) rotate(-5deg);
+  }
+
+  75% {
+    transform: scale(1.1) rotate(5deg);
+  }
+}
+
+.achievement-text {
+  flex: 1;
+}
+
+.achievement-title {
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.achievement-description {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+  margin: 0 0 0.6rem 0;
+}
+
+.achievement-reward {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  padding: 0.35rem 1rem;
+  border-radius: 2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }

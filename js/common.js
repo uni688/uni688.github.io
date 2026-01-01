@@ -31,6 +31,8 @@ const STORAGE_KEYS = {
   SHOP_ITEMS: "shopItems",
   USER_INVENTORY: "userInventory",
   THEME_SETTING: "themeSetting",
+  DEVELOPER_MODE: "developerMode",
+  ACTIVE_ITEMS: "activeItems", // 激活的道具状态
 };
 
 // 默认词库ID
@@ -529,6 +531,333 @@ function togglePracticeButtons(buttons, disabled, disableHintOnly = false) {
   if (buttons.answer) buttons.answer.disabled = disabled;
 }
 
+// =================================================================
+// 共享渲染函数 - 消除模式间重复代码
+// =================================================================
+
+/**
+ * 创建带有输入框的填空句子HTML
+ * 供 blank.js 和 mix.js 共同使用
+ * @param {string} sentence - 完整的句子
+ * @param {string} word - 要留空的单词
+ * @returns {string} - 包含输入框的HTML字符串
+ */
+function createBlankSentenceHTML(sentence, word) {
+  // 参数验证
+  if (!sentence || typeof sentence !== "string") {
+    console.error("[createBlankSentenceHTML] Invalid sentence:", sentence);
+    return '<p style="color: var(--error);">句子生成失败</p>';
+  }
+
+  if (!word || typeof word !== "string") {
+    console.error("[createBlankSentenceHTML] Invalid word:", word);
+    return sentence; // 返回原句子
+  }
+
+  // 转义特殊字符
+  const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // 使用正则表达式匹配完整单词并替换为输入框
+  const regex = new RegExp(`\\b${escapedWord}\\b`, "gi");
+  return sentence.replace(
+    regex,
+    '<input type="text" class="blank-input" id="blankInput" placeholder="click to fill" autocomplete="off">'
+  );
+}
+
+/**
+ * 渲染上下文猜词内容到容器
+ * 供 context.js 和 mix.js 共同使用
+ * @param {HTMLElement} container - 容器元素
+ * @param {Object} word - 单词对象
+ * @param {string} content - 生成的上下文内容
+ */
+function renderContextContentShared(container, word, content) {
+  // 参数验证
+  if (!content || typeof content !== "string") {
+    console.error("[renderContextContent] Invalid content:", content);
+    container.innerHTML = '<p style="color: var(--error);">内容生成失败</p>';
+    return;
+  }
+
+  if (!word || !word.word) {
+    console.error("[renderContextContent] Invalid word:", word);
+    container.innerHTML = '<p style="color: var(--error);">单词数据错误</p>';
+    return;
+  }
+
+  container.innerHTML = `
+    <h3>Contextual Situation</h3>
+    <p id="contextParagraph"></p>
+    <p style="margin-top: 1rem;"><strong>Target Word: ${word.word}</strong></p>
+  `;
+
+  // 高亮显示段落中目标单词的出现位置（不区分大小写）
+  const contextPara = container.querySelector("#contextParagraph");
+  if (contextPara) {
+    const re = new RegExp(`\\b${word.word}\\b`, "gi");
+    const highlighted = content.replace(
+      re,
+      (match) => `<mark class="highlight">${match}</mark>`
+    );
+    contextPara.innerHTML = highlighted;
+  }
+
+  // 添加淡入动画
+  container.style.opacity = "0";
+  setTimeout(() => (container.style.opacity = "1"), 50);
+}
+
+/**
+ * 渲染填空内容到容器
+ * 供 blank.js 和 mix.js 共同使用
+ * @param {HTMLElement} container - 容器元素
+ * @param {Object} word - 单词对象
+ * @param {string} content - 生成的句子内容
+ * @param {Function} onInputKeypress - 输入框回车键回调（可选）
+ */
+function renderBlankContentShared(container, word, content, onInputKeypress) {
+  // 参数验证
+  if (!content || typeof content !== "string") {
+    console.error("[renderBlankContent] Invalid content:", content);
+    container.innerHTML = '<p style="color: var(--error);">句子生成失败</p>';
+    return;
+  }
+
+  if (!word || !word.word) {
+    console.error("[renderBlankContent] Invalid word:", word);
+    container.innerHTML = '<p style="color: var(--error);">单词数据错误</p>';
+    return;
+  }
+
+  // 将目标单词替换为输入框
+  const blankSentenceHTML = createBlankSentenceHTML(content, word.word);
+
+  container.innerHTML = `
+    <h3>Fill in the Blank</h3>
+    <p class="blank-sentence">${blankSentenceHTML}</p>
+  `;
+
+  // 为输入框绑定事件监听器
+  const blankInput = document.getElementById("blankInput");
+  if (blankInput) {
+    blankInput.focus(); // 自动聚焦到输入框
+
+    // 更新提示面板的输入框引用
+    if (typeof HintPanelManager !== "undefined") {
+      HintPanelManager.inputElement = blankInput;
+    }
+
+    // 绑定回车键提交事件
+    if (onInputKeypress) {
+      blankInput.addEventListener("keypress", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          onInputKeypress();
+        }
+      });
+    }
+  }
+
+  // 添加淡入动画
+  container.style.opacity = "0";
+  setTimeout(() => (container.style.opacity = "1"), 50);
+}
+
+/**
+ * 更新单词练习数据
+ * 供各模式共同使用
+ * @param {Object} wordObj - 单词对象
+ * @param {string} mode - 练习模式
+ * @param {boolean} isCorrect - 是否答对
+ */
+function updateWordPracticeData(wordObj, mode, isCorrect) {
+  const wordBank = safeGetItem(STORAGE_KEYS.WORD_BANK, []);
+  const wordIndex = wordBank.findIndex((w) => w.word === wordObj.word);
+
+  if (wordIndex !== -1) {
+    const modeData = getWordModeData(wordBank[wordIndex], mode);
+    modeData.practiceCount++;
+    if (!isCorrect) {
+      modeData.errors++;
+    }
+    wordBank[wordIndex].modes[mode] = modeData;
+    safeSetItem(STORAGE_KEYS.WORD_BANK, wordBank);
+  }
+}
+
+/**
+ * 通用提示获取函数
+ * 供各模式共同使用
+ * @param {Object} options - 配置选项
+ * @param {Object} options.currentWord - 当前单词对象
+ * @param {string} options.contextText - 上下文文本
+ * @param {string} options.mode - 当前模式
+ * @param {HTMLButtonElement} options.hintBtn - 提示按钮
+ * @param {Function} options.onError - 错误回调
+ */
+async function getHintShared(options) {
+  const { currentWord, contextText, mode, hintBtn, onError } = options;
+
+  // 检查是否有可用的当前单词
+  if (!currentWord) {
+    showToast("当前没有可用的单词", "error");
+    return;
+  }
+
+  // 防止重复点击
+  if (hintBtn && hintBtn.disabled) {
+    return;
+  }
+
+  if (hintBtn) {
+    hintBtn.disabled = true;
+    hintBtn.textContent = "Hinting...";
+  }
+
+  try {
+    // 生成渐进式提示
+    const progressiveHint = HintPanelManager.generateHint(
+      currentWord.word,
+      currentWord,
+      contextText,
+      mode // 传入模式参数，确保使用正确的提示策略
+    );
+
+    // 检查是否被阻止（缺少道具）
+    if (progressiveHint.blocked) {
+      HintPanelManager.pushHint(progressiveHint.level, progressiveHint.text);
+      if (hintBtn) {
+        hintBtn.disabled = false;
+        hintBtn.textContent = "Hint";
+      }
+      return;
+    }
+
+    // 如果需要消耗提示加速器（高级提示且没有大师之钥）
+    const hintCount = HintPanelManager.hints.length + 1;
+    if (needsHintBooster(hintCount) && !isItemActive("item_master_key")) {
+      // 消耗提示加速器
+      if (!consumeHintBooster()) {
+        showToast("提示加速器不足！", "error");
+        if (hintBtn) {
+          hintBtn.disabled = false;
+          hintBtn.textContent = "Hint";
+        }
+        return;
+      }
+      showToast("消耗了1个提示加速器 💡", "info", 1500);
+    }
+
+    if (progressiveHint.isLocal) {
+      // 本地提示，直接添加
+      HintPanelManager.pushHint(progressiveHint.level, progressiveHint.text);
+    } else {
+      // AI提示，根据类型异步获取
+      const aiType = progressiveHint.aiType || "complex";
+      await HintPanelManager.pushAiHint(
+        currentWord,
+        contextText,
+        aiType, // AI提示类型：complex、simple、synonyms、contextual
+        null, // 成功回调
+        (error) => {
+          const errorMsg =
+            error && error.message ? error.message : String(error);
+          showToast(
+            "获取AI提示失败，请检查网络连接。错误提示：" + errorMsg,
+            "error"
+          );
+          if (onError) onError(error);
+        }
+      );
+    }
+  } catch (error) {
+    console.error("生成提示失败:", error);
+    showToast("生成提示失败: " + error.message, "error");
+    if (onError) onError(error);
+  } finally {
+    if (hintBtn) {
+      hintBtn.disabled = false;
+      hintBtn.textContent = "Hint";
+    }
+  }
+}
+
+/**
+ * 显示答案并更新状态
+ * 供各模式共同使用
+ * @param {Object} options - 配置选项
+ * @param {Object} options.currentWord - 当前单词对象
+ * @param {string} options.mode - 当前模式
+ * @param {HTMLElement} options.answerBox - 答案容器
+ * @param {HTMLButtonElement} options.answerBtn - 答案按钮
+ * @param {HTMLButtonElement} options.submitBtn - 提交按钮
+ * @param {boolean} options.hasErrorInCurrentWord - 是否已有错误
+ * @param {Function} options.onStateUpdate - 状态更新回调
+ */
+function showAnswerShared(options) {
+  const {
+    currentWord,
+    mode,
+    answerBox,
+    answerBtn,
+    submitBtn,
+    hasErrorInCurrentWord,
+    onStateUpdate,
+  } = options;
+
+  // 检查是否有可用的当前单词
+  if (!currentWord) {
+    showToast("当前没有可用的单词", "error");
+    return;
+  }
+
+  // 记录为错误，因为用户放弃了
+  const wordBank = safeGetItem(STORAGE_KEYS.WORD_BANK, []);
+  const wordIndex = wordBank.findIndex((w) => w.word === currentWord.word);
+  if (wordIndex !== -1 && !hasErrorInCurrentWord) {
+    const modeData = getWordModeData(wordBank[wordIndex], mode);
+    modeData.practiceCount++;
+    modeData.errors++;
+    wordBank[wordIndex].modes[mode] = modeData;
+    safeSetItem(STORAGE_KEYS.WORD_BANK, wordBank);
+  }
+
+  // 在练习记录中记录为错误
+  updateRecords(currentWord.word, false, mode);
+
+  // 显示答案
+  if (answerBox) {
+    answerBox.style.display = "block";
+    answerBox.style.opacity = "0";
+
+    // 根据模式显示不同内容
+    const isContextMode = mode === "context";
+    answerBox.innerHTML = `
+      <div class="answer-card">
+        <h4>${isContextMode ? "正确答案" : "答案"}</h4>
+        <p>${isContextMode ? "单词" : "正确答案"}：<strong>${
+      currentWord.word
+    }</strong></p>
+        <p>中文翻译：<span style="color: #10b981; font-weight: 600;">${currentWord.translations.join(
+          " / "
+        )}</span></p>
+      </div>
+    `;
+    setTimeout(() => (answerBox.style.opacity = "1"), 50);
+  }
+
+  // 更新按钮状态
+  if (answerBtn) answerBtn.disabled = true;
+  if (submitBtn) submitBtn.textContent = "Next";
+
+  showToast("已显示答案，点击 Next 进入下一题", "info");
+
+  // 调用状态更新回调
+  if (onStateUpdate) {
+    onStateUpdate({ answerShown: true, hasErrorInCurrentWord: true });
+  }
+}
+
 /**
  * 通用的会话启动函数
  * @param {string} mode - 练习模式
@@ -715,6 +1044,9 @@ function initializeStorage() {
     safeSetItem(STORAGE_KEYS.PRACTICE_RECORDS, []);
   }
 
+  // 应用已装备的主题皮肤
+  applyEquippedThemeSkin();
+
   return true;
 }
 
@@ -816,6 +1148,14 @@ function migrateVocabularyData() {
 // =================================================================
 // 数据访问和工具函数
 // =================================================================
+
+/**
+ * 获取所有支持的学习模式列表
+ * @returns {Array} - 支持的模式数组
+ */
+function getSupportedModes() {
+  return safeGetItem(STORAGE_KEYS.SUPPORTED_MODES, []);
+}
 
 /**
  * Retrieves information about a specific learning mode.
@@ -1263,20 +1603,20 @@ function mergeVocabularies(sourceVocabularyId, targetVocabularyId) {
   }
 
   // 将源词库的单词转移到目标词库
-  const wordBank = JSON.parse(localStorage.getItem("wordBank") || "[]");
+  const wordBank = safeGetItem(STORAGE_KEYS.WORD_BANK, []);
   wordBank.forEach((word) => {
     if (word.vocabularyId === sourceVocabularyId) {
       word.vocabularyId = targetVocabularyId;
     }
   });
-  localStorage.setItem("wordBank", JSON.stringify(wordBank));
+  safeSetItem(STORAGE_KEYS.WORD_BANK, wordBank);
 
   // 删除源词库
   const sourceIndex = vocabularies.findIndex(
     (v) => v.id === sourceVocabularyId
   );
   vocabularies.splice(sourceIndex, 1);
-  localStorage.setItem("vocabularies", JSON.stringify(vocabularies));
+  safeSetItem(STORAGE_KEYS.VOCABULARIES, vocabularies);
 
   return true;
 }
@@ -1303,7 +1643,7 @@ function toggleVocabularyEnabled(vocabularyId) {
   vocabularies[index].enabled = !vocabularies[index].enabled;
   vocabularies[index].updatedAt = new Date().toISOString();
 
-  localStorage.setItem("vocabularies", JSON.stringify(vocabularies));
+  safeSetItem(STORAGE_KEYS.VOCABULARIES, vocabularies);
   return true;
 }
 
@@ -1548,20 +1888,11 @@ const HintPanelManager = {
       this.updatePanel();
     } catch (error) {
       console.error("AI提示重试失败:", error);
+      // 使用onclick属性而非addEventListener，避免重复添加监听器
       this.hints[
         failedHintIndex
-      ].text = `❌ AI提示获取失败，请检查网络连接<br><button class="error-refresh-btn">🔄 重试</button>`;
+      ].text = `❌ AI提示获取失败，请检查网络连接<br><button class="error-refresh-btn" onclick="HintPanelManager.retryLastAiHint()">🔄 重试</button>`;
       this.updatePanel();
-      // Attach event handler to the retry button
-      const panel = this.container.querySelector(".hint-panel");
-      if (panel) {
-        const retryBtn = panel.querySelector(".error-refresh-btn");
-        if (retryBtn) {
-          retryBtn.addEventListener("click", () => {
-            this.retryLastAiHint();
-          });
-        }
-      }
     }
   },
 
@@ -1635,6 +1966,18 @@ const HintPanelManager = {
   generateHint(word, wordData, context, mode) {
     const hintCount = this.hints.length + 1;
 
+    // 检查是否需要消耗提示加速器
+    const hintCheck = canUseAdvancedHint(hintCount, mode);
+    if (!hintCheck.canUse) {
+      // 无法获取高级提示，返回提示信息
+      return {
+        level: 3,
+        text: `🔒 ${hintCheck.reason}`,
+        isLocal: true,
+        blocked: true,
+      };
+    }
+
     if (mode === "context") {
       return this.generateContextHint(word, wordData, context, hintCount);
     } else {
@@ -1658,7 +2001,7 @@ const HintPanelManager = {
       case 4:
         // 第四次：本地词性提示
         level = 3;
-        text = `📝 词性提示：观察这个词在句子中的位置和作用`;
+        text = `📝 词性提示：观察这个词在句子中的位置和作用!`;
         break;
       case 5:
         // 第五次：含义提示（部分翻译）
@@ -1785,6 +2128,7 @@ function initializeUserProfile() {
   if (!profile) {
     profile = {
       coins: 0,
+      diamonds: 0, // 钻石余额
       exp: 0,
       level: 1,
       streak: 0,
@@ -1793,6 +2137,11 @@ function initializeUserProfile() {
       totalPracticeTime: 0,
       createdAt: new Date().toISOString(),
     };
+    safeSetItem(STORAGE_KEYS.USER_PROFILE, profile);
+  }
+  // 迁移：为已有用户添加钻石字段
+  if (profile.diamonds === undefined) {
+    profile.diamonds = 0;
     safeSetItem(STORAGE_KEYS.USER_PROFILE, profile);
   }
   return profile;
@@ -1838,6 +2187,93 @@ function deductCoins(amount) {
   const newCoins = profile.coins - amount;
   updateUserProfile({ coins: newCoins });
   return true;
+}
+
+/**
+ * 添加钻石
+ */
+function addDiamonds(amount) {
+  const profile = getUserProfile();
+  const newDiamonds = profile.diamonds + amount;
+  updateUserProfile({ diamonds: newDiamonds });
+  showToast(`💎 获得 ${amount} 钻石！`, "success");
+  return newDiamonds;
+}
+
+/**
+ * 扣除钻石
+ */
+function deductDiamonds(amount) {
+  const profile = getUserProfile();
+  if (profile.diamonds < amount) {
+    showToast("钻石不足！", "error");
+    return false;
+  }
+  const newDiamonds = profile.diamonds - amount;
+  updateUserProfile({ diamonds: newDiamonds });
+  return true;
+}
+
+/**
+ * 初始化用户物品库存
+ * 确保所有用户(新用户和老用户)都拥有默认的明月清辉和星夜深邃主题
+ */
+function initializeInventory() {
+  let inventory = safeGetItem(STORAGE_KEYS.USER_INVENTORY);
+  let needsSave = false;
+  const pendingToasts = []; // 收集需要显示的 toast 消息
+
+  if (!inventory) {
+    // 新用户: 初始化默认库存
+    inventory = {
+      owned: ["theme_light", "theme_dark"], // 默认拥有明月清辉和星夜深邃主题
+      equipped: "theme_light", // 默认装备明月清辉主题
+    };
+    needsSave = true;
+    logMessage("info", "Inventory", "新用户已自动获得明月清辉和星夜深邃主题");
+  } else {
+    // 老用户: 确保拥有默认主题
+    if (!inventory.owned) {
+      inventory.owned = [];
+      needsSave = true;
+    }
+
+    // 检查并自动赠送明月清辉主题
+    if (!inventory.owned.includes("theme_light")) {
+      inventory.owned.push("theme_light");
+      needsSave = true;
+      logMessage("info", "Inventory", "系统已自动赠送明月清辉主题");
+      pendingToasts.push("🎁 系统已赠送明月清辉主题！");
+    }
+
+    // 检查并自动赠送星夜深邃主题
+    if (!inventory.owned.includes("theme_dark")) {
+      inventory.owned.push("theme_dark");
+      needsSave = true;
+      logMessage("info", "Inventory", "系统已自动赠送星夜深邃主题");
+      pendingToasts.push("🎁 系统已赠送星夜深邃主题！");
+    }
+
+    // 如果没有装备任何主题，默认装备明月清辉
+    if (!inventory.equipped) {
+      inventory.equipped = "theme_light";
+      needsSave = true;
+    }
+  }
+
+  // 只在有变更时保存
+  if (needsSave) {
+    safeSetItem(STORAGE_KEYS.USER_INVENTORY, inventory);
+  }
+
+  // 延迟显示 toast，确保 toastContainer 已存在于 DOM 中
+  if (pendingToasts.length > 0) {
+    setTimeout(() => {
+      pendingToasts.forEach((msg) => showToast(msg, "success"));
+    }, 100);
+  }
+
+  return inventory;
 }
 
 /**
@@ -1892,6 +2328,11 @@ function rewardCorrectAnswer(mode, isStreak = false) {
     exp = Math.floor(exp * REWARD_CONFIG.STREAK_MULTIPLIER);
   }
 
+  // 应用道具效果
+  const rewards = applyItemEffects(coins, exp);
+  coins = rewards.coins;
+  exp = rewards.exp;
+
   addCoins(coins);
   addExp(exp);
 
@@ -1932,6 +2373,220 @@ function updateStreak() {
       });
     }
   }
+}
+
+// =================================================================
+// 道具效果系统
+// =================================================================
+
+/**
+ * 初始化激活道具状态
+ */
+function initializeActiveItems() {
+  let activeItems = safeGetItem(STORAGE_KEYS.ACTIVE_ITEMS);
+  if (!activeItems) {
+    activeItems = {
+      items: {}, // { itemId: { activatedAt, expiresAt, usesLeft } }
+    };
+    safeSetItem(STORAGE_KEYS.ACTIVE_ITEMS, activeItems);
+  }
+  return activeItems;
+}
+
+/**
+ * 激活道具
+ * @param {string} itemId - 道具ID
+ * @param {number} duration - 持续时间（毫秒），null表示永久
+ * @param {number} uses - 使用次数，null表示无限
+ * @returns {boolean} 是否激活成功
+ */
+function activateItem(itemId, duration = null, uses = null) {
+  const activeItems = initializeActiveItems();
+  const now = Date.now();
+
+  activeItems.items[itemId] = {
+    activatedAt: now,
+    expiresAt: duration ? now + duration : null,
+    usesLeft: uses,
+  };
+
+  safeSetItem(STORAGE_KEYS.ACTIVE_ITEMS, activeItems);
+  logMessage("info", "道具系统", `激活道具: ${itemId}`);
+  return true;
+}
+
+/**
+ * 检查道具是否激活
+ * @param {string} itemId - 道具ID
+ * @returns {boolean} 是否激活
+ */
+function isItemActive(itemId) {
+  const activeItems = initializeActiveItems();
+  const item = activeItems.items[itemId];
+
+  if (!item) return false;
+
+  const now = Date.now();
+
+  // 检查是否过期
+  if (item.expiresAt && now > item.expiresAt) {
+    deactivateItem(itemId);
+    return false;
+  }
+
+  // 检查使用次数
+  if (item.usesLeft !== null && item.usesLeft <= 0) {
+    deactivateItem(itemId);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * 消耗道具使用次数
+ * @param {string} itemId - 道具ID
+ * @returns {boolean} 是否成功消耗
+ */
+function consumeItemUse(itemId) {
+  const activeItems = initializeActiveItems();
+  const item = activeItems.items[itemId];
+
+  if (!item || item.usesLeft === null) return false;
+
+  item.usesLeft -= 1;
+
+  if (item.usesLeft <= 0) {
+    deactivateItem(itemId);
+  } else {
+    safeSetItem(STORAGE_KEYS.ACTIVE_ITEMS, activeItems);
+  }
+
+  return true;
+}
+
+/**
+ * 取消激活道具
+ * @param {string} itemId - 道具ID
+ */
+function deactivateItem(itemId) {
+  const activeItems = initializeActiveItems();
+  delete activeItems.items[itemId];
+  safeSetItem(STORAGE_KEYS.ACTIVE_ITEMS, activeItems);
+  logMessage("info", "道具系统", `道具失效: ${itemId}`);
+}
+
+/**
+ * 获取所有激活的道具
+ * @returns {Object} 激活的道具列表
+ */
+function getActiveItems() {
+  const activeItems = initializeActiveItems();
+  const now = Date.now();
+  const active = {};
+
+  for (const [itemId, item] of Object.entries(activeItems.items)) {
+    // 清理过期和用尽的道具
+    if (
+      (item.expiresAt && now > item.expiresAt) ||
+      (item.usesLeft !== null && item.usesLeft <= 0)
+    ) {
+      deactivateItem(itemId);
+    } else {
+      active[itemId] = item;
+    }
+  }
+
+  return active;
+}
+
+/**
+ * 应用道具效果到奖励
+ * @param {number} baseCoins - 基础金币
+ * @param {number} baseExp - 基础经验值
+ * @returns {Object} 应用道具后的奖励 { coins, exp }
+ */
+function applyItemEffects(baseCoins, baseExp) {
+  let coins = baseCoins;
+  let exp = baseExp;
+
+  // 检查经验倍增卡
+  if (isItemActive("item_exp_boost")) {
+    exp *= 2;
+  }
+
+  // 检查金币加成
+  if (isItemActive("item_coin_boost")) {
+    coins *= 1.5;
+  }
+
+  return {
+    coins: Math.floor(coins),
+    exp: Math.floor(exp),
+  };
+}
+
+/**
+ * 检查是否需要消耗提示加速器来获取高级提示
+ * @param {number} hintCount - 当前是第几次提示（从1开始）
+ * @returns {boolean} 是否需要消耗提示加速器
+ */
+function needsHintBooster(hintCount) {
+  // 第一次提示和最后的警告提示不需要消耗
+  // 上下文模式：第1次和第6次（警告）不消耗，第2-5次需要消耗
+  // 填空模式：第1次和第10次（警告）不消耗，第2-9次需要消耗
+  return hintCount >= 2 && hintCount <= 9;
+}
+
+/**
+ * 检查是否可以获取高级提示（检查提示加速器或大师之钥）
+ * @param {number} hintCount - 当前是第几次提示
+ * @param {string} mode - 模式（context 或 blank）
+ * @returns {Object} { canUse: boolean, reason: string }
+ */
+function canUseAdvancedHint(hintCount, mode = "blank") {
+  // 第一次提示和警告提示无需道具
+  if (!needsHintBooster(hintCount)) {
+    return { canUse: true, reason: "basic_hint" };
+  }
+
+  // 检查是否拥有大师之钥
+  if (isItemActive("item_master_key")) {
+    return { canUse: true, reason: "master_key" };
+  }
+
+  // 检查是否拥有提示加速器
+  const inventory = safeGetItem(STORAGE_KEYS.USER_INVENTORY, { owned: [] });
+  const hasBooster = inventory.owned.includes("item_hint_boost");
+
+  if (!hasBooster) {
+    return {
+      canUse: false,
+      reason: "需要提示加速器才能获取高级提示！请前往商店购买。",
+    };
+  }
+
+  return { canUse: true, reason: "hint_booster" };
+}
+
+/**
+ * 消耗一个提示加速器
+ * @returns {boolean} 是否消耗成功
+ */
+function consumeHintBooster() {
+  const inventory = safeGetItem(STORAGE_KEYS.USER_INVENTORY, { owned: [] });
+  const boosterIndex = inventory.owned.indexOf("item_hint_boost");
+
+  if (boosterIndex === -1) {
+    return false;
+  }
+
+  // 移除一个提示加速器
+  inventory.owned.splice(boosterIndex, 1);
+  safeSetItem(STORAGE_KEYS.USER_INVENTORY, inventory);
+
+  logMessage("info", "道具系统", "消耗了1个提示加速器");
+  return true;
 }
 
 /**
@@ -2040,6 +2695,71 @@ function initializeAchievements() {
           reward: 500,
           icon: "⭐",
         },
+        // 排位赛成就
+        {
+          id: "first_ranked_match",
+          name: "初入竞技",
+          description: "完成第一场排位赛",
+          type: "MANUAL",
+          reward: 100,
+          icon: "⚔️",
+        },
+        {
+          id: "reach_gold",
+          name: "黄金选手",
+          description: "排位赛达到黄金段位",
+          type: "MANUAL",
+          reward: 200,
+          icon: "🥇",
+        },
+        {
+          id: "reach_platinum",
+          name: "铂金精英",
+          description: "排位赛达到铂金段位",
+          type: "MANUAL",
+          reward: 300,
+          icon: "💎",
+        },
+        {
+          id: "reach_diamond",
+          name: "钻石王者",
+          description: "排位赛达到钻石段位",
+          type: "MANUAL",
+          reward: 500,
+          icon: "💠",
+        },
+        {
+          id: "reach_master",
+          name: "登峰造极",
+          description: "排位赛达到大师段位",
+          type: "MANUAL",
+          reward: 800,
+          icon: "👑",
+        },
+        {
+          id: "reach_grandmaster",
+          name: "一代宗师",
+          description: "排位赛达到宗师段位",
+          type: "MANUAL",
+          reward: 1500,
+          icon: "🏆",
+        },
+        {
+          id: "ranked_win_streak_5",
+          name: "势不可挡",
+          description: "排位赛连胜5场",
+          type: "MANUAL",
+          reward: 300,
+          icon: "🔥",
+        },
+        {
+          id: "season_champion",
+          name: "赛季冠军",
+          description: "赛季结束时排名第一",
+          type: "MANUAL",
+          reward: 2000,
+          icon: "🏅",
+        },
       ],
     };
     safeSetItem(STORAGE_KEYS.ACHIEVEMENTS, achievements);
@@ -2113,8 +2833,11 @@ function showAchievementNotification(achievement) {
 
   // 5秒后自动关闭
   setTimeout(() => {
+    // 先移除 show 类，添加 hide 类触发离场动画
     notification.classList.remove("show");
-    setTimeout(() => notification.remove(), 300);
+    notification.classList.add("hide");
+    // 等待离场动画完成后再移除元素（动画时长 600ms，留出 650ms 余量）
+    setTimeout(() => notification.remove(), 650);
   }, 5000);
 }
 
@@ -2185,8 +2908,902 @@ function toggleTheme() {
 }
 
 /**
- * 应用主题
+ * 主题配置 - 定义所有可用主题的颜色方案
+ */
+const THEME_CONFIGS = {
+  theme_light: {
+    name: "明月清辉",
+    colors: {
+      primary: "#4f46e5",
+      secondary: "#6366f1",
+      background: "#f8fafc",
+      textPrimary: "#1e293b",
+      textSecondary: "#475569",
+      cardBg: "#ffffff",
+    },
+    gradient: "linear-gradient(90deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)",
+    isDefault: true,
+  },
+  theme_dark: {
+    name: "星夜深邃",
+    colors: {
+      primary: "#6366f1",
+      secondary: "#818cf8",
+      background: "#0f172a",
+      textPrimary: "#e2e8f0",
+      textSecondary: "#94a3b8",
+      cardBg: "rgba(30, 41, 59, 0.85)",
+    },
+    gradient: "linear-gradient(135deg, #1a1b4b, #2d1b69, #1e3a8a, #4c1d95)",
+    isDefault: true,
+  },
+  theme_forest: {
+    name: "森林绿野",
+    colors: {
+      primary: "#10b981",
+      secondary: "#059669",
+      background: "#f0fdf4",
+      textPrimary: "#064e3b",
+      textSecondary: "#047857",
+      cardBg: "#dcfce7",
+    },
+    gradient: "linear-gradient(135deg, #10b981, #059669, #34d399, #6ee7b7)",
+  },
+  theme_ocean: {
+    name: "深海蓝调",
+    colors: {
+      primary: "#0284c7",
+      secondary: "#0369a1",
+      background: "#f0f9ff",
+      textPrimary: "#0c4a6e",
+      textSecondary: "#0369a1",
+      cardBg: "#e0f2fe",
+    },
+    gradient: "linear-gradient(135deg, #0284c7, #0369a1, #0ea5e9, #38bdf8)",
+  },
+  theme_sunset: {
+    name: "日落余晖",
+    colors: {
+      primary: "#f59e0b",
+      secondary: "#d97706",
+      background: "#fffbeb",
+      textPrimary: "#78350f",
+      textSecondary: "#b45309",
+      cardBg: "#fef3c7",
+    },
+    gradient: "linear-gradient(135deg, #f59e0b, #d97706, #fbbf24, #fcd34d)",
+  },
+  theme_galaxy: {
+    name: "玉津璀璨",
+    colors: {
+      primary: "#8b5cf6",
+      secondary: "#7c3aed",
+      background: "#faf5ff",
+      textPrimary: "#4c1d95",
+      textSecondary: "#6d28d9",
+      cardBg: "#ede9fe",
+    },
+    gradient: "linear-gradient(135deg, #8b5cf6, #7c3aed, #a78bfa, #c4b5fd)",
+  },
+  theme_cherry: {
+    name: "樱花纷飞",
+    colors: {
+      primary: "#ec4899",
+      secondary: "#db2777",
+      background: "#fdf2f8",
+      textPrimary: "#831843",
+      textSecondary: "#be185d",
+      cardBg: "#fce7f3",
+    },
+    gradient: "linear-gradient(135deg, #ec4899, #db2777, #f472b6, #f9a8d4)",
+  },
+  theme_aurora: {
+    name: "极光幻境",
+    colors: {
+      primary: "#06b6d4",
+      secondary: "#0891b2",
+      background: "#ecfeff",
+      textPrimary: "#164e63",
+      textSecondary: "#0e7490",
+      cardBg: "#cffafe",
+    },
+    gradient: "linear-gradient(135deg, #06b6d4, #8b5cf6, #ec4899, #f59e0b)",
+  },
+};
+
+/**
+ * 应用主题（明暗模式）
  */
 function applyTheme(theme) {
-  document.documentElement.setAttribute("data-theme", theme);
+  let actualTheme = theme;
+
+  // 如果是自动模式，检测系统偏好
+  if (theme === "auto") {
+    const prefersDark =
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+    actualTheme = prefersDark ? "dark" : "light";
+  }
+
+  document.documentElement.setAttribute("data-theme", actualTheme);
+}
+
+/**
+ * 创建圆形扩散主题切换动画
+ * 使用 View Transition API 实现真正的圆内新主题、圆外旧主题效果
+ */
+async function createThemeTransitionAnimation(themeApplyFn) {
+  // 检查浏览器是否支持 View Transition API
+  if (!document.startViewTransition) {
+    // 不支持则直接应用主题
+    themeApplyFn();
+    return;
+  }
+
+  // 使用 View Transition API
+  const transition = document.startViewTransition(() => {
+    themeApplyFn();
+  });
+
+  // 等待动画完成
+  try {
+    await transition.finished;
+  } catch (error) {
+    logMessage("warn", "Theme", "主题切换动画失败，已回退到直接切换");
+  }
+}
+
+/**
+ * 应用装备的主题皮肤（带动画）
+ */
+function applyEquippedThemeSkin(withAnimation = false) {
+  const inventory = initializeInventory();
+  const equippedTheme = inventory.equipped;
+
+  const applyThemeStyles = () => {
+    // 移除所有主题类
+    Object.keys(THEME_CONFIGS).forEach((themeId) => {
+      document.documentElement.classList.remove(themeId);
+    });
+
+    // 如果有装备的主题，应用它
+    if (equippedTheme && THEME_CONFIGS[equippedTheme]) {
+      document.documentElement.classList.add(equippedTheme);
+      const config = THEME_CONFIGS[equippedTheme];
+
+      // 动态设置 CSS 变量
+      const root = document.documentElement;
+      root.style.setProperty("--primary", config.colors.primary);
+      root.style.setProperty("--secondary", config.colors.secondary);
+      root.style.setProperty("--background", config.colors.background);
+      root.style.setProperty("--text-primary", config.colors.textPrimary);
+      root.style.setProperty("--text-secondary", config.colors.textSecondary);
+      root.style.setProperty("--card-bg", config.colors.cardBg);
+
+      logMessage("info", "Theme", `已应用主题: ${config.name}`);
+    }
+  };
+
+  if (withAnimation) {
+    // 使用 View Transition API 实现圆形扩散动画
+    createThemeTransitionAnimation(applyThemeStyles);
+  } else {
+    applyThemeStyles();
+  }
+}
+
+/**
+ * 获取当前装备的主题信息
+ */
+function getEquippedThemeInfo() {
+  const inventory = initializeInventory();
+  const equippedTheme = inventory.equipped;
+
+  if (equippedTheme && THEME_CONFIGS[equippedTheme]) {
+    return {
+      id: equippedTheme,
+      ...THEME_CONFIGS[equippedTheme],
+    };
+  }
+
+  return null;
+}
+
+// =================================================================
+// 开发者模式系统
+// =================================================================
+
+// 开发者模式触发计数器
+let devModeClickCount = 0;
+let devModeClickTimer = null;
+
+// =================================================================
+// 赛季系统
+// =================================================================
+
+// 赛季系统存储键
+const SEASON_STORAGE_KEY = "seasonData";
+
+// 赛季配置
+const SEASON_CONFIG = {
+  // 赛季时长（毫秒）- 14天
+  DURATION: 14 * 24 * 60 * 60 * 1000,
+  // 段位配置（从低到高）
+  TIERS: [
+    { id: "bronze", name: "青铜", icon: "🥉", minScore: 0, color: "#cd7f32" },
+    { id: "silver", name: "白银", icon: "🥈", minScore: 500, color: "#c0c0c0" },
+    { id: "gold", name: "黄金", icon: "🥇", minScore: 1200, color: "#ffd700" },
+    {
+      id: "platinum",
+      name: "铂金",
+      icon: "💎",
+      minScore: 2000,
+      color: "#00ced1",
+    },
+    {
+      id: "diamond",
+      name: "钻石",
+      icon: "💠",
+      minScore: 3000,
+      color: "#b9f2ff",
+    },
+    {
+      id: "master",
+      name: "大师",
+      icon: "👑",
+      minScore: 4500,
+      color: "#9400d3",
+    },
+    {
+      id: "grandmaster",
+      name: "宗师",
+      icon: "🏆",
+      minScore: 6000,
+      color: "#ff4500",
+    },
+  ],
+  // 排位赛积分配置
+  SCORE: {
+    WIN: 30, // 胜利基础积分
+    LOSS: -15, // 失败扣分
+    PERFECT_BONUS: 20, // 全对额外奖励
+    STREAK_BONUS: 5, // 连胜额外奖励（每连胜+5）
+  },
+  // 赛季结算奖励（按段位）
+  REWARDS: {
+    bronze: { coins: 100, diamonds: 0 },
+    silver: { coins: 200, diamonds: 5 },
+    gold: { coins: 400, diamonds: 15 },
+    platinum: { coins: 700, diamonds: 30 },
+    diamond: { coins: 1000, diamonds: 50 },
+    master: { coins: 1500, diamonds: 80 },
+    grandmaster: { coins: 2500, diamonds: 150 },
+  },
+};
+
+/**
+ * 初始化赛季数据
+ * @returns {Object} 赛季数据
+ */
+function initializeSeasonData() {
+  let seasonData = safeGetItem(SEASON_STORAGE_KEY);
+  const now = Date.now();
+
+  if (!seasonData) {
+    // 首次创建赛季
+    seasonData = createNewSeason();
+    safeSetItem(SEASON_STORAGE_KEY, seasonData);
+    logMessage("info", "Season", "创建新赛季");
+  } else {
+    // 检查赛季是否过期
+    if (now > seasonData.endTime) {
+      // 赛季结束，发放奖励并创建新赛季
+      settleSeasonRewards(seasonData);
+      seasonData = createNewSeason();
+      safeSetItem(SEASON_STORAGE_KEY, seasonData);
+      logMessage("info", "Season", "赛季结束，开启新赛季");
+    }
+  }
+
+  return seasonData;
+}
+
+/**
+ * 创建新赛季
+ * @returns {Object} 新赛季数据
+ */
+function createNewSeason() {
+  const now = Date.now();
+  const seasonNumber = calculateSeasonNumber();
+
+  return {
+    seasonNumber: seasonNumber,
+    startTime: now,
+    endTime: now + SEASON_CONFIG.DURATION,
+    playerData: {
+      score: 0,
+      tier: "bronze",
+      wins: 0,
+      losses: 0,
+      winStreak: 0,
+      maxWinStreak: 0,
+      matchHistory: [], // 最近的比赛记录
+    },
+    leaderboard: generateFakeLeaderboard(seasonNumber),
+  };
+}
+
+/**
+ * 计算当前赛季编号
+ * @returns {number} 赛季编号
+ */
+function calculateSeasonNumber() {
+  // 基于2025年1月1日开始计算赛季
+  const baseDate = new Date("2025-01-01").getTime();
+  const now = Date.now();
+  return Math.floor((now - baseDate) / SEASON_CONFIG.DURATION) + 1;
+}
+
+/**
+ * 生成假玩家排行榜
+ * @param {number} seasonNumber - 赛季编号
+ * @returns {Array} 排行榜数据
+ */
+function generateFakeLeaderboard(seasonNumber) {
+  const names = [
+    "学霸小明",
+    "英语达人",
+    "单词王者",
+    "勤奋的小华",
+    "努力的小李",
+    "英语学习者",
+    "词汇大师",
+    "阅读专家",
+    "听力高手",
+    "口语达人",
+    "语法先锋",
+    "翻译专家",
+    "写作能手",
+    "考试战神",
+    "背单词狂人",
+    "每日坚持",
+    "从不放弃",
+    "追梦少年",
+    "知识海洋",
+    "智慧之星",
+    "学无止境",
+    "天道酬勤",
+    "厚积薄发",
+    "勇往直前",
+    "持之以恒",
+    "百词斩手",
+    "墨墨好友",
+    "扇贝达人",
+    "知米背词",
+    "沪江学员",
+  ];
+
+  const leaderboard = [];
+  const usedNames = new Set();
+
+  // 生成20个假玩家
+  for (let i = 0; i < 20; i++) {
+    let name;
+    do {
+      name = names[Math.floor(Math.random() * names.length)];
+      // 添加随机后缀避免重名
+      if (usedNames.has(name)) {
+        name = name + Math.floor(Math.random() * 100);
+      }
+    } while (usedNames.has(name));
+    usedNames.add(name);
+
+    // 根据排名生成合理的分数（排名越高分数越高）
+    const baseScore = 6000 - i * 250 + Math.floor(Math.random() * 200);
+    const tier = getTierByScore(Math.max(0, baseScore));
+
+    leaderboard.push({
+      rank: i + 1,
+      name: name,
+      score: Math.max(0, baseScore),
+      tier: tier.id,
+      isBot: true,
+    });
+  }
+
+  return leaderboard;
+}
+
+/**
+ * 根据分数获取段位
+ * @param {number} score - 分数
+ * @returns {Object} 段位信息
+ */
+function getTierByScore(score) {
+  const tiers = SEASON_CONFIG.TIERS;
+  for (let i = tiers.length - 1; i >= 0; i--) {
+    if (score >= tiers[i].minScore) {
+      return tiers[i];
+    }
+  }
+  return tiers[0];
+}
+
+/**
+ * 获取下一个段位信息
+ * @param {string} currentTierId - 当前段位ID
+ * @returns {Object|null} 下一段位信息，已是最高段位则返回null
+ */
+function getNextTier(currentTierId) {
+  const tiers = SEASON_CONFIG.TIERS;
+  const currentIndex = tiers.findIndex((t) => t.id === currentTierId);
+  if (currentIndex < tiers.length - 1) {
+    return tiers[currentIndex + 1];
+  }
+  return null;
+}
+
+/**
+ * 获取当前赛季数据
+ * @returns {Object} 赛季数据
+ */
+function getSeasonData() {
+  return initializeSeasonData();
+}
+
+/**
+ * 获取玩家排位数据
+ * @returns {Object} 玩家排位数据
+ */
+function getPlayerRankedData() {
+  const seasonData = getSeasonData();
+  return seasonData.playerData;
+}
+
+/**
+ * 更新排位赛结果
+ * @param {boolean} isWin - 是否胜利
+ * @param {boolean} isPerfect - 是否完美（全对）
+ * @param {number} correctCount - 正确数量
+ * @param {number} totalCount - 总题目数
+ * @returns {Object} 更新结果 { scoreChange, newScore, tierChange, rewards }
+ */
+function updateRankedResult(
+  isWin,
+  isPerfect = false,
+  correctCount = 0,
+  totalCount = 10
+) {
+  const seasonData = getSeasonData();
+  const player = seasonData.playerData;
+  const oldTier = player.tier;
+
+  let scoreChange = 0;
+
+  if (isWin) {
+    // 基础胜利分数
+    scoreChange = SEASON_CONFIG.SCORE.WIN;
+
+    // 完美奖励
+    if (isPerfect) {
+      scoreChange += SEASON_CONFIG.SCORE.PERFECT_BONUS;
+    }
+
+    // 连胜奖励
+    player.winStreak++;
+    if (player.winStreak > 1) {
+      scoreChange +=
+        SEASON_CONFIG.SCORE.STREAK_BONUS * Math.min(player.winStreak - 1, 5);
+    }
+
+    player.wins++;
+    player.maxWinStreak = Math.max(player.maxWinStreak, player.winStreak);
+  } else {
+    // 失败扣分
+    scoreChange = SEASON_CONFIG.SCORE.LOSS;
+    player.winStreak = 0;
+    player.losses++;
+  }
+
+  // 更新分数（不低于0）
+  player.score = Math.max(0, player.score + scoreChange);
+
+  // 更新段位
+  const newTierInfo = getTierByScore(player.score);
+  player.tier = newTierInfo.id;
+
+  // 记录比赛历史（最多保留20条）
+  player.matchHistory.unshift({
+    time: Date.now(),
+    isWin: isWin,
+    isPerfect: isPerfect,
+    scoreChange: scoreChange,
+    correctCount: correctCount,
+    totalCount: totalCount,
+  });
+  if (player.matchHistory.length > 20) {
+    player.matchHistory.pop();
+  }
+
+  // 更新假玩家分数（模拟其他玩家也在进步）
+  updateFakePlayersScore(seasonData);
+
+  // 更新玩家在排行榜中的位置
+  updatePlayerRankPosition(seasonData);
+
+  safeSetItem(SEASON_STORAGE_KEY, seasonData);
+
+  // 检查是否触发段位相关成就
+  checkRankedAchievements(player, oldTier);
+
+  return {
+    scoreChange: scoreChange,
+    newScore: player.score,
+    tierChange:
+      oldTier !== player.tier ? { from: oldTier, to: player.tier } : null,
+    newTier: newTierInfo,
+  };
+}
+
+/**
+ * 更新假玩家分数（模拟活跃度）
+ * @param {Object} seasonData - 赛季数据
+ */
+function updateFakePlayersScore(seasonData) {
+  seasonData.leaderboard.forEach((player) => {
+    if (player.isBot) {
+      // 随机增减分数（-10 到 +20）
+      const change = Math.floor(Math.random() * 31) - 10;
+      player.score = Math.max(0, player.score + change);
+      player.tier = getTierByScore(player.score).id;
+    }
+  });
+
+  // 重新排序
+  seasonData.leaderboard.sort((a, b) => b.score - a.score);
+
+  // 更新排名
+  seasonData.leaderboard.forEach((player, index) => {
+    player.rank = index + 1;
+  });
+}
+
+/**
+ * 更新玩家在排行榜中的位置
+ * @param {Object} seasonData - 赛季数据
+ */
+function updatePlayerRankPosition(seasonData) {
+  const player = seasonData.playerData;
+
+  // 移除旧的玩家数据（如果存在）
+  seasonData.leaderboard = seasonData.leaderboard.filter((p) => !p.isPlayer);
+
+  // 添加玩家数据
+  seasonData.leaderboard.push({
+    rank: 0,
+    name: "我",
+    score: player.score,
+    tier: player.tier,
+    isPlayer: true,
+    isBot: false,
+  });
+
+  // 重新排序
+  seasonData.leaderboard.sort((a, b) => b.score - a.score);
+
+  // 更新排名
+  seasonData.leaderboard.forEach((p, index) => {
+    p.rank = index + 1;
+  });
+}
+
+/**
+ * 获取排行榜数据
+ * @param {number} limit - 返回数量限制
+ * @returns {Array} 排行榜数据
+ */
+function getLeaderboard(limit = 20) {
+  const seasonData = getSeasonData();
+  return seasonData.leaderboard.slice(0, limit);
+}
+
+/**
+ * 获取玩家排名
+ * @returns {number} 玩家排名
+ */
+function getPlayerRank() {
+  const seasonData = getSeasonData();
+  const playerEntry = seasonData.leaderboard.find((p) => p.isPlayer);
+  return playerEntry ? playerEntry.rank : seasonData.leaderboard.length + 1;
+}
+
+/**
+ * 获取赛季剩余时间
+ * @returns {Object} { days, hours, minutes, totalMs }
+ */
+function getSeasonRemainingTime() {
+  const seasonData = getSeasonData();
+  const remaining = Math.max(0, seasonData.endTime - Date.now());
+
+  const days = Math.floor(remaining / (24 * 60 * 60 * 1000));
+  const hours = Math.floor(
+    (remaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000)
+  );
+  const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+
+  return { days, hours, minutes, totalMs: remaining };
+}
+
+/**
+ * 结算赛季奖励
+ * @param {Object} seasonData - 赛季数据
+ */
+function settleSeasonRewards(seasonData) {
+  const tier = seasonData.playerData.tier;
+  const rewards = SEASON_CONFIG.REWARDS[tier];
+
+  if (rewards) {
+    addCoins(rewards.coins);
+    if (rewards.diamonds > 0) {
+      addDiamonds(rewards.diamonds);
+    }
+
+    showToast(
+      `🎊 赛季结算！获得 ${rewards.coins} 金币${
+        rewards.diamonds > 0 ? ` 和 ${rewards.diamonds} 钻石` : ""
+      }`,
+      "success",
+      5000
+    );
+
+    // 检查赛季冠军成就
+    if (getPlayerRank() === 1) {
+      const achievements = initializeAchievements();
+      const championAchievement = achievements.definitions.find(
+        (a) => a.id === "season_champion"
+      );
+      if (
+        championAchievement &&
+        !achievements.unlocked.includes("season_champion")
+      ) {
+        unlockAchievement(championAchievement);
+      }
+    }
+  }
+
+  logMessage(
+    "info",
+    "Season",
+    `赛季结算: 段位=${tier}, 奖励=${JSON.stringify(rewards)}`
+  );
+}
+
+/**
+ * 检查排位赛相关成就
+ * @param {Object} player - 玩家数据
+ * @param {string} oldTier - 旧段位
+ */
+function checkRankedAchievements(player, oldTier) {
+  const achievements = initializeAchievements();
+
+  // 首次参赛成就
+  if (player.wins + player.losses === 1) {
+    const firstMatch = achievements.definitions.find(
+      (a) => a.id === "first_ranked_match"
+    );
+    if (firstMatch && !achievements.unlocked.includes("first_ranked_match")) {
+      unlockAchievement(firstMatch);
+    }
+  }
+
+  // 段位晋升成就
+  if (oldTier !== player.tier) {
+    const tierIndex = SEASON_CONFIG.TIERS.findIndex(
+      (t) => t.id === player.tier
+    );
+    const oldTierIndex = SEASON_CONFIG.TIERS.findIndex((t) => t.id === oldTier);
+
+    if (tierIndex > oldTierIndex) {
+      // 晋升了
+      showToast(
+        `🎉 恭喜晋升到${SEASON_CONFIG.TIERS[tierIndex].name}段位！`,
+        "success"
+      );
+
+      // 检查段位成就
+      const tierAchievements = {
+        gold: "reach_gold",
+        platinum: "reach_platinum",
+        diamond: "reach_diamond",
+        master: "reach_master",
+        grandmaster: "reach_grandmaster",
+      };
+
+      const achievementId = tierAchievements[player.tier];
+      if (achievementId) {
+        const achievement = achievements.definitions.find(
+          (a) => a.id === achievementId
+        );
+        if (achievement && !achievements.unlocked.includes(achievementId)) {
+          unlockAchievement(achievement);
+        }
+      }
+    }
+  }
+
+  // 连胜成就
+  if (player.winStreak >= 5) {
+    const winStreakAchievement = achievements.definitions.find(
+      (a) => a.id === "ranked_win_streak_5"
+    );
+    if (
+      winStreakAchievement &&
+      !achievements.unlocked.includes("ranked_win_streak_5")
+    ) {
+      unlockAchievement(winStreakAchievement);
+    }
+  }
+}
+
+/**
+ * 添加钻石
+ * @param {number} amount - 钻石数量
+ */
+function addDiamonds(amount) {
+  const profile = getUserProfile();
+  const newDiamonds = (profile.diamonds || 0) + amount;
+  updateUserProfile({ diamonds: newDiamonds });
+  showToast(`💎 获得 ${amount} 钻石！`, "success");
+}
+
+/**
+ * 检查是否为开发者模式
+ * @returns {boolean} 是否为开发者模式
+ */
+function isDeveloperMode() {
+  return safeGetItem(STORAGE_KEYS.DEVELOPER_MODE, false) === true;
+}
+
+/**
+ * 设置开发者模式
+ * @param {boolean} enabled - 是否启用
+ */
+function setDeveloperMode(enabled) {
+  safeSetItem(STORAGE_KEYS.DEVELOPER_MODE, enabled);
+  applyDeveloperModeUI();
+  logMessage("info", "DevMode", `开发者模式已${enabled ? "启用" : "关闭"}`);
+}
+
+/**
+ * 切换开发者模式
+ */
+function toggleDeveloperMode() {
+  const current = isDeveloperMode();
+  setDeveloperMode(!current);
+  showToast(
+    current ? "🔒 开发者模式已关闭" : "🔓 开发者模式已启用",
+    current ? "info" : "success"
+  );
+}
+
+/**
+ * 处理标题点击（用于触发开发者模式）
+ * 连续点击7次启用/关闭开发者模式
+ */
+function handleDevModeTitleClick() {
+  devModeClickCount++;
+
+  // 清除之前的计时器
+  if (devModeClickTimer) {
+    clearTimeout(devModeClickTimer);
+  }
+
+  // 3秒内没有继续点击则重置计数
+  devModeClickTimer = setTimeout(() => {
+    devModeClickCount = 0;
+  }, 3000);
+
+  // 达到7次点击
+  if (devModeClickCount >= 7) {
+    devModeClickCount = 0;
+    clearTimeout(devModeClickTimer);
+    toggleDeveloperMode();
+  } else if (devModeClickCount >= 5) {
+    // 提示用户快要触发了
+    showToast(`再点击 ${7 - devModeClickCount} 次...`, "info", 1000);
+  }
+}
+
+/**
+ * 初始化开发者模式标题点击监听
+ * @param {string} selector - 标题元素选择器
+ */
+function initDevModeTrigger(selector = "h1") {
+  const titleElement = document.querySelector(selector);
+  if (titleElement) {
+    titleElement.style.cursor = "default";
+    titleElement.style.userSelect = "none";
+    titleElement.addEventListener("click", handleDevModeTitleClick);
+  }
+}
+
+/**
+ * 应用开发者模式UI状态
+ * 控制开发者专属元素的显示/隐藏
+ */
+function applyDeveloperModeUI() {
+  const isDevMode = isDeveloperMode();
+
+  // 1. 主题切换按钮 (.theme-toggle-wrapper)
+  document.querySelectorAll(".theme-toggle-wrapper").forEach((el) => {
+    el.style.display = isDevMode ? "" : "none";
+  });
+
+  // 2. 开发者刷新按钮 (#devRefreshBtn)
+  const devRefreshBtn = document.getElementById("devRefreshBtn");
+  if (devRefreshBtn) {
+    devRefreshBtn.style.display = isDevMode ? "" : "none";
+  }
+
+  // 3. 管理界面的"用户数据"和"数据备份"标签
+  const devOnlyTabs = ["tab-user-data", "tab-backup"];
+  devOnlyTabs.forEach((tabId) => {
+    const tabInput = document.getElementById(tabId);
+    const tabLabel = document.querySelector(`label[for="${tabId}"]`);
+    if (tabInput) {
+      tabInput.style.display = isDevMode ? "" : "none";
+    }
+    if (tabLabel) {
+      tabLabel.style.display = isDevMode ? "" : "none";
+    }
+  });
+
+  // 4. 对应的 tab-content 面板
+  const devOnlyPanels = ["userDataTab", "backupTab"];
+  devOnlyPanels.forEach((panelId) => {
+    const panel = document.getElementById(panelId);
+    if (panel) {
+      panel.style.display = isDevMode ? "" : "none";
+    }
+  });
+
+  const tabGroup = document.querySelector(".segmented-tabs");
+  const tabRadios = tabGroup
+    ? Array.from(tabGroup.querySelectorAll('input[name="admin-tabs"]'))
+    : [];
+  const checkedTab = tabRadios.find((radio) => radio.checked);
+  const devOnlyValues = ["user-data", "backup"];
+  let targetTab = checkedTab?.value || "words";
+
+  // 关闭开发者模式时，如果当前是开发者专属标签则回退到单词管理
+  if (!isDevMode && devOnlyValues.includes(targetTab)) {
+    targetTab = "words";
+    const wordsTab = document.getElementById("tab-words");
+    if (wordsTab) {
+      wordsTab.checked = true;
+    }
+  }
+
+  // 同步标签显示和指示器位置
+  const syncTabs = () => {
+    if (typeof showTab === "function") {
+      showTab(targetTab);
+    } else if (typeof window.__moveSegIndicator === "function") {
+      window.__moveSegIndicator(targetTab);
+    }
+  };
+
+  // 等待样式更新后再同步，避免宽度计算异常
+  requestAnimationFrame(syncTabs);
+}
+
+/**
+ * 页面加载时初始化开发者模式
+ */
+function initDeveloperMode() {
+  // 应用当前开发者模式状态到UI
+  applyDeveloperModeUI();
+
+  // 初始化标题点击触发器
+  initDevModeTrigger("h1");
 }

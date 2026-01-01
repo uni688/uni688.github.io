@@ -1,0 +1,1480 @@
+/* =================================================================
+   主题样式文件 (themes.css)
+   包含：暗色主题、皮肤主题、主题相关组件优化
+   ================================================================= */
+
+/* ===================================================================
+   夜间模式 - 统一主题变量覆盖
+   =================================================================== */
+.theme_dark {
+  --primary: #6366f1;
+  --secondary: #818cf8;
+  --background: #0f172a;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-radius: 0.75rem;
+  --border-radius-sm: 0.5rem;
+  --success: #10b981;
+  --error: #ef4444;
+  --info: #3b82f6;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.7);
+  --table-row-hover-bg: rgba(99, 102, 241, 0.18);
+  --card-bg: rgba(30, 41, 59, 0.85);
+  --card-border: rgba(100, 116, 139, 0.4);
+  --input-bg: rgba(30, 41, 59, 0.6);
+  --input-border: rgba(100, 116, 139, 0.5);
+  --panel-bg: rgba(30, 41, 59, 0.95);
+}
+
+/* =================================================================
+   自定义下拉组件 - 暗色主题适配
+   ================================================================= */
+
+/* 触发按钮 */
+.theme_dark .custom-select-trigger {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(99, 102, 241, 0.25);
+  color: #e0e7ff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.theme_dark .custom-select-trigger:hover {
+  border-color: rgba(129, 140, 248, 0.5);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.25);
+}
+
+.theme_dark .custom-select-trigger:focus,
+.theme_dark .custom-select-wrapper.open .custom-select-trigger {
+  border-color: rgba(129, 140, 248, 0.6);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+.theme_dark .custom-select-display {
+  color: #e0e7ff;
+}
+
+.theme_dark .custom-select-display.placeholder {
+  color: #94a3b8;
+}
+
+.theme_dark .custom-select-arrow {
+  color: #94a3b8;
+}
+
+/* 下拉菜单 */
+.theme_dark .custom-select-dropdown {
+  background: rgba(30, 41, 59, 0.98);
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.1);
+  backdrop-filter: blur(16px);
+}
+
+/* 选项 */
+.theme_dark .custom-select-option {
+  color: #e0e7ff;
+}
+
+.theme_dark .custom-select-option:hover,
+.theme_dark .custom-select-option.highlighted {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.9), rgba(129, 140, 248, 0.9));
+  color: white;
+}
+
+.theme_dark .custom-select-option.selected {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+}
+
+.theme_dark .custom-select-option.selected:hover,
+.theme_dark .custom-select-option.selected.highlighted {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.9), rgba(129, 140, 248, 0.9));
+  color: white;
+}
+
+.theme_dark .custom-select-option.disabled {
+  color: #64748b;
+}
+
+/* 滚动条 */
+.theme_dark .custom-select-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(129, 140, 248, 0.4);
+}
+
+.theme_dark .custom-select-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 140, 248, 0.6);
+}
+
+/* ===================================================================
+   暗色主题 - 基础元素样式
+   =================================================================== */
+.theme_dark body {
+  background: linear-gradient(135deg, #1a1b4b, #2d1b69, #1e3a8a, #4c1d95);
+  background-size: 400% 400%;
+  animation: gradientBG 20s ease infinite;
+  color: var(--text-primary);
+}
+
+.theme_dark .container {
+  background: var(--panel-bg, rgba(30, 41, 59, 0.95));
+  backdrop-filter: blur(20px);
+}
+
+/* 全局文本基调 - 柔和的蓝紫白 */
+.theme_dark body,
+.theme_dark .container,
+.theme_dark p,
+.theme_dark div {
+  color: #e0e7ff;
+}
+
+/* 主标题和重要标题 - 更亮的蓝紫白 */
+.theme_dark h1,
+.theme_dark h2,
+.theme_dark h3,
+.theme_dark h4,
+.theme_dark .page-title,
+.theme_dark .section-title,
+.theme_dark .mode-card h3,
+.theme_dark .stat-card-value,
+.theme_dark .achievement-name,
+.theme_dark .vocab-name,
+.theme_dark .item-name {
+  color: #f0f4ff !important;
+}
+
+/* 次要文本可读性提升 */
+.theme_dark .text-secondary,
+.theme_dark .text-muted,
+.theme_dark .item-desc,
+.theme_dark .settings-description,
+.theme_dark .user-detail-label,
+.theme_dark .weight-label,
+.theme_dark .admin-link,
+.theme_dark .stat-label,
+.theme_dark .achievement-desc,
+.theme_dark .vocab-stats {
+  color: #94a3b8 !important;
+}
+
+/* ===================================================================
+   暗色主题 - 卡片与容器
+   =================================================================== */
+.theme_dark .mode-card,
+.theme_dark .stat-card,
+.theme_dark .shop-item,
+.theme_dark .achievement-card,
+.theme_dark .section,
+.theme_dark .user-info,
+.theme_dark .card,
+.theme_dark .user-card,
+.theme_dark .user-form-card,
+.theme_dark .admin-achievement-card {
+  background: rgba(30, 41, 59, 0.7) !important;
+  border: 1px solid rgba(99, 102, 241, 0.12) !important;
+  backdrop-filter: blur(10px);
+}
+
+.theme_dark .mode-card:hover,
+.theme_dark .shop-item:hover {
+  border-color: rgba(129, 140, 248, 0.4) !important;
+  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.25) !important;
+  transform: translateY(-4px);
+}
+
+/* 练习模式卡片 */
+.theme_dark .mode-card {
+  background: rgba(30, 41, 59, 0.75) !important;
+  border: 1px solid rgba(99, 102, 241, 0.15) !important;
+  transition: all 0.3s ease;
+}
+
+.theme_dark .mode-card:hover {
+  background: rgba(51, 65, 85, 0.8) !important;
+}
+
+.theme_dark .mode-card p {
+  color: #cbd5e1 !important;
+}
+
+.theme_dark .mode-icon {
+  filter: brightness(0.9);
+}
+
+/* 成就卡片 */
+.theme_dark .achievement-card {
+  background: rgba(30, 41, 59, 0.7) !important;
+  border: 1px solid rgba(99, 102, 241, 0.12) !important;
+}
+
+.theme_dark .achievement-card.unlocked {
+  background: rgba(51, 65, 85, 0.8) !important;
+  border-color: rgba(129, 140, 248, 0.3) !important;
+  box-shadow: 0 0 20px rgba(129, 140, 248, 0.2) !important;
+}
+
+.theme_dark .achievement-card.locked {
+  opacity: 0.6;
+}
+
+.theme_dark .achievement-desc,
+.theme_dark .achievement-description {
+  color: #94a3b8 !important;
+}
+
+.theme_dark .achievement-reward {
+  color: #fde047 !important;
+  text-shadow: 0 0 8px rgba(253, 224, 71, 0.3);
+}
+
+/* ===================================================================
+   暗色主题 - 表单元素
+   =================================================================== */
+.theme_dark input,
+.theme_dark textarea,
+.theme_dark select,
+.theme_dark .form-control,
+.theme_dark .settings-select,
+.theme_dark #wordModeSelector {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  color: #e0e7ff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.theme_dark input:hover,
+.theme_dark textarea:hover,
+.theme_dark select:hover,
+.theme_dark .form-control:hover,
+.theme_dark .settings-select:hover {
+  border-color: rgba(129, 140, 248, 0.3) !important;
+  background: rgba(30, 41, 59, 0.9) !important;
+}
+
+.theme_dark input:focus,
+.theme_dark textarea:focus,
+.theme_dark select:focus,
+.theme_dark .form-control:focus,
+.theme_dark .settings-select:focus {
+  border-color: rgba(129, 140, 248, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.theme_dark select option {
+  background-color: #0f172a;
+  color: #e0e7ff;
+  padding: 0.5rem;
+}
+
+/* ===================================================================
+   暗色主题 - 错误/警告提示样式
+   =================================================================== */
+.theme_dark .error {
+  color: #fca5a5 !important;
+  background: rgba(239, 68, 68, 0.15) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  backdrop-filter: blur(8px);
+}
+
+.theme_dark .error-message {
+  color: #fca5a5 !important;
+}
+
+.theme_dark .error-icon {
+  filter: brightness(1.1);
+}
+
+.theme_dark .error-refresh-btn {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9)) !important;
+  border: 1px solid rgba(252, 165, 165, 0.3) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+}
+
+.theme_dark .error-refresh-btn:hover {
+  background: linear-gradient(135deg, rgba(252, 165, 165, 0.95), rgba(239, 68, 68, 0.95)) !important;
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4) !important;
+}
+
+/* Mix 模式对话框警告样式 */
+.theme_dark .dialog-warning {
+  color: #fcd34d !important;
+  background: rgba(245, 158, 11, 0.15) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  padding: 0.75rem 1rem;
+  border-radius: var(--border-radius-sm);
+  margin: 0.5rem 0;
+}
+
+/* ===================================================================
+   暗色主题 - 自定义下拉选择框
+   =================================================================== */
+.theme_dark .custom-select-display {
+  background: rgba(15, 23, 42, 0.85) !important;
+  /* border: 2px solid rgba(99, 102, 241, 0.2) !important; */
+  color: #e0e7ff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.theme_dark .custom-select-display:hover {
+  border-color: rgba(129, 140, 248, 0.35) !important;
+  background: rgba(30, 41, 59, 0.9) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15) !important;
+}
+
+.theme_dark .custom-select-wrapper.open .custom-select-display,
+.theme_dark .custom-select-wrapper select:focus+.custom-select-display {
+  border-color: rgba(129, 140, 248, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.theme_dark .custom-select-arrow {
+  color: #94a3b8;
+}
+
+.theme_dark .custom-select-dropdown {
+  background: rgba(15, 23, 42, 0.98) !important;
+  border: 2px solid rgba(129, 140, 248, 0.3) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.1) !important;
+  backdrop-filter: blur(20px);
+}
+
+.theme_dark .custom-select-option {
+  color: #e0e7ff !important;
+  border-bottom-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+.theme_dark .custom-select-option:hover {
+  background: rgba(99, 102, 241, 0.15) !important;
+}
+
+.theme_dark .custom-select-option.selected {
+  background: rgba(99, 102, 241, 0.25) !important;
+  color: #a5b4fc !important;
+}
+
+.theme_dark .custom-select-option.selected::before {
+  color: #a5b4fc !important;
+}
+
+.theme_dark .custom-select-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(129, 140, 248, 0.4);
+}
+
+.theme_dark .custom-select-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 140, 248, 0.6);
+}
+
+/* ===================================================================
+   暗色主题 - 按钮样式
+   =================================================================== */
+.theme_dark .btn-primary {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.9), rgba(129, 140, 248, 0.9)) !important;
+  border: 1px solid rgba(129, 140, 248, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+  color: #ffffff !important;
+}
+
+.theme_dark .btn-primary:hover {
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.95), rgba(165, 180, 252, 0.95)) !important;
+  box-shadow: 0 6px 20px rgba(129, 140, 248, 0.4) !important;
+}
+
+.theme_dark .btn-secondary {
+  background: rgba(51, 65, 85, 0.7) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+}
+
+.theme_dark .btn-secondary:hover {
+  background: rgba(71, 85, 105, 0.85) !important;
+  color: #e0e7ff !important;
+  border-color: rgba(129, 140, 248, 0.3) !important;
+}
+
+.theme_dark .btn-delete,
+.theme_dark .btn-danger {
+  background: rgba(220, 38, 38, 0.85) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.theme_dark .btn-delete:hover,
+.theme_dark .btn-danger:hover {
+  background: rgba(239, 68, 68, 0.95) !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* ===================================================================
+   首页模式卡片按钮 - 确保所有主题下文本可见
+   =================================================================== */
+.mode-card .btn {
+  color: #ffffff !important;
+}
+
+/* 抽卡按钮 */
+.theme_dark .gacha-btn {
+  background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+  color: #ffffff !important;
+  border: 1px solid rgba(129, 140, 248, 0.3);
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.theme_dark .gacha-btn:hover {
+  background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+  box-shadow: 0 8px 24px rgba(129, 140, 248, 0.4);
+  transform: translateY(-2px);
+}
+
+/* ===================================================================
+   暗色主题 - 表格样式
+   =================================================================== */
+.theme_dark .data-table {
+  background: transparent !important;
+}
+
+.theme_dark .data-table th {
+  background: rgba(30, 41, 59, 0.95) !important;
+  color: #e0e7ff !important;
+  border-bottom: 2px solid rgba(99, 102, 241, 0.3);
+  font-weight: 600;
+}
+
+.theme_dark .data-table td {
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.theme_dark .data-table tbody tr:hover {
+  background: rgba(51, 65, 85, 0.4) !important;
+}
+
+.theme_dark .data-table tr:hover td {
+  color: #e0e7ff !important;
+  background-color: transparent;
+}
+
+/* ===================================================================
+   暗色主题 - 统计数据显示
+   =================================================================== */
+.theme_dark .stat-card-label,
+.theme_dark .stat-label,
+.theme_dark .stat-mini-label,
+.theme_dark .chart-label {
+  color: #cbd5e1 !important;
+  font-weight: 500;
+}
+
+.theme_dark .stat-card-value,
+.theme_dark .stat-value,
+.theme_dark .stat-mini-value,
+.theme_dark .chart-value {
+  color: #a5b4fc !important;
+  font-weight: 700;
+  text-shadow: 0 0 12px rgba(165, 180, 252, 0.3);
+}
+
+/* ===================================================================
+   暗色主题 - 上下文/练习区域
+   =================================================================== */
+.theme_dark .context-box,
+.theme_dark .exercise-box,
+.theme_dark .vocab-item,
+.theme_dark .chart-container,
+.theme_dark .answer-box {
+  background: rgba(30, 41, 59, 0.7) !important;
+  border: 1px solid rgba(99, 102, 241, 0.15) !important;
+  color: #e0e7ff !important;
+}
+
+.theme_dark .highlight,
+.theme_dark mark {
+  background: linear-gradient(120deg, rgba(129, 140, 248, 0.2) 0%, rgba(167, 139, 250, 0.2) 100%);
+  color: #c7d2fe;
+  text-shadow: none;
+}
+
+.theme_dark .mode-indicator {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(129, 140, 248, 0.25) 100%);
+  color: #e0e7ff;
+  border: 1px solid rgba(129, 140, 248, 0.3);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+}
+
+/* ===================================================================
+   暗色主题 - 提示面板
+   =================================================================== */
+.theme_dark .hint-panel {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.95) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.theme_dark .hint-header {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.9), rgba(129, 140, 248, 0.9));
+}
+
+.theme_dark .hint-text {
+  color: #e0e7ff !important;
+}
+
+/* ===================================================================
+   暗色主题 - Toast通知
+   =================================================================== */
+.theme_dark .toast {
+  background: rgba(30, 41, 59, 0.98) !important;
+  color: var(--text-primary);
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  backdrop-filter: blur(12px);
+}
+
+.theme_dark .toast-message {
+  color: #e0e7ff !important;
+}
+
+/* ===================================================================
+   暗色主题 - 骨架屏
+   =================================================================== */
+.theme_dark .skeleton {
+  background: linear-gradient(90deg,
+      rgba(51, 65, 85, 0.4) 25%,
+      rgba(71, 85, 105, 0.6) 50%,
+      rgba(51, 65, 85, 0.4) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ===================================================================
+   暗色主题 - 进度条
+   =================================================================== */
+.theme_dark .progress-bar {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.theme_dark .progress-fill {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.9), rgba(129, 140, 248, 0.9));
+  box-shadow: 0 0 12px rgba(129, 140, 248, 0.4);
+}
+
+/* ===================================================================
+   暗色主题 - 弹窗与对话框
+   =================================================================== */
+.theme_dark .custom-dialog {
+  background: rgba(30, 41, 59, 0.98);
+  color: #e0e7ff;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.1) inset;
+  backdrop-filter: blur(16px);
+}
+
+.theme_dark .custom-dialog h3,
+.theme_dark .dialog-title {
+  color: #a5b4fc !important;
+}
+
+.theme_dark .dialog-content,
+.theme_dark .modal-content {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 1px solid rgba(99, 102, 241, 0.15) !important;
+}
+
+.theme_dark .dialog-progress {
+  color: #e0e7ff;
+}
+
+.theme_dark .dialog-progress strong {
+  color: #a5b4fc;
+}
+
+.theme_dark .dialog-warning {
+  color: #fde047;
+}
+
+.theme_dark .dialog-btn-secondary {
+  background: rgba(51, 65, 85, 0.8);
+  color: #cbd5e1;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.theme_dark .dialog-btn-secondary:hover {
+  background: rgba(71, 85, 105, 0.9);
+  color: #e0e7ff;
+  border-color: rgba(129, 140, 248, 0.3);
+}
+
+.theme_dark .dialog-icon {
+  filter: brightness(0.95);
+}
+
+/* 确认提示框 */
+.theme_dark .confirm-tip {
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.theme_dark .confirm-tip p {
+  color: #e2e8f0;
+}
+
+.theme_dark .confirm-tip-cancel {
+  background: rgba(51, 65, 85, 0.8);
+  color: #cbd5e1;
+}
+
+.theme_dark .confirm-tip-cancel:hover {
+  background: rgba(71, 85, 105, 0.9);
+}
+
+/* ===================================================================
+   暗色主题 - 用户信息栏
+   =================================================================== */
+.theme_dark .user-info-bar {
+  background: rgba(15, 23, 42, 0.95) !important;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.15) !important;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.theme_dark .user-info-bar .stat-label,
+.theme_dark .user-info-bar .stat-mini-label {
+  color: #cbd5e1 !important;
+}
+
+.theme_dark .user-info-bar .stat-value,
+.theme_dark .user-info-bar .stat-mini-value {
+  color: #a5b4fc !important;
+  font-weight: 600;
+}
+
+.theme_dark .profile-header {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(129, 140, 248, 0.25) 100%);
+  border: 1px solid rgba(129, 140, 248, 0.3);
+}
+
+/* ===================================================================
+   暗色主题 - 主题切换按钮
+   =================================================================== */
+.theme_dark .theme-toggle-wrapper {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(99, 102, 241, 0.1) inset !important;
+}
+
+.theme_dark .theme-toggle-wrapper:hover {
+  background: rgba(30, 41, 59, 0.95) !important;
+  border-color: rgba(129, 140, 248, 0.3) !important;
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25) !important;
+}
+
+.theme_dark .theme-label,
+.theme_dark .theme-toggle-button {
+  color: #e0e7ff !important;
+}
+
+.theme_dark .theme-icon {
+  filter: brightness(0.9);
+}
+
+/* ===================================================================
+   暗色主题 - 商店界面
+   =================================================================== */
+.theme_dark .shop-tabs {
+  background: rgba(30, 41, 59, 0.6);
+  border-bottom: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+.theme_dark .shop-tab {
+  color: #94a3b8;
+}
+
+.theme_dark .shop-tab.active {
+  color: #818cf8;
+  border-bottom-color: #818cf8;
+}
+
+.theme_dark .balance-card {
+  background: linear-gradient(135deg, #ca9d2c, #cf8608);
+  border: 1px solid rgba(129, 140, 248, 0.25);
+}
+
+.theme_dark .balance-card-diamond {
+  border: 1px solid rgba(129, 140, 248, 0.25);
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  box-shadow: 0 8px 20px rgba(168, 85, 247, 0.3);
+}
+
+.theme_dark .exchange-card,
+.theme_dark .gacha-section,
+.theme_dark .balance-section {
+  background: rgba(30, 41, 59, 0.7) !important;
+  border: 1px solid rgba(99, 102, 241, 0.15) !important;
+  backdrop-filter: blur(10px);
+}
+
+.theme_dark .exchange-title,
+.theme_dark .gacha-title {
+  color: #a5b4fc !important;
+}
+
+.theme_dark .exchange-input,
+.theme_dark .exchange-select {
+  background: rgba(15, 23, 42, 0.8) !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  color: #e0e7ff !important;
+}
+
+.theme_dark .exchange-input:focus,
+.theme_dark .exchange-select:focus {
+  border-color: rgba(129, 140, 248, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
+.theme_dark .exchange-rate,
+.theme_dark .gacha-description {
+  color: #cbd5e1 !important;
+}
+
+.theme_dark .shop-item {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(99, 102, 241, 0.12) !important;
+}
+
+.theme_dark .shop-item:hover {
+  background: rgba(51, 65, 85, 0.7) !important;
+  border-color: rgba(129, 140, 248, 0.35) !important;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2) !important;
+}
+
+.theme_dark .item-name {
+  color: #e0e7ff !important;
+}
+
+.theme_dark .item-desc {
+  color: #94a3b8 !important;
+}
+
+.theme_dark .item-price {
+  color: #fde047 !important;
+  text-shadow: 0 0 8px rgba(253, 224, 71, 0.3);
+}
+
+/* ===================================================================
+   暗色主题 - Admin面包屑导航
+   =================================================================== */
+.theme_dark .breadcrumb-nav,
+.theme_dark .breadcrumbs {
+  background: rgba(15, 23, 42, 0.7) !important;
+  border: 1px solid rgba(99, 102, 241, 0.15) !important;
+  backdrop-filter: blur(8px);
+}
+
+.theme_dark .breadcrumb-nav span,
+.theme_dark #breadcrumbText,
+.theme_dark .breadcrumb-item {
+  color: #cbd5e1 !important;
+}
+
+.theme_dark .breadcrumb-item.active,
+.theme_dark .breadcrumb-current {
+  color: #a5b4fc !important;
+  font-weight: 600;
+}
+
+/* ===================================================================
+   暗色主题 - 分段指示器/标签
+   =================================================================== */
+.theme_dark .segmented-tabs,
+.theme_dark .tabs-container {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.theme_dark .seg-indicator,
+.theme_dark .tab-indicator {
+  background: rgba(99, 102, 241, 0.3) !important;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.2), 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(129, 140, 248, 0.4) !important;
+}
+
+.theme_dark .segmented-tabs label,
+.theme_dark .tab-button {
+  color: #94a3b8;
+  transition: color 0.3s ease;
+}
+
+.theme_dark .segmented-tabs input:checked+label,
+.theme_dark .tab-button.active,
+.theme_dark .tab-button:hover {
+  color: #e0e7ff;
+}
+
+/* ===================================================================
+   暗色主题 - 设置面板
+   =================================================================== */
+.theme_dark .settings-section,
+.theme_dark .settings-panel,
+.theme_dark .settings-group {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(99, 102, 241, 0.12) !important;
+  backdrop-filter: blur(8px);
+}
+
+.theme_dark .settings-section-title,
+.theme_dark .settings-group-title {
+  border-bottom: 1px solid rgba(99, 102, 241, 0.15) !important;
+  color: #a5b4fc !important;
+  font-weight: 600;
+}
+
+.theme_dark .settings-description,
+.theme_dark .settings-hint {
+  color: #94a3b8 !important;
+}
+
+.theme_dark .settings-label {
+  color: #cbd5e1 !important;
+}
+
+.theme_dark .settings-item {
+  border-bottom-color: rgba(99, 102, 241, 0.08) !important;
+}
+
+.theme_dark .settings-item:hover {
+  background: rgba(51, 65, 85, 0.3) !important;
+}
+
+.theme_dark .achievement-reset-panel .btn-secondary,
+.theme_dark .reset-achievements-btn,
+.theme_dark button[onclick*="resetAchievements"] {
+  background: rgba(30, 41, 59, 0.7) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+}
+
+.theme_dark .achievement-reset-panel .btn-secondary:hover,
+.theme_dark .reset-achievements-btn:hover {
+  background: rgba(51, 65, 85, 0.85) !important;
+  color: #e0e7ff !important;
+  border-color: rgba(129, 140, 248, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* ===================================================================
+   暗色主题 - 图表
+   =================================================================== */
+.theme_dark .chart-container {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(99, 102, 241, 0.15) !important;
+}
+
+.theme_dark .chart-title {
+  color: #a5b4fc !important;
+  font-weight: 600;
+}
+
+.theme_dark .chart-label,
+.theme_dark .chart-legend-text,
+.theme_dark .axis-label,
+.theme_dark .tick-label {
+  color: #cbd5e1 !important;
+  fill: #cbd5e1 !important;
+}
+
+.theme_dark .chart-value,
+.theme_dark .data-label {
+  color: #e0e7ff !important;
+  fill: #e0e7ff !important;
+  font-weight: 600;
+}
+
+.theme_dark .chart-bar,
+.theme_dark .chart-line {
+  filter: brightness(0.95);
+}
+
+.theme_dark canvas {
+  filter: brightness(0.95) contrast(1.1);
+}
+
+/* ===================================================================
+   暗色主题 - Admin界面特定元素
+   =================================================================== */
+.theme_dark .word-text,
+.theme_dark .translation-text,
+.theme_dark .vocab-name {
+  color: #e0e7ff !important;
+  font-weight: 500;
+}
+
+.theme_dark .vocab-description,
+.theme_dark .word-count,
+.theme_dark .practice-count {
+  color: #94a3b8 !important;
+}
+
+/* ===================================================================
+   暗色主题 - 奖励弹窗
+   =================================================================== */
+.theme_dark .reward-popup {
+  background: var(--background);
+  color: var(--text-primary);
+  border: 2px solid rgba(129, 140, 248, 0.2);
+  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.25);
+}
+
+.theme_dark .reward-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.theme_dark .reward-item.bonus {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+/* ===================================================================
+   暗色主题 - 成就通知
+   =================================================================== */
+.theme_dark .achievement-notification {
+  background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 100%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(139, 92, 246, 0.4);
+}
+
+.theme_dark .achievement-title {
+  color: #f9fafb;
+}
+
+.theme_dark .achievement-description {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.theme_dark .achievement-reward {
+  color: #fde047;
+}
+
+/* ===================================================================
+   暗色主题 - 其他元素
+   =================================================================== */
+.theme_dark hr,
+.theme_dark .divider {
+  border-color: rgba(99, 102, 241, 0.15) !important;
+}
+
+.theme_dark a {
+  color: #a5b4fc;
+}
+
+.theme_dark a:hover {
+  color: #c7d2fe;
+}
+
+/* =================================================================
+   主题皮肤样式 - 装备后应用的视觉效果
+   ================================================================= */
+
+/* 明月清辉主题（默认亮色） */
+.theme_light body {
+  background: linear-gradient(90deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background-size: 400% 400%;
+  animation: gradientBG 20s ease infinite;
+}
+
+.theme_light .container {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.theme_light .btn-primary,
+.theme_light .gacha-btn {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #ffffff;
+}
+
+.theme_light .btn-primary:hover,
+.theme_light .gacha-btn:hover {
+  box-shadow: 0 8px 16px rgba(79, 70, 229, 0.3);
+}
+
+/* 森林绿野主题 */
+.theme_forest body {
+  background: linear-gradient(135deg, #10b981, #059669, #34d399, #6ee7b7);
+  background-size: 400% 400%;
+  animation: gradientBG 20s ease infinite;
+}
+
+.theme_forest .container {
+  background: rgba(240, 253, 244, 0.95);
+}
+
+.theme_forest .btn-primary,
+.theme_forest .gacha-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+}
+
+.theme_forest .btn-primary:hover,
+.theme_forest .gacha-btn:hover {
+  box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+}
+
+/* 深海蓝调主题 */
+.theme_ocean body {
+  background: linear-gradient(135deg, #0284c7, #0369a1, #0ea5e9, #38bdf8);
+  background-size: 400% 400%;
+  animation: gradientBG 20s ease infinite;
+}
+
+.theme_ocean .container {
+  background: rgba(240, 249, 255, 0.95);
+}
+
+.theme_ocean .btn-primary,
+.theme_ocean .gacha-btn {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff;
+}
+
+.theme_ocean .btn-primary:hover,
+.theme_ocean .gacha-btn:hover {
+  box-shadow: 0 8px 16px rgba(2, 132, 199, 0.3);
+}
+
+/* 日落余晖主题 */
+.theme_sunset body {
+  background: linear-gradient(135deg, #f59e0b, #d97706, #fbbf24, #fcd34d);
+  background-size: 400% 400%;
+  animation: gradientBG 20s ease infinite;
+}
+
+.theme_sunset .container {
+  background: rgba(255, 251, 235, 0.95);
+}
+
+.theme_sunset .btn-primary,
+.theme_sunset .gacha-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+}
+
+.theme_sunset .btn-primary:hover,
+.theme_sunset .gacha-btn:hover {
+  box-shadow: 0 8px 16px rgba(245, 158, 11, 0.3);
+}
+
+/* 玉津璀璨主题 */
+.theme_galaxy body {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed, #a78bfa, #c4b5fd);
+  background-size: 400% 400%;
+  animation: gradientBG 20s ease infinite;
+}
+
+.theme_galaxy .container {
+  background: rgba(250, 245, 255, 0.95);
+}
+
+.theme_galaxy .btn-primary,
+.theme_galaxy .gacha-btn {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: #ffffff;
+}
+
+.theme_galaxy .btn-primary:hover,
+.theme_galaxy .gacha-btn:hover {
+  box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);
+}
+
+/* 樱花纷飞主题 */
+.theme_cherry body {
+  background: linear-gradient(135deg, #ec4899, #db2777, #f472b6, #f9a8d4);
+  background-size: 400% 400%;
+  animation: gradientBG 20s ease infinite;
+}
+
+.theme_cherry .container {
+  background: rgba(253, 242, 248, 0.95);
+}
+
+.theme_cherry .btn-primary,
+.theme_cherry .gacha-btn {
+  background: linear-gradient(135deg, #ec4899, #db2777);
+  color: #ffffff;
+}
+
+.theme_cherry .btn-primary:hover,
+.theme_cherry .gacha-btn:hover {
+  box-shadow: 0 8px 16px rgba(236, 72, 153, 0.3);
+}
+
+/* 极光幻境主题 - 特殊多色渐变 */
+.theme_aurora body {
+  background: linear-gradient(135deg, #06b6d4, #8b5cf6, #ec4899, #f59e0b);
+  background-size: 400% 400%;
+  animation: gradientBG 20s ease infinite;
+}
+
+.theme_aurora .container {
+  background: rgba(236, 254, 255, 0.95);
+}
+
+.theme_aurora .btn-primary,
+.theme_aurora .gacha-btn {
+  background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+  color: #ffffff;
+}
+
+.theme_aurora .btn-primary:hover,
+.theme_aurora .gacha-btn:hover {
+  box-shadow: 0 8px 16px rgba(6, 182, 212, 0.3);
+}
+
+/* =================================================================
+   自定义下拉组件 - 彩色皮肤主题适配
+   ================================================================= */
+
+/* 森林绿野主题 */
+.theme_forest .custom-select-trigger {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.theme_forest .custom-select-trigger:hover,
+.theme_forest .custom-select-wrapper.open .custom-select-trigger {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.theme_forest .custom-select-option:hover,
+.theme_forest .custom-select-option.highlighted {
+  background: #10b981;
+}
+
+.theme_forest .custom-select-option.selected {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+/* 深海蓝调主题 */
+.theme_ocean .custom-select-trigger {
+  border-color: rgba(2, 132, 199, 0.3);
+}
+
+.theme_ocean .custom-select-trigger:hover,
+.theme_ocean .custom-select-wrapper.open .custom-select-trigger {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
+}
+
+.theme_ocean .custom-select-option:hover,
+.theme_ocean .custom-select-option.highlighted {
+  background: #0284c7;
+}
+
+.theme_ocean .custom-select-option.selected {
+  background: rgba(2, 132, 199, 0.1);
+  color: #0369a1;
+}
+
+/* 日落余晖主题 */
+.theme_sunset .custom-select-trigger {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.theme_sunset .custom-select-trigger:hover,
+.theme_sunset .custom-select-wrapper.open .custom-select-trigger {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+.theme_sunset .custom-select-option:hover,
+.theme_sunset .custom-select-option.highlighted {
+  background: #f59e0b;
+}
+
+.theme_sunset .custom-select-option.selected {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+/* 玉津璀璨主题 */
+.theme_galaxy .custom-select-trigger {
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.theme_galaxy .custom-select-trigger:hover,
+.theme_galaxy .custom-select-wrapper.open .custom-select-trigger {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+.theme_galaxy .custom-select-option:hover,
+.theme_galaxy .custom-select-option.highlighted {
+  background: #8b5cf6;
+}
+
+.theme_galaxy .custom-select-option.selected {
+  background: rgba(139, 92, 246, 0.1);
+  color: #7c3aed;
+}
+
+/* 樱花纷飞主题 */
+.theme_cherry .custom-select-trigger {
+  border-color: rgba(236, 72, 153, 0.3);
+}
+
+.theme_cherry .custom-select-trigger:hover,
+.theme_cherry .custom-select-wrapper.open .custom-select-trigger {
+  border-color: #ec4899;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.2);
+}
+
+.theme_cherry .custom-select-option:hover,
+.theme_cherry .custom-select-option.highlighted {
+  background: #ec4899;
+}
+
+.theme_cherry .custom-select-option.selected {
+  background: rgba(236, 72, 153, 0.1);
+  color: #db2777;
+}
+
+/* 极光幻境主题 */
+.theme_aurora .custom-select-trigger {
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.theme_aurora .custom-select-trigger:hover,
+.theme_aurora .custom-select-wrapper.open .custom-select-trigger {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+}
+
+.theme_aurora .custom-select-option:hover,
+.theme_aurora .custom-select-option.highlighted {
+  background: #06b6d4;
+}
+
+.theme_aurora .custom-select-option.selected {
+  background: rgba(6, 182, 212, 0.1);
+  color: #0891b2;
+}
+
+/* ===================================================================
+   主题通用动画增强
+   =================================================================== */
+[class*="theme_"] .mode-card,
+[class*="theme_"] .shop-item,
+[class*="theme_"] .achievement-card {
+  transition: all 0.3s ease;
+}
+
+[class*="theme_"] .mode-card:hover,
+[class*="theme_"] .shop-item:hover,
+[class*="theme_"] .achievement-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* ===================================================================
+   排位赛页面 - 暗色主题适配
+   =================================================================== */
+
+/* 赛季信息卡片 */
+.theme_dark .season-info {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.9), rgba(129, 140, 248, 0.9)) !important;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4) !important;
+}
+
+/* 玩家段位卡片 */
+.theme_dark .player-rank-card {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  backdrop-filter: blur(10px);
+}
+
+.theme_dark .tier-name {
+  color: #f0f4ff !important;
+}
+
+.theme_dark .tier-score {
+  color: #cbd5e1 !important;
+}
+
+.theme_dark .progress-bar-container {
+  background: rgba(30, 41, 59, 0.8) !important;
+}
+
+.theme_dark .progress-bar-fill {
+  background: linear-gradient(90deg, #6366f1, #818cf8) !important;
+}
+
+.theme_dark .progress-text {
+  color: #94a3b8 !important;
+}
+
+.theme_dark .player-stats {
+  border-top-color: rgba(100, 116, 139, 0.3) !important;
+}
+
+.theme_dark .stat-value {
+  color: #818cf8 !important;
+}
+
+.theme_dark .stat-label {
+  color: #94a3b8 !important;
+}
+
+/* 开始比赛按钮 */
+.theme_dark .start-match-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4) !important;
+}
+
+.theme_dark .start-match-btn:hover {
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5) !important;
+}
+
+.theme_dark .start-match-btn:disabled {
+  background: rgba(100, 116, 139, 0.5) !important;
+  box-shadow: none !important;
+}
+
+.theme_dark .match-info {
+  color: #94a3b8 !important;
+}
+
+/* 排行榜 */
+.theme_dark .leaderboard-section {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  backdrop-filter: blur(10px);
+}
+
+.theme_dark .leaderboard-title {
+  color: #f0f4ff !important;
+}
+
+.theme_dark .leaderboard-item {
+  border-radius: var(--border-radius-sm);
+}
+
+.theme_dark .leaderboard-item:hover {
+  background: rgba(99, 102, 241, 0.1) !important;
+}
+
+.theme_dark .leaderboard-item.is-player {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.2), rgba(129, 140, 248, 0.1)) !important;
+  border: 1px solid rgba(129, 140, 248, 0.4) !important;
+}
+
+.theme_dark .leaderboard-rank {
+  color: #94a3b8 !important;
+}
+
+.theme_dark .leaderboard-name {
+  color: #e0e7ff !important;
+}
+
+.theme_dark .leaderboard-score {
+  color: #818cf8 !important;
+}
+
+/* 比赛界面 */
+.theme_dark .question-box {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  backdrop-filter: blur(10px);
+}
+
+.theme_dark .question-content {
+  color: #e0e7ff !important;
+}
+
+.theme_dark .question-content .blank {
+  border-bottom-color: #818cf8 !important;
+}
+
+.theme_dark .answer-input {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 2px solid rgba(99, 102, 241, 0.3) !important;
+  color: #e0e7ff !important;
+}
+
+.theme_dark .answer-input:focus {
+  border-color: #818cf8 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+}
+
+.theme_dark .answer-input::placeholder {
+  color: #64748b !important;
+}
+
+.theme_dark .answer-btn {
+  background: linear-gradient(135deg, #6366f1, #818cf8) !important;
+}
+
+.theme_dark .answer-btn:hover {
+  background: linear-gradient(135deg, #818cf8, #a5b4fc) !important;
+}
+
+.theme_dark .answer-btn:disabled {
+  background: rgba(100, 116, 139, 0.5) !important;
+}
+
+/* 比赛结果 */
+.theme_dark .match-result {
+  color: #e0e7ff !important;
+}
+
+.theme_dark .result-title.win {
+  color: #34d399 !important;
+}
+
+.theme_dark .result-title.lose {
+  color: #f87171 !important;
+}
+
+.theme_dark .result-score-change.positive {
+  color: #34d399 !important;
+}
+
+.theme_dark .result-score-change.negative {
+  color: #f87171 !important;
+}
+
+.theme_dark .tier-change-arrow {
+  color: #818cf8 !important;
+}
+
+.theme_dark .continue-btn {
+  background: linear-gradient(135deg, #6366f1, #818cf8) !important;
+}
+
+.theme_dark .continue-btn:hover {
+  background: linear-gradient(135deg, #818cf8, #a5b4fc) !important;
+}
+
+/* 分数显示 */
+.theme_dark .score-correct {
+  color: #34d399 !important;
+}
+
+.theme_dark .score-wrong {
+  color: #f87171 !important;
+}
+
+/* ===================================================================
+   平滑过渡
+   =================================================================== */
+body,
+.container,
+.mode-card,
+.stat-card,
+.shop-item,
+input,
+textarea,
+select,
+.custom-select-trigger,
+.custom-select-dropdown,
+.custom-select-option {
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
