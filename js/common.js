@@ -735,7 +735,7 @@ async function getHintShared(options) {
 
     // 如果需要消耗提示加速器（高级提示且没有大师之钥）
     const hintCount = HintPanelManager.hints.length + 1;
-    if (needsHintBooster(hintCount, mode) && !isItemActive("item_master_key")) {
+    if (needsHintBooster(hintCount) && !isItemActive("item_master_key")) {
       // 消耗提示加速器
       if (!consumeHintBooster()) {
         showToast("提示加速器不足！", "error");
