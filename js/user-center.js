@@ -612,8 +612,6 @@ function generateFakeLeaderboard() {
   const strongCount = Math.floor(playerCount * 0.3);
   const slightlyStrongCount = Math.floor(playerCount * 0.25);
   const slightlyWeakCount = Math.floor(playerCount * 0.25);
-  const weakCount =
-    playerCount - strongCount - slightlyStrongCount - slightlyWeakCount;
 
   for (let i = 0; i < playerCount; i++) {
     const nameIndex = Math.floor(Math.random() * FAKE_PLAYER_NAMES.length);
