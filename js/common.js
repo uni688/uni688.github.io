@@ -2140,7 +2140,7 @@ function initializeUserProfile() {
     safeSetItem(STORAGE_KEYS.USER_PROFILE, profile);
   }
   // 迁移：为已有用户添加钻石字段
-  if (profile && profile.diamonds === undefined) {
+  if (profile.diamonds === undefined) {
     profile.diamonds = 0;
     safeSetItem(STORAGE_KEYS.USER_PROFILE, profile);
   }
