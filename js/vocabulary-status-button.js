@@ -351,8 +351,6 @@
     }
   }
 
-  // 防止重复注册
-  if (!customElements.get("vocabulary-status-button")) {
-    customElements.define("vocabulary-status-button", VocabularyStatusButton);
-  }
+  // 注册组件（顶部已做重复注册检查）
+  customElements.define("vocabulary-status-button", VocabularyStatusButton);
 })();
