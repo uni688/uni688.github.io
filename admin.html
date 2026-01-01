@@ -26,17 +26,19 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
 
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/themes.css">
   <!-- PJAX 平滑页面切换 - 已暂停 -->
   <!-- <script src="js/pjax.js"></script> -->
   <style>
     /* Admin 页面专用样式 - 固定容器高度,内部滚动 */
     .container {
       height: calc(100vh - 3rem);
-      min-height: 800px;
-      max-height: calc(100vh - 3rem);
+      min-height: 900px;
+      max-height: calc(100vh - 3.5rem);
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      overflow: visible;
+      /* 允许主题下拉浮层溢出显示 */
       /* 容器本身不滚动 */
     }
 
@@ -129,6 +131,28 @@
         max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.3s ease;
       will-change: height, max-height, opacity;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(99, 102, 241, 0.35) transparent;
+    }
+
+    .data-table-container::-webkit-scrollbar {
+      height: 8px;
+      background: transparent;
+    }
+
+    .data-table-container::-webkit-scrollbar-track {
+      background: linear-gradient(90deg, rgba(226, 232, 240, 0.35), rgba(226, 232, 240, 0.1));
+      border-radius: 999px;
+    }
+
+    .data-table-container::-webkit-scrollbar-thumb {
+      background: linear-gradient(90deg, rgba(79, 70, 229, 0.7), rgba(129, 140, 248, 0.7));
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+
+    .data-table-container::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.9), rgba(129, 140, 248, 0.9));
     }
 
     .data-table {
@@ -200,8 +224,16 @@
       border-bottom: none;
     }
 
-    .data-table tr:hover td {
-      background-color: #f8fafc;
+    .data-table tbody tr {
+      transition: background-color 0.2s ease;
+    }
+
+    .data-table tbody tr:hover {
+      background-color: var(--table-row-hover-bg, #f8fafc);
+    }
+
+    .data-table tbody tr:hover td {
+      background-color: transparent;
     }
 
     .data-table td.word-cell {
@@ -325,11 +357,11 @@
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
-      background: #f8fafc;
+      background: var(--card-bg, #f8fafc);
       padding: 2rem;
       border-radius: var(--border-radius);
       box-shadow: var(--shadow-sm);
-      border: 1px solid rgba(226, 232, 240, 0.8);
+      border: 1px solid var(--card-border, rgba(226, 232, 240, 0.8));
     }
 
     .file-input-header {
@@ -354,13 +386,14 @@
 
     .file-name {
       padding: 0.5rem 1rem;
-      background: white;
+      background: var(--input-bg, white);
       border-radius: var(--border-radius-sm);
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--card-border, #e2e8f0);
       flex: 1;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      color: var(--text-primary);
     }
 
     input[type="file"] {
@@ -383,6 +416,238 @@
       background: #2563eb;
       transform: translateY(-2px);
       box-shadow: var(--shadow);
+    }
+
+    /* 用户数据区域样式 */
+    .user-data-section {
+      background: var(--card-bg, #ffffff);
+      padding: 2rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--card-border, rgba(226, 232, 240, 0.8));
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .user-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .user-stat-card {
+      padding: 1.5rem;
+      border-radius: var(--border-radius);
+      color: white;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      isolation: isolate;
+    }
+
+    .user-stat-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.35), transparent 55%);
+      opacity: 0.6;
+      z-index: -1;
+    }
+
+    .user-stat-label {
+      font-size: 0.9rem;
+      opacity: 0.95;
+      margin-bottom: 0.5rem;
+    }
+
+    .user-stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .user-stat-coins {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    }
+
+    .user-stat-level {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    }
+
+    .user-stat-streak {
+      background: linear-gradient(135deg, #ec4899, #db2777);
+    }
+
+    .user-stat-words {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .user-form-card,
+    .user-card {
+      background: var(--card-bg, #ffffff);
+      padding: 2rem;
+      border-radius: var(--border-radius);
+      border: 1px solid var(--card-border, rgba(226, 232, 240, 0.8));
+      box-shadow: var(--shadow-sm);
+      margin-top: 2rem;
+    }
+
+    .user-card:first-of-type {
+      margin-top: 0;
+    }
+
+    .user-form-card .form-text {
+      color: var(--text-secondary, #64748b);
+      font-size: 0.9rem;
+    }
+
+    .user-card-title {
+      margin-bottom: 1.5rem;
+      color: var(--primary);
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .user-card-plain {
+      margin-top: 2rem;
+    }
+
+    .user-card-detail {
+      padding: 1.5rem;
+    }
+
+    .achievements-list {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .admin-achievement-card {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      border-radius: var(--border-radius-sm);
+      border: 1px solid var(--card-border, #e2e8f0);
+      background: var(--card-bg, #f8fafc);
+      align-items: flex-start;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .admin-achievement-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(99, 102, 241, 0.35);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    }
+
+    .admin-achievement-card.unlocked {
+      border-color: rgba(16, 185, 129, 0.35);
+      background: rgba(16, 185, 129, 0.08);
+      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.2);
+    }
+
+    .admin-achievement-icon {
+      font-size: 2rem;
+      width: 3rem;
+      height: 3rem;
+      display: grid;
+      place-items: center;
+      border-radius: 1rem;
+      background: rgba(99, 102, 241, 0.08);
+      flex-shrink: 0;
+    }
+
+    .admin-achievement-card.unlocked .admin-achievement-icon {
+      background: rgba(16, 185, 129, 0.15);
+    }
+
+    .admin-achievement-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .admin-achievement-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .admin-achievement-header strong {
+      color: var(--primary);
+    }
+
+    .admin-achievement-status {
+      font-size: 0.75rem;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      font-weight: 600;
+      background: rgba(148, 163, 184, 0.25);
+      color: #475569;
+    }
+
+    .admin-achievement-status.status-unlocked {
+      background: #10b981;
+      color: #fff;
+    }
+
+    .admin-achievement-description {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-bottom: 0.35rem;
+    }
+
+    .admin-achievement-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+
+    .admin-achievement-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .admin-achievement-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-shrink: 0;
+    }
+
+    .achievement-reset-panel {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--card-border, #e2e8f0);
+    }
+
+    .user-detail-list {
+      display: grid;
+      gap: 0.75rem;
+      font-size: 0.95rem;
+    }
+
+    .user-detail-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--card-border, #f1f5f9);
+    }
+
+    .user-detail-item:last-child {
+      border-bottom: none;
+    }
+
+    .user-detail-label {
+      color: var(--text-secondary, #64748b);
+    }
+
+    .user-detail-value {
+      font-weight: 600;
+      color: var(--text-primary);
     }
 
     .badge {
@@ -434,15 +699,69 @@
 
     /* 响应式设计优化 */
     @media (max-width: 768px) {
+      .container {
+        height: auto;
+        min-height: auto;
+        max-height: none;
+      }
+
+      .page-header h1 {
+        font-size: 1.75rem;
+        line-height: 1.15;
+        margin-bottom: 0.25rem;
+      }
+
+      .nav-tabs {
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .tab-btn {
+        padding: 0.65rem 1rem;
+        border-radius: 0.9rem;
+      }
+
       .modal-content {
-        padding: 1rem;
+        padding: 0;
         min-width: unset;
         width: 95%;
       }
 
+      .modal-body {
+        padding: 1rem;
+      }
+
+      .modal-content .modal-header {
+        padding: 1rem 1rem 0.5rem 1rem;
+      }
+
+      .modal-content .form-actions {
+        padding: 0.5rem 1rem 1rem 1rem;
+      }
+
+      .modal-title {
+        font-size: 1.2rem;
+      }
+
+      .data-table-container {
+        margin-bottom: 1.25rem;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .data-table {
+        min-width: 720px;
+      }
+
       .data-table th,
       .data-table td {
-        padding: 0.75rem;
+        padding: 0.55rem 0.65rem;
+        font-size: 0.92rem;
+        white-space: nowrap;
+      }
+
+      .data-table td:nth-child(3) {
+        white-space: normal;
+        line-height: 1.4;
       }
 
       .section-header {
@@ -541,22 +860,14 @@
       margin-right: 1rem;
     }
 
-    .mode-selector select {
-      padding: 0.75rem 1.25rem;
-      border-radius: var(--border-radius-sm);
-      border: 2px solid #e2e8f0;
-      background-color: white;
-      font-size: 1rem;
-      font-weight: 500;
-      color: var(--text-primary);
-      cursor: pointer;
-      transition: all 0.2s;
+    /* 自定义下拉组件在 mode-selector 中的样式 */
+    .mode-selector .custom-select-wrapper {
+      min-width: 160px;
     }
 
-    .mode-selector select:focus {
-      outline: none;
-      border-color: var(--secondary);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    .mode-selector .custom-select-trigger {
+      padding: 0.75rem 1.25rem;
+      font-size: 1rem;
     }
 
     .text-warning {
@@ -729,6 +1040,7 @@
       max-width: 100%;
       overflow-x: auto;
       overflow-y: hidden;
+      touch-action: pan-x;
       scrollbar-width: none;
       /* Firefox */
       -ms-overflow-style: none;
@@ -746,10 +1058,9 @@
     .segmented-tabs::before,
     .segmented-tabs::after {
       content: '';
-      position: fixed;
-      top: auto;
-      bottom: auto;
-      height: 100%;
+      position: absolute;
+      top: 0;
+      bottom: 0;
       width: 32px;
       pointer-events: none;
       z-index: 2;
@@ -991,6 +1302,315 @@
         max-height: calc(100vh - 2rem);
       }
     }
+
+    /* 设置页面样式 */
+    .settings-section {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .theme_dark .settings-section {
+      background: rgba(51, 65, 85, 0.5);
+      border-color: rgba(100, 116, 139, 0.3);
+    }
+
+    .settings-section-title {
+      font-size: 1.1rem;
+      color: var(--primary);
+      font-weight: 600;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .theme_dark .settings-section-title {
+      border-bottom-color: rgba(100, 116, 139, 0.3);
+    }
+
+    .settings-group {
+      margin-bottom: 1rem;
+    }
+
+    .settings-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .settings-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .settings-label-text {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .settings-icon {
+      font-size: 1.2rem;
+    }
+
+    /* settings-select 自定义下拉组件样式 */
+    .settings-select.custom-select-wrapper,
+    .settings-label .custom-select-wrapper {
+      max-width: 200px;
+    }
+
+    .settings-label .custom-select-trigger {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.95rem;
+    }
+
+    .settings-description {
+      color: #64748b;
+      font-size: 0.85rem;
+      margin: 0.25rem 0 0 0;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+      .settings-label {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .settings-label .custom-select-wrapper {
+        max-width: 100%;
+        width: 100%;
+      }
+    }
+
+    /* Admin 页面暗色主题 */
+    .theme_dark {
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .theme_dark .container {
+      background: var(--panel-bg, #1e293b);
+    }
+
+    .theme_dark .page-header h1 {
+      color: #f1f5f9;
+    }
+
+    .theme_dark .data-table {
+      background: #1e293b;
+    }
+
+    .theme_dark .data-table th {
+      background: #334155;
+      color: #cbd5e1;
+    }
+
+    .theme_dark .data-table td {
+      color: #cbd5e1;
+      border-bottom-color: rgba(71, 85, 105, 0.5);
+    }
+
+    .theme_dark .data-table-container {
+      scrollbar-color: rgba(129, 140, 248, 0.6) transparent;
+    }
+
+    .theme_dark .data-table-container::-webkit-scrollbar-track {
+      background: linear-gradient(90deg, rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.2));
+    }
+
+    .theme_dark .data-table-container::-webkit-scrollbar-thumb {
+      background: linear-gradient(90deg, rgba(129, 140, 248, 0.9), rgba(167, 139, 250, 0.9));
+      border-color: rgba(15, 23, 42, 0.6);
+    }
+
+    /* 列表 hover 效果 - 降低亮度 */
+    .theme_dark .data-table tr:hover {
+      background: rgba(99, 102, 241, 0.12);
+    }
+
+    .theme_dark .modal-content {
+      background: #1e293b;
+      color: #e2e8f0;
+    }
+
+    .theme_dark .modal-header {
+      border-bottom-color: rgba(71, 85, 105, 0.5);
+    }
+
+    .theme_dark .form-control,
+    .theme_dark input[type="text"],
+    .theme_dark input[type="number"],
+    .theme_dark textarea,
+    .theme_dark select {
+      background: #334155;
+      color: #e2e8f0;
+      border-color: rgba(71, 85, 105, 0.5);
+    }
+
+    .theme_dark .form-control:focus,
+    .theme_dark input:focus,
+    .theme_dark textarea:focus,
+    .theme_dark select:focus {
+      border-color: var(--primary);
+      background: #334155;
+    }
+
+    .theme_dark .breadcrumb-nav {
+      background: rgba(51, 65, 85, 0.6) !important;
+      border-color: rgba(129, 140, 248, 0.3) !important;
+      color: #e0e7ff !important;
+    }
+
+    /* 面包屑导航文字可读性提升 */
+    .theme_dark .breadcrumb-nav #breadcrumbText {
+      color: #e0e7ff !important;
+      font-weight: 600 !important;
+    }
+
+    .theme_dark .file-input-container>div {
+      /*background: #334155;*/
+      border-color: rgba(71, 85, 105, 0.5);
+    }
+
+    .theme_dark .custom-file-input .file-name {
+      background: #1e293b;
+      border-color: rgba(71, 85, 105, 0.5);
+      color: #94a3b8;
+    }
+
+    .theme_dark .format-help {
+      background: #334155;
+      border-color: rgba(71, 85, 105, 0.5);
+    }
+
+    .theme_dark .format-help pre {
+      background: #1e293b;
+      border-color: rgba(71, 85, 105, 0.5);
+      color: #cbd5e1;
+    }
+
+    .theme_dark .empty-state {
+      color: #94a3b8;
+    }
+
+    /* seg-indicator 暗色主题 */
+    .theme_dark .seg-indicator {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(129, 140, 248, 0.3) 100%) !important;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+    }
+
+    /* 分段式导航栏文字可读性提升 */
+    .theme_dark .segmented-tabs label {
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .theme_dark .segmented-tabs input[type="radio"]:checked+label {
+      /* color: #1e293b; */
+      font-weight: 700;
+    }
+
+    .theme_dark .segmented-tabs .chip {
+      background: rgba(129, 140, 248, 0.2);
+      color: #c7d2fe;
+      border-color: rgba(129, 140, 248, 0.3);
+    }
+
+    /* 用户数据卡片暗色主题 */
+    .theme_dark .user-data-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(100, 116, 139, 0.3);
+    }
+
+    .theme_dark .user-data-card h3 {
+      color: #818cf8;
+    }
+
+    .theme_dark .data-item {
+      border-bottom-color: rgba(71, 85, 105, 0.3);
+    }
+
+    .theme_dark .data-label {
+      color: #94a3b8;
+    }
+
+    .theme_dark .data-value {
+      color: #e0e7ff;
+    }
+
+    .theme_dark .achievement-reset-panel {
+      border-top-color: rgba(71, 85, 105, 0.5);
+    }
+
+    .theme_dark .admin-achievement-card {
+      background: rgba(30, 41, 59, 0.6);
+      border-color: rgba(100, 116, 139, 0.35);
+      box-shadow: 0 8px 20px rgba(2, 6, 23, 0.45);
+    }
+
+    .theme_dark .admin-achievement-card.unlocked {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    .theme_dark .admin-achievement-description {
+      color: #cbd5e1;
+    }
+
+    .theme_dark .admin-achievement-meta {
+      color: #a5b4fc;
+    }
+
+    .theme_dark .admin-achievement-status {
+      background: rgba(148, 163, 184, 0.35);
+      color: #e2e8f0;
+    }
+
+    /* 数据备份暗色主题 */
+    .theme_dark .backup-section {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(100, 116, 139, 0.3);
+    }
+
+    .theme_dark .backup-section h3 {
+      color: #818cf8;
+    }
+
+    .theme_dark .backup-description {
+      color: #94a3b8;
+    }
+
+    .theme_dark .user-data-section,
+    .theme_dark .user-form-card,
+    .theme_dark .user-card {
+      background: var(--card-bg, rgba(30, 41, 59, 0.85));
+      border-color: var(--card-border, rgba(100, 116, 139, 0.4));
+      box-shadow: 0 10px 25px rgba(2, 6, 23, 0.45);
+    }
+
+    .theme_dark .user-card-title {
+      color: #a5b4fc;
+    }
+
+    .theme_dark .user-detail-item {
+      border-bottom-color: rgba(100, 116, 139, 0.3);
+    }
+
+    .theme_dark .user-detail-label {
+      color: #a0aec0;
+    }
+
+    .theme_dark .user-card-plain .btn-secondary,
+    .theme_dark .user-card-plain .btn-info {
+      box-shadow: none;
+    }
   </style>
 </head>
 
@@ -1017,6 +1637,14 @@
       <input type="radio" id="tab-backup" name="admin-tabs" value="backup">
       <label for="tab-backup" data-tab="backup" role="tab" aria-controls="backupTab" aria-selected="false">
         数据备份
+      </label>
+      <input type="radio" id="tab-settings" name="admin-tabs" value="settings">
+      <label for="tab-settings" data-tab="settings" role="tab" aria-controls="settingsTab" aria-selected="false">
+        设置
+      </label>
+      <input type="radio" id="tab-debug" name="admin-tabs" value="debug">
+      <label for="tab-debug" data-tab="debug" role="tab" aria-controls="debugTab" aria-selected="false">
+        调试工具
       </label>
       <span class="seg-indicator" aria-hidden="true"></span>
     </div>
@@ -1162,42 +1790,45 @@
             <h2 class="section-title">用户数据管理</h2>
           </div>
 
-          <div
-            style="background: white; padding: 2rem; border-radius: var(--border-radius); box-shadow: var(--shadow-sm); max-width: 800px; margin: 0 auto;">
+          <div class="user-data-section">
             <!-- 用户统计卡片 -->
-            <div
-              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-              <div
-                style="background: linear-gradient(135deg, #fbbf24, #f59e0b); padding: 1.5rem; border-radius: var(--border-radius); color: white; text-align: center;">
-                <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">💰 金币</div>
-                <div id="userCoinsDisplay" style="font-size: 2rem; font-weight: 700;">0</div>
+            <div class="user-stats-grid">
+              <div class="user-stat-card user-stat-coins">
+                <div class="user-stat-label">💰 金币</div>
+                <div id="userCoinsDisplay" class="user-stat-value">0</div>
               </div>
-              <div
-                style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); padding: 1.5rem; border-radius: var(--border-radius); color: white; text-align: center;">
-                <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">🏆 等级</div>
-                <div id="userLevelDisplay" style="font-size: 2rem; font-weight: 700;">1</div>
+              <div class="user-stat-card" style="background: linear-gradient(135deg, #a855f7, #7c3aed);">
+                <div class="user-stat-label">💎 钻石</div>
+                <div id="userDiamondsDisplay" class="user-stat-value">0</div>
               </div>
-              <div
-                style="background: linear-gradient(135deg, #ec4899, #db2777); padding: 1.5rem; border-radius: var(--border-radius); color: white; text-align: center;">
-                <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">🔥 连续天数</div>
-                <div id="userStreakDisplay" style="font-size: 2rem; font-weight: 700;">0</div>
+              <div class="user-stat-card user-stat-level">
+                <div class="user-stat-label">🏆 等级</div>
+                <div id="userLevelDisplay" class="user-stat-value">1</div>
               </div>
-              <div
-                style="background: linear-gradient(135deg, #10b981, #059669); padding: 1.5rem; border-radius: var(--border-radius); color: white; text-align: center;">
-                <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">📚 学习单词</div>
-                <div id="userWordsDisplay" style="font-size: 2rem; font-weight: 700;">0</div>
+              <div class="user-stat-card user-stat-streak">
+                <div class="user-stat-label">🔥 连续天数</div>
+                <div id="userStreakDisplay" class="user-stat-value">0</div>
+              </div>
+              <div class="user-stat-card user-stat-words">
+                <div class="user-stat-label">📚 学习单词</div>
+                <div id="userWordsDisplay" class="user-stat-value">0</div>
               </div>
             </div>
 
             <!-- 编辑表单 -->
-            <div
-              style="background: #f8fafc; padding: 2rem; border-radius: var(--border-radius); border: 1px solid #e2e8f0;">
-              <h3 style="margin-bottom: 1.5rem; color: var(--primary); font-size: 1.3rem;">📝 编辑用户数据</h3>
+            <div class="user-form-card">
+              <h3 class="user-card-title">📝 编辑用户数据</h3>
 
               <div class="form-group">
                 <label for="editCoins">💰 金币数量</label>
                 <input type="number" id="editCoins" class="form-control" min="0" placeholder="输入金币数量">
                 <small class="form-text text-muted">用于商店购买道具和皮肤</small>
+              </div>
+
+              <div class="form-group">
+                <label for="editDiamonds">💎 钻石数量</label>
+                <input type="number" id="editDiamonds" class="form-control" min="0" placeholder="输入钻石数量">
+                <small class="form-text text-muted">高级货币，可购买专属物品或兑换金币</small>
               </div>
 
               <div class="form-group">
@@ -1230,6 +1861,44 @@
                 <small class="form-text text-muted">累计练习时长（以分钟计）</small>
               </div>
 
+              <div class="form-group">
+                <label for="editMixQuestions">🎲 Mix模式题目数量</label>
+                <input type="number" id="editMixQuestions" class="form-control" min="1" max="50" placeholder="输入题目数量">
+                <small class="form-text text-muted">每次 Mix 模式练习的题目数量（默认10题，范围1-50）</small>
+              </div>
+
+              <div class="form-group">
+                <label>🎯 当前 Mix 练习进度</label>
+                <div id="mixProgressStatus"
+                  style="padding: 1rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; margin-top: 0.5rem;">
+                  <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">暂无进行中的 Mix 练习</p>
+                </div>
+              </div>
+
+              <div class="form-group" id="mixProgressEditSection" style="display: none;">
+                <label for="editMixCurrentQuestion">✏️ 修改当前题号</label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <input type="number" id="editMixCurrentQuestion" class="form-control" min="0" placeholder="当前题号"
+                    style="flex: 1;">
+                  <span style="color: var(--text-secondary);">/ <span id="mixTotalQuestions">10</span></span>
+                </div>
+                <small class="form-text text-muted">修改当前做到第几题（范围：0 到总题数）</small>
+              </div>
+
+              <div class="form-group">
+                <label>🔄 Mix 模式进度管理</label>
+                <div style="display: flex; gap: 0.5rem;">
+                  <button class="btn btn-primary" onclick="saveMixProgress()" id="saveMixProgressBtn"
+                    style="flex: 1; display: none;">
+                    💾 保存进度修改
+                  </button>
+                  <button class="btn btn-warning" onclick="clearMixProgress()" style="flex: 1;">
+                    🗑️ 清除进度
+                  </button>
+                </div>
+                <small class="form-text text-muted">管理当前保存的 Mix 练习进度</small>
+              </div>
+
               <div class="form-actions" style="margin-top: 2rem;">
                 <button class="btn btn-primary" onclick="saveUserData()" style="padding: 0.75rem 2rem;">
                   💾 保存更改
@@ -1241,9 +1910,8 @@
             </div>
 
             <!-- 测试工具区域 -->
-            <div
-              style="margin-top: 2rem; padding: 2rem; background: white; border-radius: var(--border-radius); border: 1px solid #e2e8f0;">
-              <h4 style="color: var(--primary); margin-bottom: 1.5rem;">🧪 测试工具</h4>
+            <div class="user-card user-card-plain">
+              <h4 class="user-card-title">🧪 测试工具</h4>
 
               <div style="display: grid; gap: 1rem;">
                 <button class="btn btn-info" onclick="testShowMixReward()" style="width: 100%;">
@@ -1260,15 +1928,14 @@
             </div>
 
             <!-- 成就管理区域 -->
-            <div
-              style="margin-top: 2rem; padding: 2rem; background: white; border-radius: var(--border-radius); border: 1px solid #e2e8f0;">
-              <h4 style="color: var(--primary); margin-bottom: 1.5rem;">🏆 成就管理</h4>
+            <div class="user-card user-card-plain">
+              <h4 class="user-card-title">🏆 成就管理</h4>
 
-              <div id="achievementsList" style="display: grid; gap: 0.75rem;">
+              <div id="achievementsList" class="achievements-list">
                 <!-- 成就列表将由 JavaScript 动态生成 -->
               </div>
 
-              <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0;">
+              <div class="achievement-reset-panel">
                 <button class="btn btn-secondary" onclick="resetAllAchievements()" style="width: 100%;">
                   🔄 重置所有成就
                 </button>
@@ -1279,23 +1946,20 @@
             </div>
 
             <!-- 详细信息 -->
-            <div
-              style="margin-top: 2rem; padding: 1.5rem; background: white; border-radius: var(--border-radius); border: 1px solid #e2e8f0;">
-              <h4 style="color: var(--primary); margin-bottom: 1rem;">ℹ️ 详细信息</h4>
-              <div style="display: grid; gap: 0.75rem; font-size: 0.95rem;">
-                <div
-                  style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f1f5f9;">
-                  <span style="color: #64748b;">账户创建时间:</span>
-                  <span id="userCreatedAt" style="font-weight: 600;">-</span>
+            <div class="user-card user-card-detail">
+              <h4 class="user-card-title">ℹ️ 详细信息</h4>
+              <div class="user-detail-list">
+                <div class="user-detail-item">
+                  <span class="user-detail-label">账户创建时间:</span>
+                  <span id="userCreatedAt" class="user-detail-value">-</span>
                 </div>
-                <div
-                  style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f1f5f9;">
-                  <span style="color: #64748b;">上次登录日期:</span>
-                  <span id="userLastLogin" style="font-weight: 600;">-</span>
+                <div class="user-detail-item">
+                  <span class="user-detail-label">上次登录日期:</span>
+                  <span id="userLastLogin" class="user-detail-value">-</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
-                  <span style="color: #64748b;">学习时长(小时):</span>
-                  <span id="userPracticeHours" style="font-weight: 600;">0</span>
+                <div class="user-detail-item">
+                  <span class="user-detail-label">学习时长(小时):</span>
+                  <span id="userPracticeHours" class="user-detail-value">0</span>
                 </div>
               </div>
             </div>
@@ -1330,6 +1994,77 @@
               <button class="btn btn-primary" onclick="importData()">
                 <span>导入数据</span>
               </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 设置 -->
+        <div id="settingsTab" class="tab-content tab-panel" data-tab="settings">
+          <div class="section-header">
+            <h2 class="section-title">系统设置</h2>
+          </div>
+
+          <!-- 缓存管理 -->
+          <div class="settings-section">
+            <h3 class="settings-section-title">缓存管理</h3>
+            <div class="settings-group">
+              <div class="settings-label">
+                <span class="settings-label-text">
+                  <span class="settings-icon">🗑️</span>
+                  <span>清理缓存</span>
+                </span>
+              </div>
+              <p class="settings-description">清除 Service Worker 缓存，更新到最新版本</p>
+              <button class="btn btn-secondary" onclick="clearServiceWorkerCache()" style="margin-top: 0.5rem;">
+                清除缓存
+              </button>
+            </div>
+          </div>
+
+          <!-- 版本信息 -->
+          <div class="settings-section" style="border: none; padding-bottom: 0;">
+            <div style="text-align: center; color: #94a3b8; font-size: 0.85rem; padding: 1rem 0;">
+              <p style="margin: 0.25rem 0;">AI English Learning Assistant</p>
+              <p style="margin: 0.25rem 0;">版本 <span id="appVersion">0.4.92</span></p>
+              <p style="margin: 0.25rem 0; font-size: 0.75rem;">© 2025 All Rights Reserved</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 调试工具标签页 -->
+        <div id="debugTab" class="tab-content tab-panel" data-tab="debug">
+          <div class="section-header">
+            <h2 class="section-title">调试工具</h2>
+          </div>
+
+          <!-- 抽卡动画测试 -->
+          <div class="settings-section">
+            <h3 class="settings-section-title">抽卡动画测试</h3>
+            <div class="settings-group">
+              <p style="color: var(--text-secondary); margin-bottom: 1rem;">测试不同稀有度物品的抽卡动画效果</p>
+              <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="btn btn-secondary" onclick="testGachaAnimation('common')"
+                  style="flex: 1; min-width: 150px;">
+                  测试普通物品
+                </button>
+                <button class="btn btn-secondary" onclick="testGachaAnimation('rare')"
+                  style="flex: 1; min-width: 150px;">
+                  测试稀有物品
+                </button>
+                <button class="btn btn-secondary" onclick="testGachaAnimation('epic')"
+                  style="flex: 1; min-width: 150px;">
+                  测试史诗物品
+                </button>
+                <button class="btn btn-secondary" onclick="testGachaAnimation('legendary')"
+                  style="flex: 1; min-width: 150px;">
+                  测试传说物品
+                </button>
+              </div>
+              <div style="margin-top: 1rem;">
+                <button class="btn btn-primary" onclick="testGachaAnimation('mixed')" style="width: 100%;">
+                  测试混合稀有度（十连）
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1549,10 +2284,105 @@ ambiguous    模糊的    0    0</pre>
   <script src="js/common.js"></script>
   <script src="js/vocabulary-status-button.js"></script>
   <script src="js/mobile-nav.js"></script>
+  <script src="js/custom-select.js"></script>
+  <script src="js/shop.js"></script>
   <script src="js/admin.js"></script>
+
+  <!-- 抽卡动画测试函数 -->
+  <script>
+    function testGachaAnimation(type) {
+      let mockResults = [];
+
+      if (type === 'common') {
+        mockResults = [{
+          id: 'test_common',
+          name: '测试普通物品',
+          icon: '📦',
+          rarity: 'common',
+          type: 'item'
+        }];
+      } else if (type === 'rare') {
+        mockResults = [{
+          id: 'test_rare',
+          name: '测试稀有物品',
+          icon: '💎',
+          rarity: 'rare',
+          type: 'item'
+        }];
+      } else if (type === 'epic') {
+        mockResults = [{
+          id: 'test_epic',
+          name: '测试史诗物品',
+          icon: '👑',
+          rarity: 'epic',
+          type: 'item'
+        }];
+      } else if (type === 'legendary') {
+        mockResults = [{
+          id: 'test_legendary',
+          name: '测试传说物品',
+          icon: '⭐',
+          rarity: 'legendary',
+          type: 'item'
+        }];
+      } else if (type === 'mixed') {
+        mockResults = [
+          { id: 'test1', name: '普通物品1', icon: '📦', rarity: 'common', type: 'item' },
+          { id: 'test2', name: '普通物品2', icon: '📦', rarity: 'common', type: 'item' },
+          { id: 'test3', name: '稀有物品1', icon: '💎', rarity: 'rare', type: 'item' },
+          { id: 'test4', name: '普通物品3', icon: '📦', rarity: 'common', type: 'item' },
+          { id: 'test5', name: '史诗物品', icon: '👑', rarity: 'epic', type: 'item' },
+          { id: 'test6', name: '普通物品4', icon: '📦', rarity: 'common', type: 'item' },
+          { id: 'test7', name: '稀有物品2', icon: '💎', rarity: 'rare', type: 'item' },
+          { id: 'test8', name: '普通物品5', icon: '📦', rarity: 'common', type: 'item' },
+          { id: 'test9', name: '传说物品', icon: '⭐', rarity: 'legendary', type: 'item' },
+          { id: 'test10', name: '普通物品6', icon: '📦', rarity: 'common', type: 'item' }
+        ];
+      }
+
+      // 调用shop.js中的showGachaResults函数
+      if (typeof showGachaResults === 'function') {
+        showGachaResults(mockResults);
+      } else {
+        alert('抽卡动画函数未加载，请确保shop.js已正确引入');
+      }
+    }
+  </script>
+
+  <!-- 主题切换按钮 -->
+  <script src="js/theme-toggle-button.js"></script>
 
   <!-- Service Worker 注册 -->
   <script src="js/sw-register.js"></script>
+
+  <!-- 初始化自定义下拉选择组件 -->
+  <script>
+    // 页面加载完成后初始化自定义下拉
+    document.addEventListener('DOMContentLoaded', function () {
+      // 延迟初始化，确保 admin.js 已填充 select options
+      setTimeout(function () {
+        initCustomSelects('select:not([data-native="true"])');
+      }, 100);
+    });
+
+    // 监听动态内容变化，重新初始化
+    const selectObserver = new MutationObserver(function (mutations) {
+      mutations.forEach(function (mutation) {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach(function (node) {
+            if (node.nodeType === 1) {
+              const selects = node.querySelectorAll ? node.querySelectorAll('select:not([data-native="true"]):not([data-custom-select-init="true"])') : [];
+              selects.forEach(function (select) {
+                new CustomSelect(select);
+              });
+            }
+          });
+        }
+      });
+    });
+
+    selectObserver.observe(document.body, { childList: true, subtree: true });
+  </script>
 </body>
 
 </html>

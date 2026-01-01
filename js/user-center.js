@@ -11,6 +11,9 @@ function initUserCenterPage() {
   loadAchievements();
   loadVocabularyStats();
   initializeCharts(); // 初始化图表
+  initLeaderboard(); // 初始化排行榜
+  initScrollableTabsHint(document.querySelector(".leaderboard-tabs"));
+  initDeveloperMode(); // 初始化开发者模式
 }
 
 document.addEventListener("DOMContentLoaded", initUserCenterPage);
@@ -430,9 +433,12 @@ function getLast7DaysData(records) {
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split("T")[0];
 
-    // 计算该天的练习次数
+    // 计算该天的练习次数（添加日期有效性检查）
     const count = records.filter((r) => {
-      const recordDate = new Date(r.date).toISOString().split("T")[0];
+      if (!r.date) return false;
+      const recordDateObj = new Date(r.date);
+      if (isNaN(recordDateObj.getTime())) return false;
+      const recordDate = recordDateObj.toISOString().split("T")[0];
       return recordDate === dateStr;
     }).length;
 
@@ -462,9 +468,12 @@ function getLast7DaysAccuracy(records) {
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split("T")[0];
 
-    // 该天的所有记录
+    // 该天的所有记录（添加日期有效性检查）
     const dayRecords = records.filter((r) => {
-      const recordDate = new Date(r.date).toISOString().split("T")[0];
+      if (!r.date) return false;
+      const recordDateObj = new Date(r.date);
+      if (isNaN(recordDateObj.getTime())) return false;
+      const recordDate = recordDateObj.toISOString().split("T")[0];
       return recordDate === dateStr;
     });
 
@@ -504,4 +513,438 @@ function getRandomColor() {
     "#14b8a6", // 青色
   ];
   return colors[Math.floor(Math.random() * colors.length)];
+}
+
+// =================================================================
+// 排行榜系统（本地模拟）
+// =================================================================
+
+// 模拟玩家名字库
+const FAKE_PLAYER_NAMES = [
+  "英语小达人",
+  "词汇王者",
+  "学习之星",
+  "单词猎手",
+  "语言探索者",
+  "知识追求者",
+  "拼写高手",
+  "背单词机器",
+  "词汇收割者",
+  "学霸本霸",
+  "英语爱好者",
+  "勤奋学习者",
+  "语言天才",
+  "记忆大师",
+  "词汇专家",
+  "坚持不懈",
+  "每日一词",
+  "进步达人",
+  "努力学习ing",
+  "永不放弃",
+  "Alex_Study",
+  "WordMaster",
+  "EnglishPro",
+  "LearnDaily",
+  "VocabKing",
+  "StudyHard",
+  "NeverGiveUp",
+  "LearningFun",
+  "WordLover",
+  "BookWorm",
+  "一群傻逼",
+  "楼下差1分怎么不凹了",
+  "我就是你们的爸爸",
+  "别看我，我只是世界第二",
+];
+
+// 模拟头像库
+const FAKE_AVATARS = [
+  "🎓",
+  "📚",
+  "✨",
+  "🌟",
+  "💪",
+  "🔥",
+  "⭐",
+  "🏆",
+  "👨‍🎓",
+  "👩‍🎓",
+  "🦊",
+  "🐱",
+  "🐶",
+  "🐼",
+  "🦁",
+  "🐸",
+  "🐵",
+  "🐰",
+];
+
+// 排行榜数据缓存
+let leaderboardCache = null;
+let currentLeaderboardType = "exp";
+
+/**
+ * 生成模拟排行榜数据（基于用户当前数据动态生成）
+ * 设计原则：
+ * - 用户初始排名约在 60-70% 位置
+ * - 随着用户进步，排名逐渐上升
+ * - 始终有几个"可超越"的对手在前面
+ * - 始终有几个"追赶者"在后面
+ */
+function generateFakeLeaderboard() {
+  const profile = getUserProfile();
+  const fakePlayers = [];
+
+  // 获取用户当前数据
+  const userLevel = profile.level || 1;
+  const userExp = (userLevel - 1) * 100 + (profile.exp || 0);
+  const userStreak = profile.streak || 0;
+  const userWords = profile.totalWordsLearned || 0;
+
+  // 生成 18-22 个假玩家
+  const playerCount = 18 + Math.floor(Math.random() * 5);
+
+  // 计算分布：
+  // - 约 30% 玩家明显强于用户（榜首区）
+  // - 约 25% 玩家略强于用户（可追赶区）
+  // - 约 25% 玩家略弱于用户（被追赶区）
+  // - 约 20% 玩家明显弱于用户（垫底区）
+  const strongCount = Math.floor(playerCount * 0.3);
+  const slightlyStrongCount = Math.floor(playerCount * 0.25);
+  const slightlyWeakCount = Math.floor(playerCount * 0.25);
+  const weakCount =
+    playerCount - strongCount - slightlyStrongCount - slightlyWeakCount;
+
+  for (let i = 0; i < playerCount; i++) {
+    const nameIndex = Math.floor(Math.random() * FAKE_PLAYER_NAMES.length);
+    const avatarIndex = Math.floor(Math.random() * FAKE_AVATARS.length);
+
+    let level, exp, streak, wordsLearned;
+
+    if (i < strongCount) {
+      // 榜首区：比用户强 50%-150%
+      const multiplier = 1.5 + Math.random() * 1.0;
+      level = Math.max(
+        1,
+        Math.floor(userLevel * multiplier) + Math.floor(Math.random() * 5)
+      );
+      exp = Math.floor(userExp * multiplier) + Math.floor(Math.random() * 200);
+      streak =
+        Math.floor((userStreak + 10) * multiplier) +
+        Math.floor(Math.random() * 15);
+      wordsLearned =
+        Math.floor((userWords + 20) * multiplier) +
+        Math.floor(Math.random() * 50);
+    } else if (i < strongCount + slightlyStrongCount) {
+      // 可追赶区：比用户强 5%-40%（努力一下可以超越）
+      const multiplier = 1.05 + Math.random() * 0.35;
+      level = Math.max(
+        1,
+        Math.floor(userLevel * multiplier) + Math.floor(Math.random() * 2)
+      );
+      exp = Math.floor(userExp * multiplier) + Math.floor(Math.random() * 80);
+      streak =
+        Math.floor((userStreak + 3) * multiplier) +
+        Math.floor(Math.random() * 5);
+      wordsLearned =
+        Math.floor((userWords + 5) * multiplier) +
+        Math.floor(Math.random() * 20);
+    } else if (i < strongCount + slightlyStrongCount + slightlyWeakCount) {
+      // 被追赶区：比用户弱 5%-30%（刚被用户超越的感觉）
+      const multiplier = 0.7 + Math.random() * 0.25;
+      level = Math.max(1, Math.floor(userLevel * multiplier));
+      exp = Math.max(
+        0,
+        Math.floor(userExp * multiplier) - Math.floor(Math.random() * 50)
+      );
+      streak = Math.max(
+        0,
+        Math.floor(userStreak * multiplier) - Math.floor(Math.random() * 3)
+      );
+      wordsLearned = Math.max(
+        0,
+        Math.floor(userWords * multiplier) - Math.floor(Math.random() * 10)
+      );
+    } else {
+      // 垫底区：比用户弱 50%-90%
+      const multiplier = 0.1 + Math.random() * 0.4;
+      level = Math.max(1, Math.floor(userLevel * multiplier) + 1);
+      exp = Math.max(10, Math.floor(userExp * multiplier));
+      streak = Math.max(0, Math.floor(userStreak * multiplier));
+      wordsLearned = Math.max(5, Math.floor(userWords * multiplier));
+    }
+
+    // 确保数据合理性
+    level = Math.max(1, Math.min(level, 99));
+    exp = Math.max(0, exp);
+    streak = Math.max(0, Math.min(streak, 365));
+    wordsLearned = Math.max(0, wordsLearned);
+
+    fakePlayers.push({
+      id: `fake_${i}`,
+      name:
+        FAKE_PLAYER_NAMES[nameIndex] +
+        (Math.random() > 0.7 ? Math.floor(Math.random() * 100) : ""),
+      avatar: FAKE_AVATARS[avatarIndex],
+      level: level,
+      exp: exp,
+      streak: streak,
+      wordsLearned: wordsLearned,
+      isCurrentUser: false,
+    });
+  }
+
+  // 添加当前用户
+  const currentUser = {
+    id: "current_user",
+    name: "我",
+    avatar: "🎓",
+    level: userLevel,
+    exp: userExp,
+    streak: userStreak,
+    wordsLearned: userWords,
+    isCurrentUser: true,
+  };
+
+  fakePlayers.push(currentUser);
+
+  return fakePlayers;
+}
+
+/**
+ * 获取排行榜数据（带缓存）
+ */
+function getLeaderboardData() {
+  // 检查缓存是否有效（24小时内）
+  const cacheKey = "leaderboardCache";
+  const cached = safeGetItem(cacheKey);
+
+  if (cached && cached.timestamp && Date.now() - cached.timestamp < 86400000) {
+    // 更新当前用户数据
+    const profile = getUserProfile();
+    const currentUserIndex = cached.data.findIndex((p) => p.isCurrentUser);
+    if (currentUserIndex !== -1) {
+      cached.data[currentUserIndex].level = profile.level || 1;
+      cached.data[currentUserIndex].exp =
+        (profile.level - 1) * 100 + (profile.exp || 0);
+      cached.data[currentUserIndex].streak = profile.streak || 0;
+      cached.data[currentUserIndex].wordsLearned =
+        profile.totalWordsLearned || 0;
+    }
+    return cached.data;
+  }
+
+  // 生成新数据
+  const newData = generateFakeLeaderboard();
+  safeSetItem(cacheKey, {
+    data: newData,
+    timestamp: Date.now(),
+  });
+
+  return newData;
+}
+
+/**
+ * 刷新排行榜（假刷新，只显示动画和提示）
+ */
+function refreshLeaderboard() {
+  const btn = document.querySelector(".leaderboard-refresh-btn");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "刷新中...";
+  }
+
+  // 模拟刷新延迟，增加真实感
+  setTimeout(() => {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "🔄 刷新排行榜";
+    }
+    showToast("排行榜已刷新！", "success");
+  }, 800 + Math.random() * 400); // 随机 0.8-1.2 秒延迟
+}
+
+/**
+ * 开发者专属：强制刷新排行榜（真正清除缓存并重新生成）
+ */
+function devForceRefreshLeaderboard() {
+  safeRemoveItem("leaderboardCache");
+  leaderboardCache = null;
+  showLeaderboard(currentLeaderboardType);
+  showToast("🛠️ 排行榜数据已重新生成！", "success");
+}
+
+/**
+ * 显示排行榜
+ * @param {string} type - 排行榜类型：exp(经验)、streak(连续天数)、words(学习单词)
+ */
+function showLeaderboard(type) {
+  currentLeaderboardType = type;
+
+  // 更新标签页状态
+  document.querySelectorAll(".leaderboard-tab-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.type === type);
+  });
+
+  const container = document.getElementById("leaderboardList");
+  if (!container) return;
+
+  // 获取数据
+  const players = getLeaderboardData();
+
+  // 根据类型排序
+  let sortedPlayers;
+  let scoreLabel;
+  let scoreKey;
+
+  switch (type) {
+    case "exp":
+      sortedPlayers = [...players].sort((a, b) => b.exp - a.exp);
+      scoreLabel = "经验值";
+      scoreKey = "exp";
+      break;
+    case "streak":
+      sortedPlayers = [...players].sort((a, b) => b.streak - a.streak);
+      scoreLabel = "天";
+      scoreKey = "streak";
+      break;
+    case "words":
+      sortedPlayers = [...players].sort(
+        (a, b) => b.wordsLearned - a.wordsLearned
+      );
+      scoreLabel = "个单词";
+      scoreKey = "wordsLearned";
+      break;
+    default:
+      return;
+  }
+
+  // 只显示前10名
+  const top10 = sortedPlayers.slice(0, 10);
+
+  // 查找当前用户排名
+  const currentUserRank = sortedPlayers.findIndex((p) => p.isCurrentUser) + 1;
+  const currentUserInTop10 = currentUserRank <= 10;
+
+  // 渲染列表
+  container.innerHTML = "";
+
+  top10.forEach((player, index) => {
+    const rank = index + 1;
+    const item = document.createElement("div");
+
+    let itemClass = "leaderboard-item";
+    if (player.isCurrentUser) itemClass += " current-user";
+    if (rank === 1) itemClass += " top-1";
+    else if (rank === 2) itemClass += " top-2";
+    else if (rank === 3) itemClass += " top-3";
+
+    item.className = itemClass;
+
+    const rankDisplay =
+      rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank;
+    const scoreValue = player[scoreKey];
+
+    item.innerHTML = `
+      <div class="leaderboard-rank">${rankDisplay}</div>
+      <div class="leaderboard-avatar">${player.avatar}</div>
+      <div class="leaderboard-info">
+        <div class="leaderboard-name">${player.name}</div>
+        <div class="leaderboard-level">Lv.${player.level}</div>
+      </div>
+      <div class="leaderboard-score">
+        <div class="leaderboard-score-value">${scoreValue}</div>
+        <div class="leaderboard-score-label">${scoreLabel}</div>
+      </div>
+    `;
+
+    container.appendChild(item);
+  });
+
+  // 如果当前用户不在前10，显示分隔线和用户排名
+  if (!currentUserInTop10) {
+    const currentUser = sortedPlayers.find((p) => p.isCurrentUser);
+    if (currentUser) {
+      // 添加分隔符
+      const separator = document.createElement("div");
+      separator.style.cssText =
+        "text-align: center; color: #94a3b8; padding: 0.5rem; font-size: 0.9rem;";
+      separator.textContent = "· · ·";
+      container.appendChild(separator);
+
+      // 添加当前用户
+      const item = document.createElement("div");
+      item.className = "leaderboard-item current-user";
+
+      const scoreValue = currentUser[scoreKey];
+
+      item.innerHTML = `
+        <div class="leaderboard-rank">${currentUserRank}</div>
+        <div class="leaderboard-avatar">${currentUser.avatar}</div>
+        <div class="leaderboard-info">
+          <div class="leaderboard-name">${currentUser.name}</div>
+          <div class="leaderboard-level">Lv.${currentUser.level}</div>
+        </div>
+        <div class="leaderboard-score">
+          <div class="leaderboard-score-value">${scoreValue}</div>
+          <div class="leaderboard-score-label">${scoreLabel}</div>
+        </div>
+      `;
+
+      container.appendChild(item);
+    }
+  }
+}
+
+/**
+ * 初始化排行榜
+ */
+function initLeaderboard() {
+  showLeaderboard("exp");
+}
+
+/**
+ * 为横向可滚动 tabs 提供“可滑动提示”的状态类：
+ * - is-scrollable：内容宽度超过容器
+ * - at-start / at-end：用于隐藏左右边缘渐变
+ */
+function initScrollableTabsHint(tabsContainer) {
+  if (!tabsContainer) return;
+
+  let rafId = 0;
+
+  const update = () => {
+    rafId = 0;
+
+    const isScrollable =
+      tabsContainer.scrollWidth > tabsContainer.clientWidth + 1;
+    tabsContainer.classList.toggle("is-scrollable", isScrollable);
+
+    if (!isScrollable) {
+      tabsContainer.classList.remove("at-start");
+      tabsContainer.classList.remove("at-end");
+      return;
+    }
+
+    const maxScrollLeft = Math.max(
+      0,
+      tabsContainer.scrollWidth - tabsContainer.clientWidth
+    );
+    const atStart = tabsContainer.scrollLeft <= 1;
+    const atEnd = tabsContainer.scrollLeft >= maxScrollLeft - 1;
+
+    tabsContainer.classList.toggle("at-start", atStart);
+    tabsContainer.classList.toggle("at-end", atEnd);
+  };
+
+  const scheduleUpdate = () => {
+    if (rafId) return;
+    rafId = requestAnimationFrame(update);
+  };
+
+  tabsContainer.addEventListener("scroll", scheduleUpdate, { passive: true });
+  window.addEventListener("resize", scheduleUpdate);
+
+  // 首次计算
+  scheduleUpdate();
 }

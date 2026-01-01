@@ -50,44 +50,13 @@ async function handleRetry() {
 
 /**
  * 渲染上下文内容到容器
+ * 使用 common.js 中的共享函数
  * @param {HTMLElement} container - 容器元素
  * @param {Object} word - 单词对象
  * @param {string} content - 生成的上下文内容
  */
 function renderContextContent(container, word, content) {
-  // 参数验证
-  if (!content || typeof content !== "string") {
-    console.error("[renderContextContent] Invalid content:", content);
-    container.innerHTML = '<p style="color: var(--error);">内容生成失败</p>';
-    return;
-  }
-
-  if (!word || !word.word) {
-    console.error("[renderContextContent] Invalid word:", word);
-    container.innerHTML = '<p style="color: var(--error);">单词数据错误</p>';
-    return;
-  }
-
-  container.innerHTML = `
-    <h3>Contextual Situation</h3>
-    <p id="contextParagraph"></p>
-    <p style="margin-top: 1rem;"><strong>Target Word: ${word.word}</strong></p>
-  `;
-
-  // 高亮显示段落中目标单词的出现位置（不区分大小写）
-  const contextPara = container.querySelector("#contextParagraph");
-  if (contextPara) {
-    const re = new RegExp(`\\b${word.word}\\b`, "gi");
-    const highlighted = content.replace(
-      re,
-      (match) => `<mark class="highlight">${match}</mark>`
-    );
-    contextPara.innerHTML = highlighted;
-  }
-
-  // 添加淡入动画
-  container.style.opacity = "0";
-  setTimeout(() => (container.style.opacity = "1"), 50);
+  renderContextContentShared(container, word, content);
 }
 
 /**
@@ -246,97 +215,36 @@ async function checkTranslation() {
 
 /**
  * 获取并显示提示。
+ * 使用 common.js 中的共享函数
  */
 async function getHint() {
-  // 检查是否有可用的当前单词
-  if (!currentWord) {
-    showToast("当前没有可用的单词", "error");
-    return;
-  }
-
-  hintBtn.disabled = true;
-  hintBtn.textContent = "Hinting...";
-
-  try {
-    // 生成渐进式提示
-    const progressiveHint = HintPanelManager.generateHint(
-      currentWord.word,
-      currentWord,
-      contextText,
-      CURRENT_MODE // 传入模式参数，确保使用Context模式的词义提示策略
-    );
-
-    if (progressiveHint.isLocal) {
-      // 本地提示，直接添加
-      HintPanelManager.pushHint(progressiveHint.level, progressiveHint.text);
-    } else {
-      // AI提示，根据类型异步获取
-      const aiType = progressiveHint.aiType || "complex";
-      await HintPanelManager.pushAiHint(
-        currentWord,
-        contextText,
-        aiType, // AI提示类型：complex、simple、synonyms
-        null, // 成功回调
-        (error) => {
-          showToast("获取AI提示失败，请检查网络连接", "error");
-        }
-      );
-    }
-  } catch (error) {
-    console.error("生成提示失败:", error);
-    showToast("生成提示失败: " + error.message, "error");
-  } finally {
-    hintBtn.disabled = false;
-    hintBtn.textContent = "Hint";
-  }
+  await getHintShared({
+    currentWord,
+    contextText,
+    mode: CURRENT_MODE,
+    hintBtn,
+    onError: null,
+  });
 }
 
 /**
  * 显示正确答案。
+ * 使用 common.js 中的共享函数
  */
 function showAnswer() {
-  // 检查是否有可用的当前单词
-  if (!currentWord) {
-    showToast("当前没有可用的单词", "error");
-    return;
-  }
-
-  answerShown = true;
-
-  // 记录为错误，因为用户放弃了
-  const wordBank = safeGetItem(STORAGE_KEYS.WORD_BANK, []);
-  const wordIndex = wordBank.findIndex((w) => w.word === currentWord.word);
-  if (wordIndex !== -1) {
-    const modeData = getWordModeData(wordBank[wordIndex], CURRENT_MODE);
-    modeData.practiceCount++;
-    if (!hasErrorInCurrentWord) {
-      modeData.errors++;
-      hasErrorInCurrentWord = true;
-    }
-    wordBank[wordIndex].modes[CURRENT_MODE] = modeData;
-    safeSetItem(STORAGE_KEYS.WORD_BANK, wordBank);
-  }
-
-  // 在练习记录中记录为错误
-  updateRecords(currentWord.word, false, CURRENT_MODE);
-  updateStats();
-
-  answerBox.style.display = "block";
-  answerBox.style.opacity = "0";
-  answerBox.innerHTML = `
-    <div class="answer-card">
-        <h4>正确答案</h4>
-        <p>单词：<strong>${currentWord.word}</strong></p>
-        <p>中文翻译：<span style="color: #10b981; font-weight: 600;">${currentWord.translations.join(
-          " / "
-        )}</span></p>
-    </div>
-`;
-  setTimeout(() => (answerBox.style.opacity = "1"), 50);
-
-  answerBtn.disabled = true;
-  submitBtn.textContent = "Next";
-  showToast("已显示答案，点击 Next 进入下一题", "info");
+  showAnswerShared({
+    currentWord,
+    mode: CURRENT_MODE,
+    answerBox,
+    answerBtn,
+    submitBtn,
+    hasErrorInCurrentWord,
+    onStateUpdate: (state) => {
+      answerShown = state.answerShown;
+      hasErrorInCurrentWord = state.hasErrorInCurrentWord;
+      updateStats();
+    },
+  });
 }
 
 // 事件监听器 - 使用命名函数以便需要时移除
@@ -370,6 +278,7 @@ const initPage = async () => {
     if (!storageReady) {
       console.warn("存储初始化失败，应用可能无法正常工作");
     }
+    initDeveloperMode(); // 初始化开发者模式
     updateStats();
     const result = await startNewSession();
     if (!result.success) {

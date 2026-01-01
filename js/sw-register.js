@@ -321,15 +321,10 @@ window.addEventListener("load", () => {
 function handleOnline() {
   console.log("[网络状态] 恢复在线");
 
-  const banner = document.getElementById("offlineBanner");
-  if (banner) {
-    banner.style.display = "none";
-  }
-
   // 移除离线模式样式
   document.body.classList.remove("offline-mode");
 
-  // 可选: 显示恢复在线提示
+  // 显示恢复在线提示
   showTemporaryMessage("✅ 网络已恢复", "success");
 }
 
@@ -337,28 +332,11 @@ function handleOnline() {
 function handleOffline() {
   console.log("[网络状态] 进入离线模式");
 
-  // 显示离线横幅
-  let banner = document.getElementById("offlineBanner");
-  if (!banner) {
-    banner = document.createElement("div");
-    banner.id = "offlineBanner";
-    banner.className = "offline-banner";
-    banner.innerHTML = `
-      <div class="offline-content">
-        <span class="offline-icon">📡</span>
-        <span class="offline-text">离线模式 - 部分功能受限</span>
-      </div>
-    `;
-    document.body.insertBefore(banner, document.body.firstChild);
-  }
-
-  banner.style.display = "flex";
-
   // 添加离线模式样式
   document.body.classList.add("offline-mode");
 
   // 显示离线提示
-  showTemporaryMessage("⚠️ 网络已断开,进入离线模式", "warning");
+  showTemporaryMessage("⚠️ 网络已断开，进入离线模式", "warning");
 }
 
 // 显示临时消息

@@ -10,6 +10,7 @@ const MIX_PROGRESS_KEY = "mixPracticeProgress";
 // 当前练习状态
 let currentExercise = null;
 let currentSubMode = null;
+let hasErrored = false; // 当前题目是否已经错误过（用于 blank 模式）
 let sessionStats = {
   correct: 0,
   errors: 0,
@@ -32,6 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeStorage();
   initializeUserProfile();
   updateStreak();
+  initDeveloperMode(); // 初始化开发者模式
   initElements();
   initEventListeners();
 
@@ -127,9 +129,23 @@ function showResumeDialog(savedProgress) {
     // 恢复进度
     sessionStats = { ...savedProgress };
     completedWords = new Set(savedProgress.completedWords || []);
+
+    // 恢复当前题目（如果存在）
+    if (savedProgress.currentExercise) {
+      currentExercise = savedProgress.currentExercise;
+      currentSubMode = savedProgress.currentSubMode;
+
+      // 恢复题目显示
+      restoreExerciseDisplay();
+    }
+
     updateProgress();
     dialog.remove();
-    setTimeout(() => loadNextQuestion(), 500);
+
+    // 如果没有当前题目，加载下一题
+    if (!savedProgress.currentExercise) {
+      setTimeout(() => loadNextQuestion(), 500);
+    }
   });
 
   restartBtn.addEventListener("click", () => {
@@ -151,15 +167,77 @@ function showResumeDialog(savedProgress) {
 }
 
 /**
- * 保存练习进度
+ * 保存练习进度（包含当前题目）
  */
 function saveProgress() {
   const progress = {
     ...sessionStats,
     completedWords: Array.from(completedWords),
     timestamp: Date.now(),
+    // 保存当前题目信息
+    currentExercise: currentExercise
+      ? {
+          word: currentExercise.word,
+          type: currentExercise.type,
+          content: currentExercise.content,
+          wordObj: currentExercise.wordObj,
+        }
+      : null,
+    currentSubMode: currentSubMode,
   };
   safeSetItem(MIX_PROGRESS_KEY, progress);
+}
+
+/**
+ * 恢复已保存的题目显示
+ */
+function restoreExerciseDisplay() {
+  if (!currentExercise || !currentSubMode) {
+    console.warn("无法恢复题目：缺少必要信息");
+    return;
+  }
+
+  // 更新模式指示器
+  updateModeIndicator();
+
+  // 设置标题
+  exerciseTitle.textContent =
+    currentSubMode === "context"
+      ? "📖 根据上下文猜测单词"
+      : "✏️ 填入正确的单词";
+
+  // 恢复内容显示
+  if (currentSubMode === "context") {
+    renderContextContent(
+      exerciseContent,
+      currentExercise.wordObj,
+      currentExercise.content
+    );
+  } else {
+    renderBlankContent(
+      exerciseContent,
+      currentExercise.wordObj,
+      currentExercise.content
+    );
+  }
+
+  // 配置输入框
+  setupInputForMode(currentSubMode);
+
+  // 启用按钮
+  if (submitBtn) submitBtn.disabled = false;
+  if (hintBtn) hintBtn.disabled = false;
+  if (nextBtn) nextBtn.style.display = "none";
+
+  // 初始化提示面板
+  const hintPanelContainer = document.getElementById("hintPanel");
+  const inputEl =
+    currentSubMode === "context"
+      ? answerInput
+      : document.getElementById("blankInput");
+  if (hintPanelContainer && inputEl) {
+    initHintPanel(hintPanelContainer, inputEl);
+  }
 }
 
 /**
@@ -173,13 +251,17 @@ function clearProgress() {
  * 开始混合模式练习
  */
 async function startMixedPractice() {
+  // 从设置中读取题目数量，默认为 10
+  const mixSettings = safeGetItem("mixModeSettings", { totalQuestions: 10 });
+  const totalQuestions = mixSettings.totalQuestions || 10;
+
   // 重置统计
   sessionStats = {
     correct: 0,
     errors: 0,
     streak: 0,
     currentQuestion: 0,
-    totalQuestions: 10,
+    totalQuestions: totalQuestions,
     completed: false,
   };
   completedWords.clear();
@@ -197,6 +279,9 @@ async function startMixedPractice() {
 async function loadNextQuestion() {
   // 隐藏 Next 按钮
   if (nextBtn) nextBtn.style.display = "none";
+
+  // 重置错误状态
+  hasErrored = false;
 
   if (sessionStats.currentQuestion >= sessionStats.totalQuestions) {
     // 练习完成
@@ -258,6 +343,8 @@ async function loadNextQuestion() {
         // 更新进度
         sessionStats.currentQuestion++;
         updateProgress();
+
+        // 保存进度（包含当前题目）
         saveProgress();
       },
       onError: (error) => {
@@ -277,66 +364,23 @@ async function loadNextQuestion() {
 
 /**
  * 渲染上下文内容
+ * 使用 common.js 中的共享函数
  */
 function renderContextContent(container, word, context) {
-  // 参数验证
-  if (!context || typeof context !== "string") {
-    console.error("[Mix renderContextContent] Invalid context:", context);
-    container.innerHTML = '<p style="color: var(--error);">内容生成失败</p>';
-    return;
-  }
-
-  if (!word || !word.word) {
-    console.error("[Mix renderContextContent] Invalid word:", word);
-    container.innerHTML = '<p style="color: var(--error);">单词数据错误</p>';
-    return;
-  }
-
-  container.innerHTML = `
-    <h3>Contextual Situation</h3>
-    <p id="contextParagraph"></p>
-    <p style="margin-top: 1rem;"><strong style="color: var(--primary);">Target Word: ${word.word}</strong></p>
-  `;
-
-  // 高亮显示段落中目标单词
-  const contextPara = container.querySelector("#contextParagraph");
-  if (contextPara) {
-    const re = new RegExp(`\\b${word.word}\\b`, "gi");
-    const highlighted = context.replace(
-      re,
-      (match) => `<mark class="highlight">${match}</mark>`
-    );
-    contextPara.innerHTML = highlighted;
-  }
+  renderContextContentShared(container, word, context);
 }
 
 /**
  * 渲染填空内容
+ * 使用 common.js 中的共享函数
  */
 function renderBlankContent(container, word, sentence) {
-  // 参数验证
-  if (!sentence || typeof sentence !== "string") {
-    console.error("[Mix renderBlankContent] Invalid sentence:", sentence);
-    container.innerHTML = '<p style="color: var(--error);">句子生成失败</p>';
-    return;
-  }
-
-  if (!word || !word.word) {
-    console.error("[Mix renderBlankContent] Invalid word:", word);
-    container.innerHTML = '<p style="color: var(--error);">单词数据错误</p>';
-    return;
-  }
-
-  const blankSentenceHTML = createBlankSentenceHTML(sentence, word.word);
-
-  container.innerHTML = `
-    <h3>Fill in the Blank</h3>
-    <p class="blank-sentence">${blankSentenceHTML}</p>
-  `;
+  renderBlankContentShared(container, word, sentence, submitAnswer);
 }
 
 /**
  * 根据模式配置输入框
+ * 注意: blank 模式的输入框事件已在 renderBlankContentShared 中处理
  */
 function setupInputForMode(mode) {
   if (mode === "context") {
@@ -359,23 +403,18 @@ function setupInputForMode(mode) {
       answerInput.style.display = "none";
     }
 
-    // 绑定 blankInput 事件
+    // blankInput 的事件绑定已在 renderBlankContentShared 中处理
     const blankInput = document.getElementById("blankInput");
     if (blankInput) {
       blankInput.focus();
 
-      // 更新提示面板引用
-      if (typeof HintPanelManager !== "undefined") {
+      // 更新提示面板引用（如果尚未设置）
+      if (
+        typeof HintPanelManager !== "undefined" &&
+        !HintPanelManager.inputElement
+      ) {
         HintPanelManager.inputElement = blankInput;
       }
-
-      // 绑定回车键
-      blankInput.addEventListener("keypress", (event) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          submitAnswer();
-        }
-      });
     }
   }
 }
@@ -384,40 +423,16 @@ function setupInputForMode(mode) {
  * 更新模式指示器
  */
 function updateModeIndicator() {
-  const indicator = document.getElementById("modeIndicator");
+  // 使用全局变量或通过ID获取元素
+  const indicator = modeIndicator || document.getElementById("modeIndicator");
   if (indicator) {
-    indicator.textContent =
-      currentSubMode === "context" ? "📖 Context Mode" : "✏️ Blank Mode";
+    const modeNames = {
+      context: "📖 上下文猜词",
+      blank: "✏️ 单词填空",
+    };
+    indicator.textContent = modeNames[currentSubMode] || "未知模式";
     indicator.className = `mode-indicator ${currentSubMode}`;
   }
-}
-
-/**
- * 创建填空句子HTML（与 blank.js 相同）
- * @param {string} sentence - 完整的句子
- * @param {string} word - 要留空的单词
- * @returns {string} - 包含输入框的HTML字符串
- */
-function createBlankSentenceHTML(sentence, word) {
-  // 参数验证
-  if (!sentence || typeof sentence !== "string") {
-    console.error("[createBlankSentenceHTML] Invalid sentence:", sentence);
-    return '<p style="color: var(--error);">句子生成失败</p>';
-  }
-
-  if (!word || typeof word !== "string") {
-    console.error("[createBlankSentenceHTML] Invalid word:", word);
-    return sentence; // 返回原句子
-  }
-
-  // 转义特殊字符
-  const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  // 使用正则表达式匹配完整单词并替换为输入框
-  const regex = new RegExp(`\\b${escapedWord}\\b`, "gi");
-  return sentence.replace(
-    regex,
-    '<input type="text" class="blank-input" id="blankInput" placeholder="click to fill" autocomplete="off">'
-  );
 }
 
 /**
@@ -459,13 +474,52 @@ async function submitAnswer() {
     // 记录结果到练习历史
     updateRecords(currentExercise.word, isCorrect, currentSubMode);
 
-    // 更新单词数据
-    updateWordData(currentExercise.wordObj, currentSubMode, isCorrect);
-
-    if (isCorrect) {
-      handleCorrectAnswer();
+    // 处理答案（blank 模式允许多次试错）
+    if (currentSubMode === "blank") {
+      if (isCorrect) {
+        // 如果答对了
+        if (!hasErrored) {
+          // 之前没错过，记为正确
+          updateWordPracticeData(currentExercise.wordObj, currentSubMode, true);
+          handleCorrectAnswer();
+        } else {
+          // 之前错过，不记为正确，直接进入下一题
+          showToast("回答正确！但因之前错误，不计入正确数", "info");
+          setTimeout(() => {
+            loadNextQuestion();
+          }, 1000);
+        }
+      } else {
+        // 如果答错了
+        if (!hasErrored) {
+          // 第一次错误，记录错误
+          hasErrored = true;
+          updateWordPracticeData(
+            currentExercise.wordObj,
+            currentSubMode,
+            false
+          );
+          sessionStats.errors++;
+          sessionStats.streak = 0;
+          updateProgress();
+        }
+        // 显示错误提示，但允许继续尝试
+        showToast("回答错误！请再试一次", "error", 2000);
+        submitBtn.disabled = false;
+        return; // 不禁用输入，允许继续尝试
+      }
     } else {
-      handleWrongAnswer();
+      // context 模式：传统逻辑
+      updateWordPracticeData(
+        currentExercise.wordObj,
+        currentSubMode,
+        isCorrect
+      );
+      if (isCorrect) {
+        handleCorrectAnswer();
+      } else {
+        handleWrongAnswer();
+      }
     }
 
     // 保存进度
@@ -489,24 +543,6 @@ function getUserAnswer() {
     return blankInput ? blankInput.value.trim() : "";
   }
   return "";
-}
-
-/**
- * 更新单词数据
- */
-function updateWordData(wordObj, mode, isCorrect) {
-  const wordBank = safeGetItem(STORAGE_KEYS.WORD_BANK, []);
-  const wordIndex = wordBank.findIndex((w) => w.word === wordObj.word);
-
-  if (wordIndex !== -1) {
-    const modeData = getWordModeData(wordBank[wordIndex], mode);
-    modeData.practiceCount++;
-    if (!isCorrect) {
-      modeData.errors++;
-    }
-    wordBank[wordIndex].modes[mode] = modeData;
-    safeSetItem(STORAGE_KEYS.WORD_BANK, wordBank);
-  }
 }
 
 /**
@@ -575,6 +611,7 @@ function disableAnswering() {
 
 /**
  * 显示提示
+ * 使用 common.js 中的共享函数
  */
 async function showHint() {
   if (!currentExercise) {
@@ -582,66 +619,18 @@ async function showHint() {
     return;
   }
 
-  // 防止重复点击
-  if (hintBtn.disabled) {
-    return;
-  }
+  const contextText =
+    currentSubMode === "context"
+      ? currentExercise.context
+      : currentExercise.sentence;
 
-  hintBtn.disabled = true;
-  hintBtn.textContent = "Hinting...";
-
-  try {
-    // 生成渐进式提示
-    const progressiveHint = HintPanelManager.generateHint(
-      currentExercise.word,
-      currentExercise.wordObj,
-      currentSubMode === "context"
-        ? currentExercise.context
-        : currentExercise.sentence,
-      currentSubMode // 传入模式参数，确保使用正确的提示策略
-    );
-
-    if (progressiveHint.isLocal) {
-      // 本地提示，直接添加
-      HintPanelManager.pushHint(progressiveHint.level, progressiveHint.text);
-    } else {
-      // AI提示，根据类型异步获取
-      const aiType = progressiveHint.aiType || "complex";
-      await HintPanelManager.pushAiHint(
-        currentExercise.wordObj,
-        currentSubMode === "context"
-          ? currentExercise.context
-          : currentExercise.sentence,
-        aiType, // AI提示类型：complex、simple、synonyms、contextual
-        null, // 成功回调
-        (error) => {
-          const errorMsg =
-            error && error.message ? error.message : String(error);
-          showToast(
-            "获取AI提示失败，请检查网络连接。错误提示：" + errorMsg,
-            "error"
-          );
-        }
-      );
-    }
-  } catch (error) {
-    console.error("生成提示失败:", error);
-    showToast("生成提示失败: " + error.message, "error");
-  } finally {
-    hintBtn.disabled = false;
-    hintBtn.textContent = "Hint";
-  }
-}
-
-/**
- * 更新模式指示器
- */
-function updateModeIndicator() {
-  const modeNames = {
-    context: "📖 上下文猜词",
-    blank: "✏️ 单词填空",
-  };
-  modeIndicator.textContent = modeNames[currentSubMode] || "未知模式";
+  await getHintShared({
+    currentWord: currentExercise.wordObj,
+    contextText,
+    mode: currentSubMode,
+    hintBtn,
+    onError: null,
+  });
 }
 
 /**
@@ -735,13 +724,16 @@ function grantPracticeRewards() {
   const totalExp = baseExp + accuracyBonus * 2;
 
   // 更新用户资料
-  profile.coins += totalCoins;
-  profile.exp += totalExp;
+  const updates = {
+    coins: profile.coins + totalCoins,
+    exp: profile.exp + totalExp,
+  };
 
   // 检查升级
-  while (profile.exp >= getExpForNextLevel(profile.level)) {
-    profile.exp -= getExpForNextLevel(profile.level);
+  while (updates.exp >= getExpForNextLevel(profile.level)) {
+    updates.exp -= getExpForNextLevel(profile.level);
     profile.level++;
+    updates.level = profile.level;
     showAchievementNotification({
       icon: "🎊",
       name: "等级提升！",
@@ -750,7 +742,7 @@ function grantPracticeRewards() {
     });
   }
 
-  saveUserProfile(profile);
+  updateUserProfile(updates);
   updateUserInfoBar();
 
   // 显示奖励通知
@@ -769,6 +761,11 @@ function grantPracticeRewards() {
  * 显示奖励通知
  */
 function showRewardNotification(rewards) {
+  // 创建遮罩层
+  const overlay = document.createElement("div");
+  overlay.className = "reward-overlay";
+
+  // 创建弹窗
   const popup = document.createElement("div");
   popup.className = "reward-popup";
   popup.innerHTML = `
@@ -780,18 +777,25 @@ function showRewardNotification(rewards) {
       🎯 正确率: ${rewards.accuracy}%<br>
       ${rewards.streak >= 3 ? `🔥 最高连击: ${rewards.streak}` : ""}
     </p>
-    <button class="btn" onclick="this.parentElement.remove()"
-      style="margin-top: 1.5rem; background: var(--primary);">
+    <button class="btn reward-close-btn"
+      style="margin-top: 1.5rem; background: var(--primary); color: white;">
       太棒了！
     </button>
   `;
-  document.body.appendChild(popup);
 
-  // 3秒后自动关闭
-  setTimeout(() => {
-    popup.classList.add("hide");
-    setTimeout(() => popup.remove(), 300);
-  }, 3000);
+  // 添加到遮罩层
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+
+  // 点击按钮关闭
+  popup.querySelector(".reward-close-btn").addEventListener("click", () => {
+    overlay.remove();
+  });
+
+  // 触发重排后添加show类以启动动画
+  requestAnimationFrame(() => {
+    popup.classList.add("show");
+  });
 }
 
 /**

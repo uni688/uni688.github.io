@@ -25,6 +25,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
 
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/themes.css">
   <!-- PJAX 平滑页面切换 - 已暂停 -->
   <!-- <script src="js/pjax.js"></script> -->
   <style>
@@ -152,6 +153,52 @@
     strong {
       color: var(--primary);
       font-weight: 700;
+    }
+
+    @media (max-width: 480px) {
+      .context-box {
+        padding: 1.1rem;
+        margin: 1rem 0;
+        min-height: 150px;
+      }
+
+      .input-group {
+        gap: 0.6rem;
+        margin: 1.25rem 0;
+      }
+
+      input {
+        padding: 0.7rem 0.9rem;
+        font-size: 0.95rem;
+      }
+
+      .btn-container {
+        gap: 0.5rem;
+        margin-top: 1.25rem;
+        flex-wrap: wrap;
+      }
+
+      .btn-container button {
+        padding: 0.65rem 0.85rem;
+        font-size: 0.9rem;
+        line-height: 1.1;
+        white-space: nowrap;
+        writing-mode: horizontal-tb;
+      }
+
+      .answer-box {
+        margin: 1rem 0;
+        padding: 0.95rem;
+      }
+
+      .answer-card {
+        padding: 1rem;
+      }
+
+      .answer-card h4 {
+        font-size: 1.05rem;
+        margin-bottom: 0.5rem;
+      }
     }
   </style>
 </head>

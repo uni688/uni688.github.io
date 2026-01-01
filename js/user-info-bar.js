@@ -23,18 +23,20 @@ function initUserInfoBar(containerId = "userInfoBar") {
         justify-content: space-between;
         align-items: center;
         padding: 1rem 1.5rem;
-        background: rgba(255, 255, 255, 0.95);
+        background: rgba(255, 255, 255, 0.92);
         border-radius: var(--border-radius);
         margin-bottom: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        border: 1px solid #e2e8f0;
+        box-shadow: 0 15px 35px rgba(15, 23, 42, 0.08);
+        border: 1px solid rgba(226, 232, 240, 0.9);
         flex-wrap: wrap;
         gap: 1rem;
+        backdrop-filter: blur(12px);
       }
 
-      [data-theme="dark"] .user-info-bar {
-        background: rgba(51, 65, 85, 0.8);
-        border-color: rgba(100, 116, 139, 0.3);
+      .theme_dark .user-info-bar {
+        background: linear-gradient(135deg, rgba(12, 17, 35, 0.9), rgba(38, 32, 78, 0.85));
+        border-color: rgba(99, 102, 241, 0.35);
+        box-shadow: 0 20px 45px rgba(5, 7, 19, 0.65);
       }
 
       .user-stats-mini {
@@ -49,6 +51,20 @@ function initUserInfoBar(containerId = "userInfoBar") {
         align-items: center;
         gap: 0.5rem;
         font-size: 0.9rem;
+        color: var(--text-secondary);
+      }
+
+      .stat-mini-unit {
+        color: #94a3b8;
+        font-size: 0.8rem;
+      }
+
+      .theme_dark .stat-mini {
+        color: #d5dbff;
+      }
+
+      .theme_dark .stat-mini-unit {
+        color: #c7d2ff;
       }
 
       .stat-mini-value {
@@ -99,9 +115,13 @@ function initUserInfoBar(containerId = "userInfoBar") {
           <span class="stat-mini-value" id="userCoinsMini">${profile.coins}</span>
         </div>
         <div class="stat-mini">
+          <span>💎</span>
+          <span class="stat-mini-value" id="userDiamondsMini">${profile.diamonds}</span>
+        </div>
+        <div class="stat-mini">
           <span>🔥</span>
           <span class="stat-mini-value" id="userStreakMini">${profile.streak}</span>
-          <span style="color: #64748b; font-size: 0.85rem;">天</span>
+          <span class="stat-mini-unit">天</span>
         </div>
       </div>
     </div>
@@ -118,10 +138,12 @@ function updateUserInfoBar() {
 
   const levelEl = document.getElementById("userLevelMini");
   const coinsEl = document.getElementById("userCoinsMini");
+  const diamondsEl = document.getElementById("userDiamondsMini");
   const streakEl = document.getElementById("userStreakMini");
 
   if (levelEl) levelEl.textContent = profile.level;
   if (coinsEl) coinsEl.textContent = profile.coins;
+  if (diamondsEl) diamondsEl.textContent = profile.diamonds;
   if (streakEl) streakEl.textContent = profile.streak;
 }
 
